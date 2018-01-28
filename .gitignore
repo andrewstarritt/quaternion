@@ -1,0 +1,10 @@
+*.local
+*.o
+*.so
+*.creator.user
+*.creator.user.*
+*.pyc
+.cache/
+cmathmodule.c
+complexobject.c
+proto.py
