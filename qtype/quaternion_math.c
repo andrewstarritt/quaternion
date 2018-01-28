@@ -208,6 +208,7 @@ qmath_log(PyObject *module, PyObject *args)
    return result;
 }
 
+
 /* -----------------------------------------------------------------------------
  */
 PyDoc_STRVAR(qmath_log10__doc__,
@@ -427,6 +428,7 @@ qmath_polar(PyObject *module, PyObject *arg)
    return result;
 }
 
+
 /* -----------------------------------------------------------------------------
  */
 PyDoc_STRVAR(qmath_rect__doc__,
@@ -479,6 +481,9 @@ static PyMethodDef qmath_methods[] = {
    {NULL, NULL}  /* sentinel */
 };
 
+
+/* Allow module defn code to access the quaternion PyMethodDef.
+ */
 PyMethodDef* _PyQmathMethods ()
 {
    return qmath_methods;

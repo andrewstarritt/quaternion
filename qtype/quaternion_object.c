@@ -252,7 +252,9 @@ quaternion_parse_triple (PyObject *arg, Py_quat_triple* triple,
  * Leading/trailing spaces allowed
  * Leading/trailing "(" and ")" allowed.
  *
- * Mirrors complex type behaviour
+ * This mirrors the complex type behaviour.
+ *
+ * TODO: Handle under scores.
  */
 static int
 quaternion_init_from_string_inner (PyQuaternionObject *self, const char *s, Py_ssize_t len)
@@ -502,15 +504,15 @@ quaternion_init (PyQuaternionObject *self, PyObject *args, PyObject *kwds)
    /* Angle and axis specification ?
     */
    if (mask == (mask & 0x30)) {
-      /* We have given one of both - we need need both angle and axis
+      /* We have been given one or both - we need need both angle and axis.
        */
       if (angle == NULL) {
-          PyErr_SetString(PyExc_TypeError, "Quaternion() missing 1 required positional argument: 'angle'");
+          PyErr_SetString(PyExc_TypeError, "Quaternion() missing 1 required named argument: 'angle'");
          return -1;
       }
 
       if (axis == NULL) {
-          PyErr_SetString(PyExc_TypeError, "Quaternion() missing 1 required positional argument: 'axis'");
+          PyErr_SetString(PyExc_TypeError, "Quaternion() missing 1 required named argument: 'axis'");
          return -1;
       }
 
@@ -742,8 +744,8 @@ PyDoc_STRVAR(quaternion_rotate_doc,
              "Rotates the point using self. Self should be constructed using the angle/axis.\n"
              "\n"
              "point    - is the point to be rotated, expects a tuple with 3 float elements\n"
-             "origin   - the point about which the rotation occurs; when None the origin is\n"
-             "           deemed to be (0.0, 0.0, 0.0)\n");
+             "origin   - the point about which the rotation occurs; when not specified or\n"
+             "           None the origin is deemed to be (0.0, 0.0, 0.0)\n");
 
 static PyObject *
 quaternion_rotate(PyObject *self, PyObject *args, PyObject *kwds)
@@ -755,8 +757,8 @@ quaternion_rotate(PyObject *self, PyObject *args, PyObject *kwds)
    PyObject *origin = NULL;
 
    int s;
-   Py_quat_triple c_point = { 0.0,  0.0, 0.0 };
-   Py_quat_triple c_origin= { 0.0,  0.0, 0.0 };
+   Py_quat_triple c_point = { 0.0, 0.0, 0.0 };
+   Py_quat_triple c_origin= { 0.0, 0.0, 0.0 };
    Py_quat_triple r_point;
 
    /* Parse into two arguments
@@ -1154,14 +1156,11 @@ quaternion_int_div(PyObject *v, PyObject *w)
  * =============================================================================
  */
 static PyMethodDef QuaternionMethods [] = {
-   {"__format__", (PyCFunction)quaternion__format__,       METH_VARARGS, quaternion_format_doc},
-   {"conjugate",  (PyCFunction)quaternion_conjugate,       METH_NOARGS,  quaternion_conjugate_doc},
-   {"normalise",  (PyCFunction)quaternion_normalise,       METH_NOARGS,  quaternion_normalise_doc},
-
-   {"rotate",        (PyCFunction)quaternion_rotate,
-                      METH_VARARGS | METH_KEYWORDS,
-                      quaternion_rotate_doc},
-
+   {"__format__", (PyCFunction)quaternion__format__,  METH_VARARGS,  quaternion_format_doc},
+   {"conjugate",  (PyCFunction)quaternion_conjugate,  METH_NOARGS,   quaternion_conjugate_doc},
+   {"normalise",  (PyCFunction)quaternion_normalise,  METH_NOARGS,   quaternion_normalise_doc},
+   {"rotate",     (PyCFunction)quaternion_rotate,     METH_VARARGS |
+                                                      METH_KEYWORDS, quaternion_rotate_doc},
    {NULL},  /* sentinel */
 };
 
@@ -1172,7 +1171,7 @@ static PyMemberDef QuaternionMembers[] = {
    {"i",  T_DOUBLE, offsetof(PyQuaternionObject, qval.x), READONLY, "the i part of a Quaternion number"},
    {"j",  T_DOUBLE, offsetof(PyQuaternionObject, qval.y), READONLY, "the j part of a Quaternion number"},
    {"k",  T_DOUBLE, offsetof(PyQuaternionObject, qval.z), READONLY, "the k part of a Quaternion number"},
-   {NULL},  /* Sentinel */
+   {NULL},  /* sentinel */
 };
 
 /* -----------------------------------------------------------------------------
