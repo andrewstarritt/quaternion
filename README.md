@@ -1,7 +1,8 @@
 # quaternion
 
-## general
 A Python extension to provide a Quaternion type and some associated math functions.
+
+## general
 
 The Quaternion type has a real component and three imaginary components. These are
 accessable using the Quaternion instance attributes r, i, j, and k respectively.
@@ -31,11 +32,13 @@ to i or k is mathematically arbitary, but for Python j is the natural choice.
 
 ## construction
 
-Quaternion ()                                     -> quaternion zero
-Quaternion (r[, i[, j[, k]]])                     -> quaternion number
-Quaternion (angle=float,axis=(float,float,float)) -> quaternion rotation number
-Quaternion (number)                               -> quaternion number
-Quaternion ("str representation")                 -> quaternion number
+A Quaternion type amy be constructions using one of the following forms:
+
+* Quaternion ()                                     -> quaternion zero
+* Quaternion (r[, i[, j[, k]]])                     -> quaternion number
+* Quaternion (angle=float,axis=(float,float,float)) -> quaternion rotation number
+* Quaternion (number)                               -> quaternion number
+* Quaternion ("str representation")                 -> quaternion number
 
 A Quaternion number may be created from:
 
@@ -55,12 +58,12 @@ c) from the string representation of a quaternion (cf float and complex).
 
 ## attributes
 
-r       - float - real/scalar part
-i       - float - i imaginary part
-j       - float - j imaginary part
-k       - float - k imaginary part
-axis    - tuple - the tuple (i,j,k) 
-complex - complex - the complex number (r, j)
+* r       - float - real/scalar part
+* i       - float - i imaginary part
+* j       - float - j imaginary part
+* k       - float - k imaginary part
+* axis    - tuple - the tuple (i,j,k) 
+* complex - complex - the complex number (r, j)
 
 
 ## math functions
@@ -84,10 +87,10 @@ The functions prvided are:
 
 ## module variables
 
-one = Quaternion (1.0, 0.0, 0.0, 0.0)
-i   = Quaternion (0.0, 1.0, 0.0, 0.0)
-i   = Quaternion (0.0, 0.0, 1.0, 0.0)
-i   = Quaternion (0.0, 0.0, 0.0, 1.0)
+* one = Quaternion (1.0, 0.0, 0.0, 0.0)
+* i   = Quaternion (0.0, 1.0, 0.0, 0.0)
+* i   = Quaternion (0.0, 0.0, 1.0, 0.0)
+* i   = Quaternion (0.0, 0.0, 0.0, 1.0)
 
 ## backround
 
@@ -100,7 +103,7 @@ on other modules such as numpy
 
 ## references
 
-http://onlinelibrary.wiley.com/doi/10.1002/9780470682906.app4/pdf
-https://www.geometrictools.com/Documentation/Quaternions.pdf
-https://en.wikipedia.org/wiki/Quaternion
+* http://onlinelibrary.wiley.com/doi/10.1002/9780470682906.app4/pdf
+* https://www.geometrictools.com/Documentation/Quaternions.pdf
+* https://en.wikipedia.org/wiki/Quaternion
 
