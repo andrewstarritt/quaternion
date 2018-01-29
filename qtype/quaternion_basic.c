@@ -260,73 +260,39 @@ Py_quaternion _Py_quat_normalise (const Py_quaternion a)
 /* -----------------------------------------------------------------------------
  * Returns: a ** b
  */
-Py_quaternion _Py_quat_pow (const Py_quaternion a, const Py_quaternion b)
+Py_quaternion _Py_quat_pow (const Py_quaternion a, const double x)
 {
    Py_quaternion r;
 
-   /* special cases b == 0 */
-   if (b.s == 0.0 && b.x == 0.0 && b.y == 0.0 && b.z == 0.0) {
-      /* a ** 0 == 1 */
+   /* special cases */
+   if (x == 0.0) {
+      /* a ** 0 == 1 (even when a == 0) */
       r.s = 1.0;
       r.x = 0.0;
       r.y = 0.0;
       r.z = 0.0;
+
    } else if (a.s == 0.0 && a.x == 0.0 && a.y == 0.0 && a.z == 0.0) {
       /* 0 ** a == 0 */
       r.s = r.x = r.y = r.z = 0.0;
 
-      /* unless negative or quaternic power */
-      if (b.x != 0.0 || b.y != 0.0 || b.z != 0.0 || b.s < 0.0)
+      /* unless negative power */
+      if (x < 0.0)
          errno = EDOM;
+
+   } else if (x == 1) {
+      /* a ** 1 == a */
+      r = a;
+
    } else {
-      /* r = exp (log(a)*b) */
-
-      Py_quaternion t1, t2;
-      t1 = _Py_quat_log (a);
-      t2 = _Py_quat_prod (t1, b);
-      r = _Py_quat_exp (t2);
-   }
-   return r;
-}
-
-/* -----------------------------------------------------------------------------
- * Returns: x ** long'(n)
- * Uses _Py_quat_pow if n is large
- */
-Py_quaternion _Py_quat_powi (const Py_quaternion a, const long n)
-{
-   Py_quaternion r;
-   Py_quaternion xp;
-
-   /* why the arbitary 100 limit ??
-    * At some point _Py_quat_pow must become more efficient
-    * Count num bits in n
-    */
-   if (n > +128 || n < -128) {
-
-      double m;
+      /* convert to polar coordinates
+       */
+      double length;
       Py_quat_triple unit;
       double angle;
-      _Py_quat_into_polar (a, &m, &unit, &angle);
-      r = _Py_quat_from_polar (pow (m, n), unit, angle*n);
 
-   } else {
-
-      r = q_one;
-      xp = a;
-      long mask = n >= 0 ? n : -n;
-      while (mask >= 0) {
-         if (mask & 1)
-            r = _Py_quat_prod (r, xp);
-         mask >>= 1;
-         if(!mask) break;
-         xp = _Py_quat_prod (xp, xp);
-      }
-
-      /* Need inverse if n -ve
-       */
-      if (n < 0)
-         r = _Py_quat_quot (q_one, r);
+      _Py_quat_into_polar (a, &length, &unit, &angle);
+      r = _Py_quat_from_polar (pow (length, x), unit, angle*x);
    }
    return r;
 }

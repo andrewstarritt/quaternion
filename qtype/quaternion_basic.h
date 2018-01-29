@@ -85,8 +85,7 @@ Py_quaternion _Py_quat_diff (const Py_quaternion a, const Py_quaternion b);
 Py_quaternion _Py_quat_prod (const Py_quaternion a, const Py_quaternion b);
 Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b);
 
-Py_quaternion _Py_quat_pow  (const Py_quaternion a, const Py_quaternion b);
-Py_quaternion _Py_quat_powi (const Py_quaternion a, const long n);
+Py_quaternion _Py_quat_pow  (const Py_quaternion a, const double x);
 
 /* Rotation related functions
  */

@@ -1028,45 +1028,70 @@ quaternion_divmod(PyObject *v, PyObject *w)
 }
 
 /* -----------------------------------------------------------------------------
+ * Unlike its complex counter part, a Quaternion cannot be raised to the
+ * power of a Quaternion (except in special circumstances, e.g. no imarginary
+ * parts). The usual exp (log(v)*w) does not work with Quaternions as this
+ * yields a different result from exp (w*log(v))
  */
 static PyObject *
 quaternion_pow(PyObject *v, PyObject *w, PyObject *z)
 {
    Py_quaternion p;
-   Py_quaternion exponent;
-   long int_exponent;
-   Py_quaternion a, b;
+   Py_quaternion a;
+
+   double exponent;
+   bool x_is_okay;
+
+   /* Cannot modulo a Quaternion, 3rd parameter not allowed
+    */
+   if (z != Py_None) {
+      Py_INCREF(Py_NotImplemented);
+      return Py_NotImplemented;
+   }
+
+   /* In general case can only raise a Quaternion to a real power
+    */
+   if (!PyFloat_Check (w) && !PyLong_Check (w)) {
+      Py_INCREF(Py_NotImplemented);
+      return Py_NotImplemented;
+   }
 
    TO_C_QUATERNION(v, a);
-   TO_C_QUATERNION(w, b);
-
-   if (z != Py_None) {
-      PyErr_SetString(PyExc_ValueError, "quaternion modulo");
+   exponent = _PyNumber_AsDouble (w, &x_is_okay);
+   if (!x_is_okay) {
+      PyErr_SetString(PyExc_TypeError, "Quaternion pow()argument 2 didn't return a float");
       return NULL;
    }
 
    PyFPE_START_PROTECT("quaternion_pow", return 0);
    errno = 0;
-   exponent = b;
-   int_exponent = (long)exponent.s;
-   if (exponent.x == 0.0 && exponent.y == 0.0 &&
-       exponent.z == 0.0 && exponent.s == int_exponent)
-      p = _Py_quat_powi(a, int_exponent);
-   else
-      p = _Py_quat_pow(a, exponent);
-
+   p = _Py_quat_pow(a, exponent);
    PyFPE_END_PROTECT(p);
-   Py_ADJUST_ERANGE2(p.s, p.x);
+
    if (errno == EDOM) {
       PyErr_SetString(PyExc_ZeroDivisionError,
-                      "0.0 to a negative or Quaternion power");
+                      "(0+0i+0j+0k) cannot be raised to a negative power");
       return NULL;
    }
-   else if (errno == ERANGE) {
+
+   x_is_okay = true;
+
+   Py_ADJUST_ERANGE2(p.s, p.x);
+   if (errno == ERANGE) {
+      x_is_okay = false;
+   }
+
+   Py_ADJUST_ERANGE2(p.y, p.z);
+   if (errno == ERANGE) {
+      x_is_okay = false;
+   }
+
+   if (!x_is_okay) {
       PyErr_SetString(PyExc_OverflowError,
-                      "Quaternion exponentiation");
+                      "Quaternion numerical result out of range");
       return NULL;
    }
+
    return PyQuaternion_FromCQuaternion(p);
 }
 

@@ -2,6 +2,7 @@
 #
 
 import math
+import quaternion
 from quaternion import Quaternion
 
 zero = Quaternion(0)
@@ -142,20 +143,20 @@ def test_abs():
     q = a * a.conjugate()
     assert math.isclose (p, q.r)
     assert abs (p - q) < 1.0e-9
-    
+
     p = abs(b) * abs(b)
     q = b * b.conjugate()
     assert math.isclose (p, q.r)
     assert abs (p - q) < 1.0e-9
-    
-   
+
+
 
 def test_add():
     assert a == +a
     assert zero + a == a
     assert a + zero == a
     assert a + b == b + a
-    
+
     # arg conversion
     #
     d = Quaternion (a.r + 7, a.i, a.j, a.k)
@@ -163,7 +164,7 @@ def test_add():
     assert d == a + 7.0
     assert d == a + (7.0+0j)
     assert d == a +  Quaternion (7, 0, 0, 0)
-    
+
     e = Quaternion (a.r + 7.3, a.i, a.j + 11.3, a.k)
 
     assert e == a + (7.3+11.3j)
@@ -183,7 +184,7 @@ def test_sub():
     assert d == a - 7.0
     assert d == a - (7.0+0j)
     assert d == a -  Quaternion (7, 0, 0, 0)
-    
+
     e = Quaternion (a.r - 7.3, a.i, a.j - 11.3, a.k)
 
     assert e == a - (7.3+11.3j)
@@ -214,7 +215,7 @@ def test_mul():
     assert t * a == 3.0 * a
     assert t * a == 3 * a
     assert t * a == (3.0 + 0j) * a
-    
+
     # arg conversion
     #
     d = Quaternion (a.r * 7, a.i * 7, a.j * 7, a.k * 7)
@@ -222,8 +223,8 @@ def test_mul():
     assert d == a * 7.0
     assert d == a * (7.0+0j)
     assert d == a *  Quaternion (7, 0, 0, 0)
-    
-    
+
+
 
 def test_div():
     assert a / one == a
@@ -245,13 +246,13 @@ def test_div():
     assert d == a / 7.0
     assert d == a / (7.0+0j)
     assert d == a /  Quaternion (7, 0, 0, 0)
-    
+
 
 def test_pow():
-    assert a ** zero == one
-    assert a ** one == a
-    assert a ** 2 == a * a
-    assert a ** 2 == a * a
+    assert a ** 0 == one
+    assert a ** 1 == a
+    assert abs (a ** 2  - (a * a))  <= 1.0e-12
+    assert abs (a ** 3  - (a * a * a))  <= 1.0e-12
 
     t = a * a * a * a * a * a * a
 
@@ -266,24 +267,13 @@ def test_pow():
     p = (t * t * t * t - a) / abs(a)
     assert abs(p) <= 1.0e-12
 
-    e = Quaternion(2.718281828459045)
-    pi = Quaternion(3.141592653589793)
 
-    t = e ** (-i * pi) + one
-    assert abs(t) <= 1.0e-12
-
-    t = e ** (-j * pi) + one
-    assert abs(t) <= 1.0e-12
-
-    t = e ** (-k * pi) + one
-    assert abs(t) <= 1.0e-12
-    
 def test_hash():
     n = 234
     r = float (n)
     c = complex (r)
     q = Quaternion (c)
-    
+
     assert hash(q) == hash (n)
     assert hash(q) == hash (r)
     assert hash(q) == hash (c)
@@ -291,22 +281,22 @@ def test_hash():
     r = 1.234
     c = complex (r)
     q = Quaternion (c)
-    
+
     assert hash(q) == hash (r)
     assert hash(q) == hash (c)
-    
+
     c = -1.234 + 0.567j
     q = Quaternion (c)
     assert hash(q) == hash (c)
-    
+
     assert hash (one) != hash (i)
     assert hash (one) != hash (j)
     assert hash (one) != hash (k)
-    
+
     assert hash (i) != hash (j)
     assert hash (j) != hash (k)
     assert hash (k) != hash (i)
-    
+
 
 
 def run_stuff():
@@ -422,7 +412,7 @@ if __name__ == "__main__":
     test_mul()
     test_div()
     test_pow()
-    test_hash()        
+    test_hash()
     run_stuff()
 
 # end
