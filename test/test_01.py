@@ -38,10 +38,10 @@ def test_attributes():
     assert b.j == -1.2
     assert b.k == -3.4
 
-    assert a.axis == (-3.4, +5.6, -7.8)
+    assert a.vector == (-3.4, +5.6, -7.8)
     assert a.complex == 1.2 + 5.6j
 
-    assert b.axis == (+9.0, -1.2, -3.4)
+    assert b.vector == (+9.0, -1.2, -3.4)
     assert b.complex == 7.8 - 1.2j
 
 

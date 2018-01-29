@@ -45,9 +45,9 @@ A Quaternion number may be created from:
 a) the real part and an optional imaginary parts. r, i, j and k must be float
    or type which can be converted to float;
 
-b) from an angle (radians) and a 3-tuple axis (automatically normalised),
-   which generates a rotator quaternion rotation that can be used with the 
-   rotate mothod;
+b) from an angle (radians) and a 3-tuple axis of rotation (automatically 
+   normalised),  which generates a rotator quaternion that can be used with
+   the rotate mothod;
 
 d) from a single number parameter: int, float, complex or another Quaternion.
    When the number is complex, the imaginary part of the complex is assigned
@@ -62,7 +62,7 @@ c) from the string representation of a quaternion (cf float and complex).
 * i       - float - i imaginary part
 * j       - float - j imaginary part
 * k       - float - k imaginary part
-* axis    - tuple - the tuple (i,j,k) 
+* vector  - tuple - the tuple (i,j,k) 
 * complex - complex - the complex number (r, j)
 
 

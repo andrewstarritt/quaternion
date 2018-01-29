@@ -70,6 +70,32 @@ static double quat_max_abs_elem (const Py_quaternion a)
    return r;
 }
 
+/* -----------------------------------------------------------------------------
+ * Find length of a triple.
+ */
+static double length_triple (const Py_quat_triple t)
+{
+   double ax = fabs (t.x);
+   double ay = fabs (t.y);
+   double az = fabs (t.z);
+
+   /* Find max abs value of the tiplet
+    */
+   double m = ax;
+   if (ay > m) m = ay;
+   if (az > m) m = az;
+
+   if (m == 0.0)
+      return m;
+
+   /* Scale coordinates - avoid overflow
+    */
+   double x = t.x / m;
+   double y = t.y / m;
+   double z = t.z / m;
+
+   return m * sqrt (x*x + y*y + z*z);
+}
 
 /* -----------------------------------------------------------------------------
  * PUBLIC FUNCTIONS
@@ -355,23 +381,16 @@ double _Py_quat_abs (const Py_quaternion a)
 }
 
 /* -----------------------------------------------------------------------------
- * Returns:
+ * Returns: rotation quaternion value
  */
 Py_quaternion _Py_quat_calc_rotation (const double angle, const Py_quat_triple axis)
 {
    Py_quaternion r;
    double m;
 
-   double ax = fabs (axis.x);
-   double ay = fabs (axis.y);
-   double az = fabs (axis.z);
-
-   /* Find max abs value of the axis coordinated
+   /* Find length of ther axis or rotation
     */
-   m = ax;
-   if (ay > m) m = ay;
-   if (az > m) m = az;
-
+   m = length_triple (axis);
    if (m == 0.0) {
       errno = EDOM;     /** Needs Python.h **/
       r.s = r.x = r.y = r.z = 0.0;
@@ -481,22 +500,36 @@ void _Py_quat_into_polar (const Py_quaternion a,
 /* -----------------------------------------------------------------------------
  * Composes a quaternion from its polar format
  * a <= m * (cos(angle) + unit.sin(angle))
+ * Function ensures |unit| is one
+ * Note: this is similar but subtly different from _Py_quat_calc_rotation
+ * as calc_rotation returns a unit length quaternion and from_polar does not.
+ * Also _Py_quat_calc_rotation uses the half the angle.
  */
 Py_quaternion _Py_quat_from_polar (const double m,
                                    const Py_quat_triple unit,
                                    const double angle)
 {
    Py_quaternion r;
+   double u;
    double c, s;
+   double t;
 
-   c = cos (angle);
-   s = sin (angle);
+   u = length_triple (unit);
+   if (u == 0.0) {
+      errno = EDOM;     /** Needs Python.h **/
+      r.s = r.x = r.y = r.z = 0.0;
+   } else {
 
-   r.s = m * c;
-   r.x = m * unit.x * s;
-   r.y = m * unit.y * s;
-   r.z = m * unit.z * s;
+      c = cos (angle);
+      s = sin (angle);
 
+      r.s = m * c;
+
+      t = m*s/u;    /* combine length, sine and normalisation factor. */
+      r.x = t * unit.x;
+      r.y = t * unit.y;
+      r.z = t * unit.z;
+   }
    return r;
 }
 

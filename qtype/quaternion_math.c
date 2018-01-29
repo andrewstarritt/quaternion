@@ -402,7 +402,8 @@ PyDoc_STRVAR(qmath_polar__doc__,
              "polar(q)\n"
              "\n"
              "Convert a Quaternion from rectangular coordinates to polar coordinates.\n"
-             "The polar coordinates of Quaternion are a tuple (radius, unit, angle).");
+             "The polar coordinates of Quaternion are a tuple (length, unit, angle)\n"
+             "such that q = length *(cos(angle) + unit*sin(angle))");
 
 static PyObject *
 qmath_polar(PyObject *module, PyObject *arg)
@@ -428,11 +429,44 @@ qmath_polar(PyObject *module, PyObject *arg)
    return result;
 }
 
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_phase__doc__,
+             "phase(q)\n"
+             "\n"
+             "Return the phase or angle part of the polar coordinates of q.\n"
+             "The polar coordinates of Quaternion are length, unit, and angle\n"
+             "such that q = length *(cos(angle) + unit*sin(angle))");
+
+static PyObject *
+qmath_phase(PyObject *module, PyObject *arg)
+{
+   PyObject * result = NULL;
+   Py_quaternion q;
+   bool s;
+
+   s = PyObject_AsCQuaternion (arg, &q);
+   if (s) {
+      double radius;
+      Py_quat_triple unit;
+      double angle;
+      _Py_quat_into_polar (q, &radius, &unit, &angle);
+
+      result = Py_BuildValue("d", angle);
+   } else {
+      PyErr_Format(PyExc_TypeError,
+                   "phase() argument must be a number, not '%.200s'",
+                   Py_TYPE(arg)->tp_name);
+   }
+
+   return result;
+}
+
 
 /* -----------------------------------------------------------------------------
  */
 PyDoc_STRVAR(qmath_rect__doc__,
-             "rect(radius, unit, angle)\n"
+             "rect(length, unit, angle)\n"
              "\n"
              "Convert from polar coordinates to rectangular coordinates.");
 
@@ -477,6 +511,7 @@ static PyMethodDef qmath_methods[] = {
    {"isclose",  (PyCFunction)qmath_isclose,  METH_KEYWORDS |
                                              METH_VARARGS,  qmath_isclose__doc__},
    {"polar",   (PyCFunction)qmath_polar,     METH_O,        qmath_polar__doc__},
+   {"phase",   (PyCFunction)qmath_phase,     METH_O,        qmath_phase__doc__},
    {"rect",    (PyCFunction)qmath_rect,      METH_VARARGS,  qmath_rect__doc__},
    {NULL, NULL}  /* sentinel */
 };

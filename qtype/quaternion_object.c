@@ -570,7 +570,7 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
  * Attribute support function
  */
 static PyObject *
-quaternion_get_axis(PyObject *self)
+quaternion_get_vector(PyObject *self)
 {
    Py_quaternion q;
    PyObject *r = NULL;
@@ -804,8 +804,8 @@ quaternion_getattro(PyObject *self, PyObject *attr)
       if (name) {
          /* Check for our own attributes
           */
-         if (strcmp(name, "axis") == 0) {
-            result = quaternion_get_axis (self);
+         if (strcmp(name, "vector") == 0) {
+            result = quaternion_get_vector (self);
 
          } else if (strcmp(name, "complex") == 0) {
             result = quaternion_get_complex (self);
@@ -1272,7 +1272,7 @@ PyDoc_STRVAR(
       "i       - float - i imaginary part\n"
       "j       - float - j imaginary part\n"
       "k       - float - k imaginary part\n"
-      "axis    - tuple - the tuple (i,j,k) \n"
+      "vector  - tuple - the tuple (i,j,k) \n"
       "complex - complex - the complex number (r, j)\n"
       "\n"
       );
