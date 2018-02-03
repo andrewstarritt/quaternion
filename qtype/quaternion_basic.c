@@ -39,7 +39,7 @@ static const double pi = 3.14159265358979323846;
  * -----------------------------------------------------------------------------
  * normalise x in to range -pi .. +pi
  */
-static double circle (double x) {
+static double angle_mod (double x) {
 
    int long n = (long) (x / pi);  /* truncates towards 0 */
    if (n >= 0) {
@@ -448,7 +448,7 @@ Py_quat_triple _Py_quat_rotate (const Py_quaternion a,
 
 /* -----------------------------------------------------------------------------
  * Decomposes a quaternion into its polar format
- * a => m * (cos(angle) + unit.sin(angle))
+ * a  ->  m * (cos(angle) + unit.sin(angle))
  */
 void _Py_quat_into_polar (const Py_quaternion a,
                           double* m,
@@ -476,7 +476,7 @@ void _Py_quat_into_polar (const Py_quaternion a,
    v.y = a.y / (*m);
    v.z = a.z / (*m);
 
-   /* v already normalised, so no overlow issues here
+   /* v already normalised, so no overlow issues here.
     */
    s = sqrt (v.x*v.x + v.y*v.y + v.z*v.z);   /* sin (angle) */
 
@@ -485,22 +485,36 @@ void _Py_quat_into_polar (const Py_quaternion a,
       /* Basically real - no imaginary parts
        */
       unit->x = 0.0;
-      unit->y = 1.0;
+      unit->y = 1.0;    /* arbitary - any unit vector would do. */
       unit->z = 0.0;
       return;
    }
 
-   /* Form the unit vector
+   /* Form the unit vector.
     */
    unit->x = v.x/s;
    unit->y = v.y/s;
    unit->z = v.z/s;
+
+  /* Cosmetic fluff: ensure that on balance, unit imaginary vector is +ve.
+   * This is mainly so that when there is one imaginary component, is is
+   * always positive, just like with complex numbers:
+   *   j is always a unit vector in +ve direction
+   */
+   if (unit->x + unit->y + unit->z < 0) {
+      *angle  = -*angle;
+      unit->x = -unit->x;
+      unit->y = -unit->y;
+      unit->z = -unit->z;
+   }
 }
 
 /* -----------------------------------------------------------------------------
- * Composes a quaternion from its polar format
- * a <= m * (cos(angle) + unit.sin(angle))
- * Function ensures |unit| is one
+ * Composes a quaternion from its polar components.
+ * a  <-  m * (cos(angle) + unit.sin(angle))
+ *
+ * Function ensures |unit| is one.
+ *
  * Note: this is similar but subtly different from _Py_quat_calc_rotation
  * as calc_rotation returns a unit length quaternion and from_polar does not.
  * Also _Py_quat_calc_rotation uses the half the angle.
@@ -573,7 +587,8 @@ Py_quaternion _Py_quat_exp (const Py_quaternion a)
     */
    eas = exp (a.s);
    angle = sqrt (a.x*a.x + a.y*a.y + a.z*a.z);   /* size if the imaginary part */
-   if (angle < angle_limit) {
+
+   if (abs(angle) < angle_limit) {
       /* Essentially real
        */
       r.s = eas;
@@ -610,7 +625,7 @@ Py_quaternion _Py_quat_log (const Py_quaternion a)
 
    _Py_quat_into_polar (a, &m, &u, &angle);
 
-   if (angle < angle_limit) {
+   if (abs(angle) < angle_limit) {
       /* Essentially real
        */
       if (a.s >= 0) {
@@ -664,7 +679,7 @@ Py_quaternion _Py_quat_sin (const Py_quaternion a)
    /* normalise the real part of a to range -pi .. +pi
     */
    an = a;
-   an.s = circle (a.s);
+   an.s = angle_mod (a.s);
 
    a_sqd = _Py_quat_prod(an, an);
 
@@ -725,7 +740,7 @@ Py_quaternion _Py_quat_cos (const Py_quaternion a)
    int j;
 
    an = a;
-   an.s = circle (a.s);
+   an.s = angle_mod (a.s);
 
    a_sqd = _Py_quat_prod(an, an);
 
@@ -765,6 +780,10 @@ Py_quaternion _Py_quat_tan (const Py_quaternion a)
 
    s = _Py_quat_sin (a);
    c = _Py_quat_cos (a);
+
+   /* The axis of sin (a) and cos(a) are parallel, so the divide makes sense.
+    * That is s and c commute in this case, and (1/c)*s == s*(1/c)
+    */
    r = _Py_quat_quot (s, c);
 
    return r;
