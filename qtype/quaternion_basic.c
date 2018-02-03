@@ -664,14 +664,14 @@ Py_quaternion _Py_quat_sin (const Py_quaternion a)
    /* normalise the real part of a to range -pi .. +pi
     */
    an = a;
-   an.s = circle (an.s);
+   an.s = circle (a.s);
 
    a_sqd = _Py_quat_prod(an, an);
 
    sign = +1;
    factorial = 1.0;
    ap = an;       /* first term */
-   r = ap;        /*  initialise with first term*/
+   r = ap;        /* initialise with first term */
 
    for (j = 3; j < 51; j += 2) {
       ap = _Py_quat_prod (ap, a_sqd);
@@ -683,7 +683,7 @@ Py_quaternion _Py_quat_sin (const Py_quaternion a)
       /* Don't use _Py_quat_prod as muliplying with a scalar, and inline add.
        */
       t.s = ap.s * m;  r.s += t.s;
-      t.x = ap.z * m;  r.x += t.x;
+      t.x = ap.x * m;  r.x += t.x;
       t.y = ap.y * m;  r.y += t.y;
       t.z = ap.z * m;  r.z += t.z;
 
@@ -725,7 +725,7 @@ Py_quaternion _Py_quat_cos (const Py_quaternion a)
    int j;
 
    an = a;
-   an.s = circle (an.s);
+   an.s = circle (a.s);
 
    a_sqd = _Py_quat_prod(an, an);
 
@@ -742,7 +742,7 @@ Py_quaternion _Py_quat_cos (const Py_quaternion a)
       m = sign/factorial;
 
       t.s = ap.s * m;  r.s += t.s;
-      t.x = ap.z * m;  r.x += t.x;
+      t.x = ap.x * m;  r.x += t.x;
       t.y = ap.y * m;  r.y += t.y;
       t.z = ap.z * m;  r.z += t.z;
 
