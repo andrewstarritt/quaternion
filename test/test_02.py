@@ -7,9 +7,52 @@ import math
 import cmath
 
 
-def test_isclose():
-    return
+qlist = (Quaternion(+0.16, +0.32, +1.48, +0.80),
+         Quaternion(+1.16, +1.32, +1.48, -0.80),
+         Quaternion(+2.16, +0.00, -0.01, +0.00),
+         Quaternion(+3.16, +0.32, -1.48, -2.80),
+         Quaternion(+4.16, -2.32, +1.48, +0.80),
+         Quaternion(+0.16, -0.32, +1.48, -0.80),
+         Quaternion(+6.16, -3.32, -1.48, +3.80),
+         Quaternion(+7.16, -0.32, -3.48, -0.80),
+         Quaternion(+0.16, +0.32, +1.48, +4.80))
 
+
+def qfoo(q):
+    """ Rotate axis by +tau/3 """
+    return Quaternion(q.r, q.j, q.k, q.i)
+
+
+def qbar(q):
+    """ Rotate axis by -tau/3 """
+    return Quaternion(q.r, q.k, q.i, q.j)
+
+
+def check(rfn, cfn, qfn, q):
+    """ compares the Quaternion function (qfn) with the equivilent
+        real (rfn) and complex (cfn) functions
+    """
+    a = Quaternion(rfn(q.r))
+    b = qfn(Quaternion(q.r))
+    assert quaternion.isclose(a, b)
+
+    a = Quaternion(cfn(q.complex))
+    b = qfn(Quaternion(q.complex))
+    assert quaternion.isclose(a, b)
+
+    # Test cut'n'paste errors referenceing imaginary components
+    # by rotating the axis,
+    #
+    a = qfn(qfoo(q))
+    b = qfoo(qfn(q))
+    assert quaternion.isclose(a, b)
+
+    a = qfn(qbar(q))
+    b = qbar(qfn(q))
+    assert quaternion.isclose(a, b)
+
+
+def test_isclose():
     a = Quaternion(1.23e10)
     b = a + 0.001
 
@@ -18,11 +61,26 @@ def test_isclose():
     assert quaternion.isclose(a, a)
 
 
+def test_exp():
+    for q in qlist:
+        check(math.exp, cmath.exp, quaternion.exp, q)
+
+
+def test_log():
+    for q in qlist:
+        check(math.log, cmath.log, quaternion.log, q)
+
+
+def test_log10():
+    for q in qlist:
+        check(math.log10, cmath.log10, quaternion.log10, q)
+
+
 def test_log_exp():
-    a = Quaternion(1.2, -3.4, +5.6, -7.8)
-    b = quaternion.log (a)
-    c = quaternion.exp (b)
-    assert abs (a - c) < 1.0e-9;
+    for a in qlist:
+        b = quaternion.log(a)
+        c = quaternion.exp(b)
+        assert abs(a - c) < 1.0e-9
 
 
 def test_sqrt():
@@ -30,54 +88,37 @@ def test_sqrt():
     b = Quaternion(2.0, 0.0, 0.0, 0.0)
 
     c = quaternion.sqrt(a)
-    assert abs (b - c) < 1.0e-9;
+    assert abs(b - c) < 1.0e-9
 
     a = Quaternion(1.23, 4.56, -7.89, 2.456)
     b = quaternion.sqrt(a)
-    c = b*b
-    assert abs (a - c) < 1.0e-9;
+    c = b * b
+    assert abs(a - c) < 1.0e-9
+
+    for q in qlist:
+         check(math.sqrt, cmath.sqrt, quaternion.sqrt, q)
+
 
 def test_sin():
-    t = 1.23
-    a = quaternion.sin(Quaternion(t))
-    b = Quaternion(math.sin(t))
-    assert abs (a - b) < 1.0e-9;
-
-    t = 1.0 + 0.23j
-    a = quaternion.sin(Quaternion(t))
-    b = Quaternion(cmath.sin(t))
-    assert abs (a - b) < 1.0e-9;
+    for q in qlist:
+        check(math.sin, cmath.sin, quaternion.sin, q)
 
 
 def test_cos():
-    t = 1.23
-    a = quaternion.cos(Quaternion(t))
-    b = Quaternion(math.cos(t))
-    assert abs (a - b) < 1.0e-9;
-
-    t = 1.0 + 0.23j
-    a = quaternion.cos(Quaternion(t))
-    b = Quaternion(cmath.cos(t))
-    assert abs (a - b) < 1.0e-9;
+    for q in qlist:
+        check(math.cos, cmath.cos, quaternion.cos, q)
 
 
 def test_pythagoras():
-    a = Quaternion(-0.1, -0.1, +0.1, +0.1)
-    u = quaternion.sin(a)**2 + quaternion.cos(a)**2
-    v = abs (u)
-    assert v - 1.0 < 1.0e-3;
+    for a in qlist:
+        u = quaternion.sin(a)**2 + quaternion.cos(a)**2
+        v = abs(u)
+        assert v - 1.0 < 1.0e-3
 
 
 def test_tan():
-    t = 1.23
-    a = quaternion.tan(Quaternion(t))
-    b = Quaternion(math.tan(t))
-    assert abs (a - b) < 1.0e-9;
-
-    t = 1.0 + 0.23j
-    a = quaternion.tan(Quaternion(t))
-    b = Quaternion(cmath.tan(t))
-    assert abs (a - b) < 1.0e-9;
+    for q in qlist:
+        check(math.tan, cmath.tan, quaternion.tan, q)
 
 
 if __name__ == "__main__":
