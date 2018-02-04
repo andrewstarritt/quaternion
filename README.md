@@ -10,25 +10,30 @@ Note: the instance attributes i, j, k should not be confused with the quaternion
 module variables i, j and k. The former return floats where as the latter are unit
 Quaternion instances such that i.i = j.j = k.k = 1, and i.r = i.j = i.k etc = 0.
 
-A Quaternion may also be considered to be a real scalar plus a vector (with real
-components). The vector part is accessable via the axis attribute which provides a
-tuple. The following Python expressions are equvilent: q.axis and (q.i, q.j, q.k)
+A Quaternion may also be considered to be a real scalar part plus a vector (with
+real components). The vector part is accessable via the vector attribute which
+provides a tuple of floats. The following Python expressions are equivilent:
+
+    q.vector == (q.i, q.j, q.k)
 
 The Quaternion type is non-commutative, i.e.  q1*q2  and  q2*q1 in general
- providedifferent results. To divide one Quaternion by another, there are two
+provide different results. To divide one Quaternion by another, there are two
 options, i.e.:  q1*inverse(q2) or inverse(q2)* q1. The quotient function returns
-the former. So (q1/q2)*q2 == q1
+the former, thus (q1/q2)*q2 == q1
 
-Mixed mode: Quaternions and scalar numbers, int or float, are interoperable.
+Mixed mode: Quaternions and scalar numbers, i.e. int or float, are interoperable.
 int and float are treated as Quaternions with zero imaginary components.
 
 Mixed mode with complex numbers is also allowed. A complex number, z, is treated
 as a Quaternions, q, such that q.r = z.real, q.j = z.imag, and q.i and q.k are
 zero. The complex part of a Quaternion may be obtained using the complex
-attribute, such that:  q.complex == complex(q.r, q.j).
+attribute, such that:
 
-The choice of allocating the imaginary part of a complex number to j as opposed
-to i or k is mathematically arbitary, but for Python j is the natural choice.
+    q.complex == complex(q.r, q.j).
+
+The choice of alligning the imaginary part of a complex number to the j component
+as opposed to i or k is mathematically arbitary, but for Python j is the natural
+choice.
 
 ## construction
 
@@ -68,21 +73,26 @@ c) from the string representation of a quaternion (cf float and complex).
 
 ## math functions
 
-These functions aim to mimic the equivilent functions out of the math/cmath module.
-The functions prvided are:
+A number of math functions that operate on Quaternions are also provided. Where
+provided, these provide the equivilent quaternion function as the functions of
+the same name out of the math and/or cmath module.
+
+The functions provided are:
 
     isfinite
     isinf
     isnan
+    isclose
     sqrt
     exp
     log
     log10
     cos
-    sine
+    sin
     tan
-    isclose
     polar
+    phase
+    axis
     rect
 
 ## module variables
@@ -99,7 +109,7 @@ that was a bit more challenging than just a "hello world" extension.
 
 Altough there are already a number of Quaternion Python packages out there, this
 has the advantage of speed over the pure Python implementations and no dependencies
-on other modules such as numpy
+on other modules such as numpy.
 
 ## references
 

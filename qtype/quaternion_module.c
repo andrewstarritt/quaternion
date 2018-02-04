@@ -82,7 +82,7 @@ static PyModuleDef QuaternionModule = {
    "Math functions\n"
    "A number of math functions that operate on Quaternions are also provided. Where\n"
    "provided, these provide the equivilent quaternion function as the functions of\n"
-   "the same name out of math and/or cmath.\n"
+   "the same name out of the math and/or cmath module.\n"
    "\n"
    "\n"
    "References\n"
