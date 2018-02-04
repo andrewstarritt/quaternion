@@ -1,10 +1,13 @@
 *.local
 *.o
 *.so
+creator/
+qcreator
 *.creator.user
 *.creator.user.*
 *.pyc
 .cache/
+Makefile
+proto.py
 cmathmodule.c
 complexobject.c
-proto.py

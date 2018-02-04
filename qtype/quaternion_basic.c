@@ -588,7 +588,7 @@ Py_quaternion _Py_quat_exp (const Py_quaternion a)
    eas = exp (a.s);
    angle = sqrt (a.x*a.x + a.y*a.y + a.z*a.z);   /* size if the imaginary part */
 
-   if (abs(angle) < angle_limit) {
+   if (fabs (angle) < angle_limit) {
       /* Essentially real
        */
       r.s = eas;
@@ -625,7 +625,7 @@ Py_quaternion _Py_quat_log (const Py_quaternion a)
 
    _Py_quat_into_polar (a, &m, &u, &angle);
 
-   if (abs(angle) < angle_limit) {
+   if (fabs (angle) < angle_limit) {
       /* Essentially real
        */
       if (a.s >= 0) {
@@ -633,7 +633,7 @@ Py_quaternion _Py_quat_log (const Py_quaternion a)
          r.x = r.y = r.z = 0.0;
       } else {
          /* For -ve real, we need pi worth of imaginary, as exp (i.pi) == -1
-          * We allocate this to the j component, so that quaternion behave
+          * We allocate this to the j component, so that a quaternion behaves
           * like complex numbers.
           */
          r.s = log (-a.s);
@@ -643,8 +643,8 @@ Py_quaternion _Py_quat_log (const Py_quaternion a)
 
    } else {
       /* log (a) = log (m.v) = log(m) + log(v)
-       *                     = log(m) + log (cos(theta) + u.sin(angle))
-       *                     = log(m) + log (cos(theta) + u.sin(angle))
+       *                     = log(m) + log (cos(angle) + u.sin(angle))
+       *                     = log(m) + log (cos(angle) + u.sin(angle))
        *                     = log(m) + log (exp (u.angle))
        *                     = log(m) + u.angle
        */
