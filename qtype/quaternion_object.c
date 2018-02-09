@@ -33,6 +33,7 @@
 
 #include "quaternion_object.h"
 #include <structmember.h>
+#include <string.h>
 
 /* ----------------------------------------------------------------------------
  */
@@ -80,7 +81,7 @@ _PyNumber_AsDouble (PyObject *obj, bool* is_okay)
    }
    return result;
 
-   DEBUG_TRACE ("no warning");
+   DEBUG_TRACE ("make compiler warning go away");
 }
 
 /// ----------------------------------------------------------------------------
@@ -647,8 +648,17 @@ quaternion__format__(PyObject *self, PyObject *args)
    if (!PyArg_ParseTuple(args, "U:__format__", &format_spec))
       return NULL;
 
-   /* Leverage off the float formating function - this ensures consistancy but at
-    * the cost of creating four float PyObjects and four formatted string objects.
+   if (!format_spec) {
+      /* Belts amd braces
+       */
+      PyErr_SetString(PyExc_ValueError,
+                      "Quaternion.__format__() null format spec");                                         \
+      return NULL;
+   }
+
+   /* Leverage off the float formating function - this ensures consistancy
+    * but at the cost of creating four float PyObjects objects and four
+    * unicode PyObjects objects.
     */
    PyQuaternionObject *q = (PyQuaternionObject *)self;
    PyObject *r = PyFloat_FromDouble (q->qval.s);
@@ -669,57 +679,70 @@ quaternion__format__(PyObject *self, PyObject *args)
        */
       if (fr && fi && fj && fk) {
 
-         PyObject *ps = NULL;
-         PyObject *ns = NULL;
-         PyObject *fmt = NULL;
-         PyObject *t = NULL;
-
-         char* c;
-
-         /* Is there a sign char at start of the format?
+         /* Convert to utf8 strings
           */
-         c = PyUnicode_AsUTF8 (fi);
-         int ci = *c != '+' && *c != '-';
+         char *utf8_r = PyUnicode_AsUTF8 (fr);
+         char *utf8_i = PyUnicode_AsUTF8 (fi);
+         char *utf8_j = PyUnicode_AsUTF8 (fj);
+         char *utf8_k = PyUnicode_AsUTF8 (fk);
 
-         c = PyUnicode_AsUTF8 (fj);
-         int cj = *c != '+' && *c != '-';
-
-         c = PyUnicode_AsUTF8 (fk);
-         int ck = *c != '+' && *c != '-';
-
-         ns = PyUnicode_FromString ("");
-         ps = PyUnicode_FromString ("+");
-         fmt = PyUnicode_FromString ("%s%s%si%s%sj%s%sk");
-
-         t = PyTuple_New(7);
-         PyTuple_SetItem(t, 0, fr);
-         PyTuple_SetItem(t, 1, (ci ? ps : ns));
-         PyTuple_SetItem(t, 2, fi);
-         PyTuple_SetItem(t, 3, (cj ? ps : ns));
-         PyTuple_SetItem(t, 4, fj);
-         PyTuple_SetItem(t, 5, (ck ? ps : ns));
-         PyTuple_SetItem(t, 6, fk);
-
-         /* this is analogous to format % args */
-         result = PyUnicode_Format(fmt, t);
-
-         QDECREF (t);
-         QDECREF (fmt);
-         QDECREF (ps);
-         QDECREF (ns);
-
-      } else {
-         /* On the if (true) branch these objects are assigned to the tuple and
-          * get removed when the tuple is deleted - as are the sole ref. On the
-          * else branch we must decrement the ref dount and deallocate here.
+         /* Save required length - the formatting of r on its own will
+          * capture ther overall required length.
           */
-         QDECREF (fr);
-         QDECREF (fi);
-         QDECREF (fj);
-         QDECREF (fk);
+         const int rlen = strlen (utf8_r);
+
+         /* Strip leading spaces.
+          */
+         while (*utf8_r == ' ') utf8_r++;
+         while (*utf8_i == ' ') utf8_i++;
+         while (*utf8_j == ' ') utf8_j++;
+         while (*utf8_k == ' ') utf8_k++;
+
+         /* Do the i, j and/or k start with a sign?
+          */
+         bool si = (*utf8_i == '+') || (*utf8_i == '-');
+         bool sj = (*utf8_j == '+') || (*utf8_j == '-');
+         bool sk = (*utf8_k == '+') || (*utf8_k == '-');
+
+         /* If no sign add a '+', if component -ve format will always add a sign.
+          */
+         char image [240];
+         snprintf (image, sizeof(image), "%s%s%si%s%sj%s%sk", utf8_r,
+                   si ? "" : "+", utf8_i,
+                   sj ? "" : "+", utf8_j,
+                   sk ? "" : "+", utf8_k);
+
+
+         int alen = strlen (image);
+         int pad = rlen - alen;
+
+         /* Constrain pad to available buffer size. */
+         if (pad > (int) sizeof(image) - 1 - alen) {
+             pad = (int) sizeof(image) - 1 - alen;
+         }
+
+         if (pad > 0) {
+            memmove (&image[pad], &image [0], alen + 1);   /* Include the zero */
+            int i;
+            for (i = 0; i < pad; i++)
+               image [i] = ' ';
+         }
+
+         image [sizeof(image) - 1] = '\0';     /* Belts n braces */
+
+         result = PyUnicode_FromString (image);
       }
+
+      /* Done with these objects - decrement the ref counts.
+       */
+      QDECREF (fr);
+      QDECREF (fi);
+      QDECREF (fj);
+      QDECREF (fk);
    }
 
+   /* And done with these objects - decrement the ref counts.
+    */
    QDECREF (r);
    QDECREF (i);
    QDECREF (j);
