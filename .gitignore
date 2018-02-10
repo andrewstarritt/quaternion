@@ -2,6 +2,7 @@
 *.o
 *.so
 creator/
+creator.d/
 qcreator
 *.creator.user
 *.creator.user.*

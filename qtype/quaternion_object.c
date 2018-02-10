@@ -381,6 +381,26 @@ parse_error:
    return -1;
 }
 
+
+/* -----------------------------------------------------------------------------
+ * The _Py_string_to_number_with_underscores finction expects the inner function
+ * to return a new instance, where as we just initiliase an existing instance.
+ * This is because we essentially override __init__, not __new__.
+ * This is a wrapper function around quaternion_init_from_string_inner just
+ * to meet the API requirements of _Py_string_to_number_with_underscores().
+ */
+static PyObject *quaternion_init_from_string_wraper
+   (const char *s , Py_ssize_t len , void *self)
+{
+   int okay;
+   okay = quaternion_init_from_string_inner (self, s, len);
+
+   if (okay == 0)
+      return self;  // No increment - just a flag
+
+   return NULL;   // Not okay
+}
+
 /* -----------------------------------------------------------------------------
  */
 static int
@@ -388,11 +408,28 @@ quaternion_init_from_string(PyQuaternionObject *self, PyObject *v)
 {
    const char *s;
    Py_ssize_t len;
+   int result = -1;
 
    s = PyUnicode_AsUTF8AndSize (v, &len);
-   return quaternion_init_from_string_inner (self, s, len);
-}
 
+#if PY_VERSION_HEX >= 0x03060000
+   /* Python understands underscores in numeric literals (cribbed from Ada83 ;-)
+    */
+   PyObject *status;
+   PyObject *type = (PyObject *) PyQuaternionType ();
+
+   status = _Py_string_to_number_with_underscores
+         (s, len, "Quaternion", type, self, quaternion_init_from_string_wraper);
+
+   result = (status == (PyObject *)self) ? 0 : -1;
+#else
+   /* 3.5 or earlier - go old school
+    */
+   result = quaternion_init_from_string_inner (self, s, len);
+#endif
+
+   return result;
+}
 
 /* -----------------------------------------------------------------------------
  */
