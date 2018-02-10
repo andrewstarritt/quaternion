@@ -14,12 +14,13 @@ A Quaternion may also be considered to be a real scalar part plus a vector (with
 real components). The vector part is accessable via the vector attribute which
 provides a tuple of floats. The following Python expressions are equivilent:
 
-    q.vector == (q.i, q.j, q.k)
+    q.vector
+    (q.i, q.j, q.k)
 
-The Quaternion type is non-commutative, i.e.  q1*q2  and  q2*q1 in general
+The Quaternion type is non-commutative, i.e.  q1\*q2  and  q2\*q1 in general
 provide different results. To divide one Quaternion by another, there are two
-options, i.e.:  q1*inverse(q2) or inverse(q2)* q1. The quotient function returns
-the former, thus (q1/q2)*q2 == q1
+options, i.e.:  q1\*inverse(q2) or inverse(q2)\* q1. The quotient function returns
+the former, thus (q1/q2)\*q2 == q1
 
 Mixed mode: Quaternions and scalar numbers, i.e. int or float, are interoperable.
 int and float are treated as Quaternions with zero imaginary components.
