@@ -20,7 +20,9 @@ provides a tuple of floats. The following Python expressions are equivilent:
 The Quaternion type is non-commutative, i.e.  q1\*q2  and  q2\*q1 in general
 provide different results. To divide one Quaternion by another, there are two
 options, i.e.:  q1\*inverse(q2) or inverse(q2)\* q1. The quotient function returns
-the former, thus (q1/q2)\*q2 == q1
+the former, thus;
+
+    (q1/q2)\*q2 == q1
 
 Mixed mode: Quaternions and scalar numbers, i.e. int or float, are interoperable.
 int and float are treated as Quaternions with zero imaginary components.
@@ -51,7 +53,7 @@ A Quaternion number may be created from:
 a) the real part and an optional imaginary parts. r, i, j and k must be float
    or type which can be converted to float;
 
-b) from an angle (radians) and a 3-tuple axis of rotation (automatically 
+b) from an angle (radians) and a 3-tuple axis of rotation (automatically
    normalised),  which generates a rotator quaternion that can be used with
    the rotate mothod;
 
@@ -68,7 +70,7 @@ c) from the string representation of a quaternion (cf float and complex).
 * i       - float - i imaginary part
 * j       - float - j imaginary part
 * k       - float - k imaginary part
-* vector  - tuple - the tuple (i,j,k) 
+* vector  - tuple - the tuple (i,j,k)
 * complex - complex - the complex number (r, j)
 
 
@@ -117,4 +119,9 @@ on other modules such as numpy.
 * http://onlinelibrary.wiley.com/doi/10.1002/9780470682906.app4/pdf
 * https://www.geometrictools.com/Documentation/Quaternions.pdf
 * https://en.wikipedia.org/wiki/Quaternion
+
+## credits
+
+Guidence from https://docs.python.org/3.5/extending/newtypes.html
+together with cribbing many code-snippets and ideas from the complex type.
 

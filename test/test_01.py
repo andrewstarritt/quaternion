@@ -5,6 +5,7 @@ import math
 import quaternion
 from quaternion import Quaternion
 
+
 zero = Quaternion(0)
 one = Quaternion(1)
 i = Quaternion(0,i=1)
@@ -246,6 +247,17 @@ def test_div():
     assert d == a / 7.0
     assert d == a / (7.0+0j)
     assert d == a /  Quaternion (7, 0, 0, 0)
+
+
+def test_inverse():
+    b = a.inverse()
+    t = one - a*b
+    assert abs (t) < 1.0e-9
+    t = one - b*a
+    assert abs (t) < 1.0e-9
+    b = a.inverse().inverse()
+    t = a - b
+    assert abs (t) < 1.0e-9
 
 
 def test_pow():

@@ -40,6 +40,18 @@ def check(rfn, cfn, qfn, q):
     b = qfn(Quaternion(q.complex))
     assert quaternion.isclose(a, b)
 
+    # For single value functions, we can creae a z with same r and phi as the q
+    # Call the complex function, then create a Quaternion with f(r, phi) of the complex
+    # result merged in with the original axis.
+    #
+    q_polar = quaternion.polar(q)
+    z = cmath.rect (q_polar[0], q_polar[1])
+    fz = cfn (z)
+    fz_polar = cmath.polar (fz)
+    fi = quaternion.rect(fz_polar[0], fz_polar [1], q_polar[2])
+    fd = qfn (q)
+    assert quaternion.isclose(fi, fd)
+
     # Test cut'n'paste errors referenceing imaginary components
     # by rotating the axis,
     #
