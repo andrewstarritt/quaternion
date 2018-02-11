@@ -223,7 +223,7 @@ Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b)
        */
       nom = _Py_quat_prod (sa, sbc);
 
-      /* denom inatoris b * b^ which is real
+      /* denominator is b * b^ which is real
        */
       denom = (sb.s * sb.s) + (sb.x * sb.x) + (sb.y * sb.y) + (sb.z * sb.z);
 
@@ -259,6 +259,31 @@ Py_quaternion _Py_quat_conjugate (const Py_quaternion a)
    r.x = -a.x;
    r.y = -a.y;
    r.z = -a.z;
+   return r;
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: inverse of a
+ */
+Py_quaternion _Py_quat_inverse (const Py_quaternion a)
+{
+   Py_quaternion r;
+   double denom;
+
+   /* denominator is a * a^ which is real
+    */
+   denom = (a.s * a.s) + (a.x * a.x) + (a.y * a.y) + (a.z * a.z);
+
+   if (denom == 0.0) {
+      errno = EDOM;     /** Needs Python.h **/
+      r.s = r.x = r.y = r.z = 0.0;
+   } else {
+      /* conjugate / denom */
+      r.s = +a.s / denom;
+      r.x = -a.x / denom;
+      r.y = -a.y / denom;
+      r.z = -a.z / denom;
+   }
    return r;
 }
 

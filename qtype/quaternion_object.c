@@ -637,7 +637,9 @@ quaternion_conjugate(PyObject *self)
 {
    Py_quaternion c, r;
    c = ((PyQuaternionObject *)self)->qval;
+   PyFPE_START_PROTECT("quaternion_conjugate", return 0);
    r = _Py_quat_conjugate(c);
+   PyFPE_END_PROTECT(r);
    return PyQuaternion_FromCQuaternion(r);
 }
 
@@ -650,11 +652,37 @@ PyDoc_STRVAR(quaternion_conjugate_doc,
 /* -----------------------------------------------------------------------------
  */
 static PyObject *
+quaternion_inverse(PyObject *self)
+{
+   Py_quaternion c, r;
+   c = ((PyQuaternionObject *)self)->qval;
+   PyFPE_START_PROTECT("quaternion_inverse", return 0);
+   errno = 0;
+   r = _Py_quat_inverse(c);
+   PyFPE_END_PROTECT(r);
+   if (errno == EDOM) {
+      PyErr_SetString(PyExc_ZeroDivisionError, "quaternion inverse of zero");
+      return NULL;
+   }
+   return PyQuaternion_FromCQuaternion(r);
+}
+
+PyDoc_STRVAR(quaternion_inverse_doc,
+             "quaternion.inverse() -> quaternion\n"
+             "\n"
+             "Return the quaternion inverse of its argument,\n"
+             "such that: q * q.inverse() == 1+0i+0j+0k.");
+
+/* -----------------------------------------------------------------------------
+ */
+static PyObject *
 quaternion_normalise(PyObject *self)
 {
    Py_quaternion c, r;
    c = ((PyQuaternionObject *)self)->qval;
+   PyFPE_START_PROTECT("quaternion_normalise", return 0);
    r = _Py_quat_normalise(c);
+   PyFPE_END_PROTECT(pr);
    return PyQuaternion_FromCQuaternion(r);
 }
 
@@ -844,47 +872,6 @@ quaternion_rotate(PyObject *self, PyObject *args, PyObject *kwds)
    r_point = _Py_quat_rotate (((PyQuaternionObject *)self)->qval, c_point, c_origin);
 
    result = Py_BuildValue("(ddd)", r_point.x, r_point.y, r_point.z);
-   return result;
-}
-
-/* -----------------------------------------------------------------------------
- */
-static PyObject *
-quaternion_getattro(PyObject *self, PyObject *attr)
-{
-   PyObject *result = NULL;
-   char* name = NULL;
-
-   if (PyUnicode_Check(attr)) {
-      /* The returned buffer always has an extra null byte appended
-       * In the case of an error, NULL is returned with an exception set.
-       * The caller is not responsible for deallocating the buffer.
-       */
-      name = PyUnicode_AsUTF8 (attr);
-      if (name) {
-         /* Check for our own attributes
-          */
-         if (strcmp(name, "vector") == 0) {
-            result = quaternion_get_vector (self);
-
-         } else if (strcmp(name, "complex") == 0) {
-            result = quaternion_get_complex (self);
-         }
-      }
-   }
-
-   if (result == NULL) {
-      /* Use default generic get attributes function for members and functions.
-       * This could maybe be placed inside the unicode check or the name check.
-       */
-      result = PyObject_GenericGetAttr (self, attr);
-   }
-
-   if (result == NULL) {
-      PyErr_Format(PyExc_AttributeError,
-                   "'quaternion.Quaternion' object has no attribute '%.200s'", name);
-   }
-
    return result;
 }
 
@@ -1235,6 +1222,47 @@ quaternion_int_div(PyObject *v, PyObject *w)
    return NULL;
 }
 
+/* -----------------------------------------------------------------------------
+ */
+static PyObject *
+quaternion_getattro(PyObject *self, PyObject *attr)
+{
+   PyObject *result = NULL;
+   char* name = NULL;
+
+   if (PyUnicode_Check(attr)) {
+      /* The returned buffer always has an extra null byte appended
+       * In the case of an error, NULL is returned with an exception set.
+       * The caller is not responsible for deallocating the buffer.
+       */
+      name = PyUnicode_AsUTF8 (attr);
+      if (name) {
+         /* Check for our own attributes
+          */
+         if (strcmp(name, "vector") == 0) {
+            result = quaternion_get_vector (self);
+
+         } else if (strcmp(name, "complex") == 0) {
+            result = quaternion_get_complex (self);
+         }
+      }
+   }
+
+   if (result == NULL) {
+      /* Use default generic get attributes function for members and functions.
+       * This could maybe be placed inside the unicode check or the name check.
+       */
+      result = PyObject_GenericGetAttr (self, attr);
+   }
+
+   if (result == NULL) {
+      PyErr_Format(PyExc_AttributeError,
+                   "'quaternion.Quaternion' object has no attribute '%.200s'", name);
+   }
+
+   return result;
+}
+
 
 /* =============================================================================
  * Tables
@@ -1243,6 +1271,7 @@ quaternion_int_div(PyObject *v, PyObject *w)
 static PyMethodDef QuaternionMethods [] = {
    {"__format__", (PyCFunction)quaternion__format__,  METH_VARARGS,  quaternion_format_doc},
    {"conjugate",  (PyCFunction)quaternion_conjugate,  METH_NOARGS,   quaternion_conjugate_doc},
+   {"inverse",    (PyCFunction)quaternion_inverse,    METH_NOARGS,   quaternion_inverse_doc},
    {"normalise",  (PyCFunction)quaternion_normalise,  METH_NOARGS,   quaternion_normalise_doc},
    {"rotate",     (PyCFunction)quaternion_rotate,     METH_VARARGS |
                                                       METH_KEYWORDS, quaternion_rotate_doc},

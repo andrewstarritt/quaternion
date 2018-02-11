@@ -76,6 +76,7 @@ int _Py_quat_ne (const Py_quaternion a, const Py_quaternion b);
 double _Py_quat_abs (const Py_quaternion a);
 Py_quaternion _Py_quat_neg (const Py_quaternion a);
 Py_quaternion _Py_quat_conjugate (const Py_quaternion a);
+Py_quaternion _Py_quat_inverse   (const Py_quaternion a);
 Py_quaternion _Py_quat_normalise (const Py_quaternion a);
 
 Py_quaternion _Py_quat_sum  (const Py_quaternion a, const Py_quaternion b);
