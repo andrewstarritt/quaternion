@@ -390,7 +390,6 @@ qmath_isclose(PyObject *module, PyObject *args, PyObject *kwds)
       }
    }
 
-
    Py_INCREF (result);
    return result;
 }
@@ -402,9 +401,10 @@ PyDoc_STRVAR(qmath_polar__doc__,
              "polar(q)\n"
              "\n"
              "Convert a Quaternion from rectangular coordinates to polar coordinates.\n"
-             "The polar coordinates of Quaternion are a tuple (length, axis, phase)\n"
-             "such that q = length *(cos(phase) + axis*sin(phase))\n"
-             "Note: axis = (x.i + y.j + z.k) and |axis| is 1");
+             "The polar coordinates of Quaternion are a tuple (length, phase, axis)\n"
+             "such that q = length *(math.cos(phase) + axis*math.sin(phase))\n"
+             "Note: axis is itself tuple = (x, y, z) and |axis| is 1\n"
+             "polar(q) is equivalent to (abs(q), phase(q), axis(q)).");
 
 static PyObject *
 qmath_polar(PyObject *module, PyObject *arg)
@@ -420,7 +420,7 @@ qmath_polar(PyObject *module, PyObject *arg)
       double phase;
       _Py_quat_into_polar (q, &radius, &axis, &phase);
 
-      result = Py_BuildValue("d(ddd)d", radius, axis.x, axis.y, axis.z, phase);
+      result = Py_BuildValue("dd(ddd)", radius, phase, axis.x, axis.y, axis.z);
    } else {
       PyErr_Format(PyExc_TypeError,
                    "polar() argument must be a number, not '%.200s'",
@@ -433,11 +433,11 @@ qmath_polar(PyObject *module, PyObject *arg)
 /* -----------------------------------------------------------------------------
  */
 PyDoc_STRVAR(qmath_axis__doc__,
-             "polar(q)\n"
+             "axis(q)\n"
              "\n"
              "Returns the axis part of the polar coordinates.\n"
              "The polar coordinates of Quaternion are length, axis, and phase\n"
-             "such that q = length *(cos(phase) + axis*sin(phase))\n"
+             "such that q = length *(math.cos(phase) + axis*math.sin(phase))\n"
              "Note: |axis| is 1");
 
 static PyObject *
@@ -471,7 +471,7 @@ PyDoc_STRVAR(qmath_phase__doc__,
              "\n"
              "Return the phase or angle part of the polar coordinates of q.\n"
              "The polar coordinates of Quaternion are length, axis, and phase\n"
-             "such that q = length *(cos(phase) + axis*sin(phase))");
+             "such that q = length *(math.cos(phase) + axis*math.sin(phase))");
 
 static PyObject *
 qmath_phase(PyObject *module, PyObject *arg)
@@ -501,10 +501,11 @@ qmath_phase(PyObject *module, PyObject *arg)
 /* -----------------------------------------------------------------------------
  */
 PyDoc_STRVAR(qmath_rect__doc__,
-             "rect(length, axis, phase)\n"
+             "rect(length, phase, axis)\n"
              "\n"
              "Convert from polar coordinates to rectangular coordinates.\n"
-             "Note: axis will normalised such that |axis| = 1 if required.");
+             "Equivalent to: length *(math.cos(phase) + axis*sin(math.phase))\n"
+             "Note: axis is normalised such that |axis| = 1 if required.");
 
 static PyObject *
 qmath_rect(PyObject *module, PyObject *args)
@@ -517,10 +518,10 @@ qmath_rect(PyObject *module, PyObject *args)
    int status;
    Py_quaternion r;
 
-   status = PyArg_ParseTuple (args, "d(ddd)d:quaternion.rect",
-                              &radius, &axis.x, &axis.y, &axis.z, &phase);
+   status = PyArg_ParseTuple (args, "dd(ddd):quaternion.rect",
+                              &radius, &phase, &axis.x, &axis.y, &axis.z);
    if (status) {
-      /* Check |axis| == 1 */
+      /* Note: _Py_quat_from_polar normalised axis if need be */
       r = _Py_quat_from_polar(radius, axis, phase);
       result = PyQuaternion_FromCQuaternion (r);
    } else {

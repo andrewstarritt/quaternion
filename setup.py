@@ -31,11 +31,11 @@ m = Extension("quaternion",
                          "qtype/quaternion_module.c"])
 
 setup(name="quaternion",
-      version="1.0.3",
+      version="1.0.6",
       author="Andrew Starritt",
       author_email="starritt@netspace.net.au",
       license="GPL3",
-      description=""" Provides a Quaternion and associated math functions """,
+      description=""" Provides a Quaternion type and associated math functions """,
       ext_modules=[m])
 
 # end
