@@ -39,14 +39,14 @@ The Quaternion type is associative under both addition and multiplication, i.e.:
 
 The Quaternion type is non-commutative with respect to multiplication (and division),
 i.e.  p \* q  and  q \* p in general provide different results. To divide one
-Quaternion by another, there are two options, namely:
+Quaternion by another, there are two options:
 
-    p \* q.inverse() ; or
-    q.inverse() \* p.
+    p * q.inverse() ; or
+    q.inverse() * p.
 
-The quotient function returns the former, thus:
+The quotient function returns the former, therefore:
 
-    (p / q) \* q = p
+    (p / q) * q = p
 
 
 ## mixed mode arithmetic
