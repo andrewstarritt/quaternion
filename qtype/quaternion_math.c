@@ -185,7 +185,7 @@ qmath_log(PyObject *module, PyObject *args)
             double b = PyFloat_Check (base) ? PyFloat_AsDouble (base) : PyLong_AsDouble (base);
             double logBase_e = 1.0 / log (b);
 
-            r.s *= logBase_e;
+            r.w *= logBase_e;
             r.x *= logBase_e;
             r.y *= logBase_e;
             r.z *= logBase_e;
@@ -233,7 +233,7 @@ qmath_log10(PyObject *module, PyObject *arg)
        * which is the inverse of log.e(10)
        */
       static const double log10_e = 0.4342944819032518;
-      r.s *= log10_e;
+      r.w *= log10_e;
       r.x *= log10_e;
       r.y *= log10_e;
       r.z *= log10_e;

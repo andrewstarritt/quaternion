@@ -57,7 +57,7 @@ static double angle_mod (double x) {
 static double quat_max_abs_elem (const Py_quaternion a)
 {
    double r, t;
-   r = fabs (a.s);
+   r = fabs (a.w);
    t = fabs (a.x);
    if (t > r)
       r = t;
@@ -104,7 +104,7 @@ static double length_triple (const Py_quat_triple t)
  */
 bool _Py_quat_isfinite (const Py_quaternion a)
 {
-   return Py_IS_FINITE (a.s) && Py_IS_FINITE (a.x) &&
+   return Py_IS_FINITE (a.w) && Py_IS_FINITE (a.x) &&
           Py_IS_FINITE (a.y) && Py_IS_FINITE (a.z);
 }
 
@@ -113,7 +113,7 @@ bool _Py_quat_isfinite (const Py_quaternion a)
  */
 bool _Py_quat_isinf    (const Py_quaternion a)
 {
-   return Py_IS_INFINITY (a.s) || Py_IS_INFINITY (a.x) ||
+   return Py_IS_INFINITY (a.w) || Py_IS_INFINITY (a.x) ||
           Py_IS_INFINITY (a.y) || Py_IS_INFINITY (a.z);
 }
 
@@ -122,7 +122,7 @@ bool _Py_quat_isinf    (const Py_quaternion a)
  */
 bool _Py_quat_isnan    (const Py_quaternion a)
 {
-   return Py_IS_NAN (a.s) || Py_IS_NAN (a.x) ||
+   return Py_IS_NAN (a.w) || Py_IS_NAN (a.x) ||
           Py_IS_NAN (a.y) || Py_IS_NAN (a.z);
 }
 
@@ -132,7 +132,7 @@ bool _Py_quat_isnan    (const Py_quaternion a)
  */
 int _Py_quat_eq (const Py_quaternion a, const Py_quaternion b)
 {
-   return (a.s == b.s) && (a.x == b.x) && (a.y == b.y) && (a.z == b.z);
+   return (a.w == b.w) && (a.x == b.x) && (a.y == b.y) && (a.z == b.z);
 }
 
 /* -----------------------------------------------------------------------------
@@ -149,7 +149,7 @@ int _Py_quat_ne (const Py_quaternion a, const Py_quaternion b)
 Py_quaternion _Py_quat_sum (const Py_quaternion a, const Py_quaternion b)
 {
    Py_quaternion r;
-   r.s = a.s + b.s;
+   r.w = a.w + b.w;
    r.x = a.x + b.x;
    r.y = a.y + b.y;
    r.z = a.z + b.z;
@@ -162,7 +162,7 @@ Py_quaternion _Py_quat_sum (const Py_quaternion a, const Py_quaternion b)
 Py_quaternion _Py_quat_diff (const Py_quaternion a, const Py_quaternion b)
 {
    Py_quaternion r;
-   r.s = a.s - b.s;
+   r.w = a.w - b.w;
    r.x = a.x - b.x;
    r.y = a.y - b.y;
    r.z = a.z - b.z;
@@ -176,10 +176,10 @@ Py_quaternion _Py_quat_diff (const Py_quaternion a, const Py_quaternion b)
 Py_quaternion _Py_quat_prod (const Py_quaternion a, const Py_quaternion b)
 {
    Py_quaternion r;
-   r.s = (a.s * b.s) - (a.x * b.x) - (a.y * b.y) - (a.z * b.z);
-   r.x = (a.s * b.x) + (a.x * b.s) + (a.y * b.z) - (a.z * b.y);
-   r.y = (a.s * b.y) + (a.y * b.s) + (a.z * b.x) - (a.x * b.z);
-   r.z = (a.s * b.z) + (a.z * b.s) + (a.x * b.y) - (a.y * b.x);
+   r.w = (a.w * b.w) - (a.x * b.x) - (a.y * b.y) - (a.z * b.z);
+   r.x = (a.w * b.x) + (a.x * b.w) + (a.y * b.z) - (a.z * b.y);
+   r.y = (a.w * b.y) + (a.y * b.w) + (a.z * b.x) - (a.x * b.z);
+   r.z = (a.w * b.z) + (a.z * b.w) + (a.x * b.y) - (a.y * b.x);
    return r;
 }
 
@@ -194,7 +194,7 @@ Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b)
    m = quat_max_abs_elem (b);
    if (m == 0.0) {
       errno = EDOM;     /**  Needs Python.h  **/
-      r.s = r.x = r.y = r.z = 0.0;
+      r.w = r.x = r.y = r.z = 0.0;
    } else {
       Py_quaternion sa, sb, sbc, nom;
       double denom;
@@ -202,19 +202,19 @@ Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b)
       /* Scale a and b by 1/m:
        * Note: a/b == (a/m) / (b/m)
        */
-      sa.s = a.s / m;
+      sa.w = a.w / m;
       sa.x = a.x / m;
       sa.y = a.y / m;
       sa.z = a.z / m;
 
-      sb.s = b.s / m;
+      sb.w = b.w / m;
       sb.x = b.x / m;
       sb.y = b.y / m;
       sb.z = b.z / m;
 
       /* Form b^, i.e. complex conjugate of b
        */
-      sbc.s = + sb.s;
+      sbc.w = + sb.w;
       sbc.x = - sb.x;
       sbc.y = - sb.y;
       sbc.z = - sb.z;
@@ -225,9 +225,9 @@ Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b)
 
       /* denominator is b * b^ which is real
        */
-      denom = (sb.s * sb.s) + (sb.x * sb.x) + (sb.y * sb.y) + (sb.z * sb.z);
+      denom = (sb.w * sb.w) + (sb.x * sb.x) + (sb.y * sb.y) + (sb.z * sb.z);
 
-      r.s = nom.s / denom;
+      r.w = nom.w / denom;
       r.x = nom.x / denom;
       r.y = nom.y / denom;
       r.z = nom.z / denom;
@@ -242,7 +242,7 @@ Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b)
 Py_quaternion _Py_quat_neg (const Py_quaternion a)
 {
    Py_quaternion r;
-   r.s = -a.s;
+   r.w = -a.w;
    r.x = -a.x;
    r.y = -a.y;
    r.z = -a.z;
@@ -255,7 +255,7 @@ Py_quaternion _Py_quat_neg (const Py_quaternion a)
 Py_quaternion _Py_quat_conjugate (const Py_quaternion a)
 {
    Py_quaternion r;
-   r.s = +a.s;
+   r.w = +a.w;
    r.x = -a.x;
    r.y = -a.y;
    r.z = -a.z;
@@ -272,14 +272,14 @@ Py_quaternion _Py_quat_inverse (const Py_quaternion a)
 
    /* denominator is a * a^ which is real
     */
-   denom = (a.s * a.s) + (a.x * a.x) + (a.y * a.y) + (a.z * a.z);
+   denom = (a.w * a.w) + (a.x * a.x) + (a.y * a.y) + (a.z * a.z);
 
    if (denom == 0.0) {
       errno = EDOM;     /** Needs Python.h **/
-      r.s = r.x = r.y = r.z = 0.0;
+      r.w = r.x = r.y = r.z = 0.0;
    } else {
       /* conjugate / denom */
-      r.s = +a.s / denom;
+      r.w = +a.w / denom;
       r.x = -a.x / denom;
       r.y = -a.y / denom;
       r.z = -a.z / denom;
@@ -298,9 +298,9 @@ Py_quaternion _Py_quat_normalise (const Py_quaternion a)
 
    if (m == 0.0) {
       errno = EDOM;     /** Needs Python.h **/
-      r.s = r.x = r.y = r.z = 0.0;
+      r.w = r.x = r.y = r.z = 0.0;
    } else {
-      r.s = a.s / m;
+      r.w = a.w / m;
       r.x = a.x / m;
       r.y = a.y / m;
       r.z = a.z / m;
@@ -318,14 +318,14 @@ Py_quaternion _Py_quat_pow (const Py_quaternion a, const double x)
    /* special cases */
    if (x == 0.0) {
       /* a ** 0 == 1 (even when a == 0) */
-      r.s = 1.0;
+      r.w = 1.0;
       r.x = 0.0;
       r.y = 0.0;
       r.z = 0.0;
 
-   } else if (a.s == 0.0 && a.x == 0.0 && a.y == 0.0 && a.z == 0.0) {
+   } else if (a.w == 0.0 && a.x == 0.0 && a.y == 0.0 && a.z == 0.0) {
       /* 0 ** a == 0 */
-      r.s = r.x = r.y = r.z = 0.0;
+      r.w = r.x = r.y = r.z = 0.0;
 
       /* unless negative power */
       if (x < 0.0)
@@ -358,12 +358,12 @@ double _Py_quat_abs (const Py_quaternion a)
 
    /* Is any element infinite or NaN - needs Python.h
     */
-   if (!Py_IS_FINITE (a.s) || !Py_IS_FINITE (a.x) || !Py_IS_FINITE (a.y) || !Py_IS_FINITE (a.z)) {
+   if (!Py_IS_FINITE (a.w) || !Py_IS_FINITE (a.x) || !Py_IS_FINITE (a.y) || !Py_IS_FINITE (a.z)) {
       /* C99 rules: if either the real or the imaginary parts is an
          infinity, return infinity, even if the other part is a NaN.
        */
-      if (Py_IS_INFINITY (a.s)) {
-         result = fabs (a.s);
+      if (Py_IS_INFINITY (a.w)) {
+         result = fabs (a.w);
          errno = 0;
          return result;
       }
@@ -389,7 +389,7 @@ double _Py_quat_abs (const Py_quaternion a)
 
    double m = quat_max_abs_elem (a);
    if (m > 0.0) {
-      double ss = a.s / m;
+      double ss = a.w / m;
       double sx = a.x / m;
       double sy = a.y / m;
       double sz = a.z / m;
@@ -418,7 +418,7 @@ Py_quaternion _Py_quat_calc_rotation (const double angle, const Py_quat_triple a
    m = length_triple (axis);
    if (m == 0.0) {
       errno = EDOM;     /** Needs Python.h **/
-      r.s = r.x = r.y = r.z = 0.0;
+      r.w = r.x = r.y = r.z = 0.0;
    } else {
       /* Scale to avoid over flows
        */
@@ -431,7 +431,7 @@ Py_quaternion _Py_quat_calc_rotation (const double angle, const Py_quat_triple a
       double caot = cos (angle / 2.0);
       double saot = sin (angle / 2.0);
 
-      r.s = caot;
+      r.w = caot;
       r.x = sx * saot / norm;
       r.y = sy * saot / norm;
       r.z = sz * saot / norm;
@@ -454,7 +454,7 @@ Py_quat_triple _Py_quat_rotate (const Py_quaternion a,
    Py_quaternion ap;
    Py_quaternion t;
 
-   p.s = 0.0;
+   p.w = 0.0;
    p.x = point.x - origin.x;
    p.y = point.y - origin.y;
    p.z = point.z - origin.z;
@@ -496,7 +496,7 @@ void _Py_quat_into_polar (const Py_quaternion a,
 
    /* Normalise a
    */
-   c   = a.s / (*m);    /* cos (angle) */
+   c   = a.w / (*m);    /* cos (angle) */
    v.x = a.x / (*m);
    v.y = a.y / (*m);
    v.z = a.z / (*m);
@@ -556,13 +556,13 @@ Py_quaternion _Py_quat_from_polar (const double m,
    u = length_triple (unit);
    if (u == 0.0) {
       errno = EDOM;     /** Needs Python.h **/
-      r.s = r.x = r.y = r.z = 0.0;
+      r.w = r.x = r.y = r.z = 0.0;
    } else {
 
       c = cos (angle);
       s = sin (angle);
 
-      r.s = m * c;
+      r.w = m * c;
 
       t = m*s/u;    /* combine length, sine and normalisation factor. */
       r.x = t * unit.x;
@@ -610,13 +610,13 @@ Py_quaternion _Py_quat_exp (const Py_quaternion a)
     *          = exp (s)*exp(u.angle)
     *          = exp (s)*(cos(angle) + u.sin(angle))
     */
-   eas = exp (a.s);
+   eas = exp (a.w);
    angle = sqrt (a.x*a.x + a.y*a.y + a.z*a.z);   /* size if the imaginary part */
 
    if (fabs (angle) < angle_limit) {
       /* Essentially real
        */
-      r.s = eas;
+      r.w = eas;
       r.x = r.y = r.z = 0.0;
    } else {
       double ca = cos (angle);
@@ -628,7 +628,7 @@ Py_quaternion _Py_quat_exp (const Py_quaternion a)
       u.y = a.y / angle;
       u.z = a.z / angle;
 
-      r.s = eas * ca;
+      r.w = eas * ca;
       r.x = eas * u.x * sa;
       r.y = eas * u.y * sa;
       r.z = eas * u.z * sa;
@@ -653,15 +653,15 @@ Py_quaternion _Py_quat_log (const Py_quaternion a)
    if (fabs (angle) < angle_limit) {
       /* Essentially real
        */
-      if (a.s >= 0) {
-         r.s = log (a.s);
+      if (a.w >= 0) {
+         r.w = log (a.w);
          r.x = r.y = r.z = 0.0;
       } else {
          /* For -ve real, we need pi worth of imaginary, as exp (i.pi) == -1
           * We allocate this to the j component, so that a quaternion behaves
           * like complex numbers.
           */
-         r.s = log (-a.s);
+         r.w = log (-a.w);
          r.y = pi;
          r.x = r.z = 0.0;
       }
@@ -673,7 +673,7 @@ Py_quaternion _Py_quat_log (const Py_quaternion a)
        *                     = log(m) + log (exp (u.angle))
        *                     = log(m) + u.angle
        */
-      r.s = log (m);
+      r.w = log (m);
       r.x = u.x * angle;
       r.y = u.y * angle;
       r.z = u.z * angle;
@@ -704,7 +704,7 @@ Py_quaternion _Py_quat_sin (const Py_quaternion a)
    /* normalise the real part of a to range -pi .. +pi
     */
    an = a;
-   an.s = angle_mod (a.s);
+   an.w = angle_mod (a.w);
 
    a_sqd = _Py_quat_prod(an, an);
 
@@ -722,7 +722,7 @@ Py_quaternion _Py_quat_sin (const Py_quaternion a)
 
       /* Don't use _Py_quat_prod as muliplying with a scalar, and inline add.
        */
-      t.s = ap.s * m;  r.s += t.s;
+      t.w = ap.w * m;  r.w += t.w;
       t.x = ap.x * m;  r.x += t.x;
       t.y = ap.y * m;  r.y += t.y;
       t.z = ap.z * m;  r.z += t.z;
@@ -733,8 +733,8 @@ Py_quaternion _Py_quat_sin (const Py_quaternion a)
        *
        * To avoid the sqrt we examine squares of the abs values.
        */
-      t2 = (t.s*t.s) + (t.x*t.x) + (t.y*t.y) + (t.z*t.z);
-      r2 = (r.s*r.s) + (r.x*r.x) + (r.y*r.y) + (r.z*r.z);
+      t2 = (t.w*t.w) + (t.x*t.x) + (t.y*t.y) + (t.z*t.z);
+      r2 = (r.w*r.w) + (r.x*r.x) + (r.y*r.y) + (r.z*r.z);
 
       if (t2 <= 1.0e-40 * r2)
          break;
@@ -765,7 +765,7 @@ Py_quaternion _Py_quat_cos (const Py_quaternion a)
    int j;
 
    an = a;
-   an.s = angle_mod (a.s);
+   an.w = angle_mod (a.w);
 
    a_sqd = _Py_quat_prod(an, an);
 
@@ -781,13 +781,13 @@ Py_quaternion _Py_quat_cos (const Py_quaternion a)
       factorial = factorial * j * (j - 1);
       m = sign/factorial;
 
-      t.s = ap.s * m;  r.s += t.s;
+      t.w = ap.w * m;  r.w += t.w;
       t.x = ap.x * m;  r.x += t.x;
       t.y = ap.y * m;  r.y += t.y;
       t.z = ap.z * m;  r.z += t.z;
 
-      t2 = (t.s*t.s) + (t.x*t.x) + (t.y*t.y) + (t.z*t.z);
-      r2 = (r.s*r.s) + (r.x*r.x) + (r.y*r.y) + (r.z*r.z);
+      t2 = (t.w*t.w) + (t.x*t.x) + (t.y*t.y) + (t.z*t.z);
+      r2 = (r.w*r.w) + (r.x*r.x) + (r.y*r.y) + (r.z*r.z);
 
       if (t2 <= 1.0e-40 * r2)
          break;

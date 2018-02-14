@@ -132,11 +132,11 @@ to_c_quaternion(PyObject **pobj, Py_quaternion *pc)
 {
    PyObject *obj = *pobj;
 
-   pc->s = pc->x = pc->y = pc->z = 0.0;
+   pc->w = pc->x = pc->y = pc->z = 0.0;
 
    if (PyLong_Check(obj)) {
-      pc->s = PyLong_AsDouble(obj);
-      if (pc->s == -1.0 && PyErr_Occurred()) {
+      pc->w = PyLong_AsDouble(obj);
+      if (pc->w == -1.0 && PyErr_Occurred()) {
          *pobj = NULL;
          return false;
       }
@@ -144,13 +144,13 @@ to_c_quaternion(PyObject **pobj, Py_quaternion *pc)
    }
 
    if (PyFloat_Check(obj)) {
-      pc->s = PyFloat_AsDouble(obj);
+      pc->w = PyFloat_AsDouble(obj);
       return true;
    }
 
    if (PyComplex_Check(obj)) {
       Py_complex z = PyComplex_AsCComplex (obj);
-      pc->s = z.real;
+      pc->w = z.real;
       pc->y = z.imag;
       return true;
    }
@@ -369,7 +369,7 @@ quaternion_init_from_string_inner (PyQuaternionObject *self, const char *s, Py_s
 
    /* all good = copy the values
     */
-   self->qval.s = r;
+   self->qval.w = r;
    self->qval.x = x;
    self->qval.y = y;
    self->qval.z = z;
@@ -436,7 +436,7 @@ quaternion_init_from_string(PyQuaternionObject *self, PyObject *v)
 static int
 quaternion_init (PyQuaternionObject *self, PyObject *args, PyObject *kwds)
 {
-   static char *kwlist[] = {"r", "i", "j", "k", "angle", "axis", 0};
+   static char *kwlist[] = {"w", "x", "y", "z", "angle", "axis", 0};
 
    PyObject *r = NULL, *i = NULL, *j = NULL, *k = NULL;
    PyObject *angle = NULL, *axis = NULL;
@@ -505,14 +505,14 @@ quaternion_init (PyQuaternionObject *self, PyObject *args, PyObject *kwds)
       if (PyComplex_Check(r)) {
          /* init from complex */
          z = (PyComplexObject*) (r);
-         self->qval.s = z->cval.real;
+         self->qval.w = z->cval.real;
          self->qval.y = z->cval.imag;
          return 0;
       }
 
       if (PyNumber_Check(r)) {
          /* init from number */
-         MMM (r, self->qval.s);
+         MMM (r, self->qval.w);
          return 0;
       }
 
@@ -525,11 +525,11 @@ quaternion_init (PyQuaternionObject *self, PyObject *args, PyObject *kwds)
       return -1;
    }
 
-   /* Rectalinear components  [r[i[,j[k]]] - we want up to four floats ?
+   /* Rectalinear components - we want up to four floats ?
     */
    if (mask == (mask & 0x0F)) {
 
-      MMM (r, qval.s);
+      MMM (r, qval.w);
       MMM (i, qval.x);
       MMM (j, qval.y);
       MMM (k, qval.z);
@@ -565,7 +565,7 @@ quaternion_init (PyQuaternionObject *self, PyObject *args, PyObject *kwds)
       }
 
       errno = 0;
-      self->qval = _Py_quat_calc_rotation (a, b);
+      self->qval = _Py_quat_calc_rotation (a, b);  /* will normalise the axis */
       if (errno == EDOM) {
          PyErr_SetString(PyExc_ValueError, "Quaternion() 'axis' argument has no direction - is zero");
          return -1;
@@ -594,7 +594,7 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    self = (PyQuaternionObject *)type->tp_alloc(type, 0);
    if (self != NULL) {
       /* implicit ??? */
-      self->qval.s = self->qval.x = self->qval.y = self->qval.z = 0.0;
+      self->qval.w = self->qval.x = self->qval.y = self->qval.z = 0.0;
    }
 
    return (PyObject *)self;
@@ -627,7 +627,7 @@ quaternion_get_complex(PyObject *self)
 {
    Py_quaternion c;
    c = ((PyQuaternionObject *)self)->qval;
-   return PyComplex_FromDoubles (c.s, c.y);  /* real and j component */
+   return PyComplex_FromDoubles (c.w, c.y);  /* real and j component */
 }
 
 /* -----------------------------------------------------------------------------
@@ -726,7 +726,7 @@ quaternion__format__(PyObject *self, PyObject *args)
     * unicode PyObjects objects.
     */
    PyQuaternionObject *q = (PyQuaternionObject *)self;
-   PyObject *r = PyFloat_FromDouble (q->qval.s);
+   PyObject *r = PyFloat_FromDouble (q->qval.w);
    PyObject *i = PyFloat_FromDouble (q->qval.x);
    PyObject *j = PyFloat_FromDouble (q->qval.y);
    PyObject *k = PyFloat_FromDouble (q->qval.z);
@@ -830,6 +830,7 @@ PyDoc_STRVAR(quaternion_rotate_doc,
              "quaternion.rotate (point, origin=None) -> point\n"
              "\n"
              "Rotates the point using self. Self should be constructed using the angle/axis.\n"
+             "option. At very least self should be normalised\n"
              "\n"
              "point    - is the point to be rotated, expects a tuple with 3 float elements\n"
              "origin   - the point about which the rotation occurs; when not specified or\n"
@@ -892,7 +893,7 @@ quaternion_repr (PyQuaternionObject *v)
    char *py = NULL;
    char *pz = NULL;
 
-   ps = PyOS_double_to_string(v->qval.s, format, prec, 0, NULL);
+   ps = PyOS_double_to_string(v->qval.w, format, prec, 0, NULL);
    if (!ps) {
       PyErr_NoMemory();
       goto done;
@@ -939,7 +940,7 @@ quaternion_hash (PyQuaternionObject *v)
    /* z1 is the complex part of v, z2 is the other part of v as a complex number
    * This ensures that numbers that compare equal return same hash value.
    */
-   z1 = (PyObject *) PyComplex_FromDoubles (v->qval.s, v->qval.y);
+   z1 = (PyObject *) PyComplex_FromDoubles (v->qval.w, v->qval.y);
    z2 = (PyObject *) PyComplex_FromDoubles (v->qval.x, v->qval.z);
 
    hashz1 = z1->ob_type->tp_hash (z1);
@@ -1123,7 +1124,7 @@ quaternion_pow(PyObject *v, PyObject *w, PyObject *z)
 
    x_is_okay = true;
 
-   Py_ADJUST_ERANGE2(p.s, p.x);
+   Py_ADJUST_ERANGE2(p.w, p.x);
    if (errno == ERANGE) {
       x_is_okay = false;
    }
@@ -1189,7 +1190,7 @@ quaternion_abs (PyQuaternionObject *v)
 static int
 quaternion_is_bool(PyQuaternionObject *v)
 {
-   return v->qval.s != 0.0 || v->qval.x != 0.0 || v->qval.y != 0.0 || v->qval.z != 0.0;
+   return v->qval.w != 0.0 || v->qval.x != 0.0 || v->qval.y != 0.0 || v->qval.z != 0.0;
 }
 
 /* -----------------------------------------------------------------------------
@@ -1239,7 +1240,12 @@ quaternion_getattro(PyObject *self, PyObject *attr)
       if (name) {
          /* Check for our own attributes
           */
-         if (strcmp(name, "vector") == 0) {
+         if (strcmp(name, "real") == 0) {
+            Py_quaternion c;
+            c = ((PyQuaternionObject *)self)->qval;
+            result = PyFloat_FromDouble (c.w);
+
+         } else if ((strcmp(name, "vector") == 0) || (strcmp(name, "imag") == 0)) {
             result = quaternion_get_vector (self);
 
          } else if (strcmp(name, "complex") == 0) {
@@ -1281,10 +1287,10 @@ static PyMethodDef QuaternionMethods [] = {
 /* -----------------------------------------------------------------------------
  */
 static PyMemberDef QuaternionMembers[] = {
-   {"r",  T_DOUBLE, offsetof(PyQuaternionObject, qval.s), READONLY, "the scalar part of a Quaternion number"},
-   {"i",  T_DOUBLE, offsetof(PyQuaternionObject, qval.x), READONLY, "the i part of a Quaternion number"},
-   {"j",  T_DOUBLE, offsetof(PyQuaternionObject, qval.y), READONLY, "the j part of a Quaternion number"},
-   {"k",  T_DOUBLE, offsetof(PyQuaternionObject, qval.z), READONLY, "the k part of a Quaternion number"},
+   {"w",  T_DOUBLE, offsetof(PyQuaternionObject, qval.w), READONLY, "the scalar part of a Quaternion number"},
+   {"x",  T_DOUBLE, offsetof(PyQuaternionObject, qval.x), READONLY, "the i imaginary part of a Quaternion number"},
+   {"y",  T_DOUBLE, offsetof(PyQuaternionObject, qval.y), READONLY, "the j imaginary part of a Quaternion number"},
+   {"z",  T_DOUBLE, offsetof(PyQuaternionObject, qval.z), READONLY, "the k imaginary part of a Quaternion number"},
    {NULL},  /* sentinel */
 };
 
@@ -1349,20 +1355,20 @@ PyDoc_STRVAR(
       "   which generates a rotator quaternion rotation that can be used with the \n"
       "   rotate mothod;\n"
       "\n"
-      "d) from a single number parameter: int, float, complex or another Quaternion.\n"
+      "c) from a single number parameter: int, float, complex or another Quaternion.\n"
       "   When the number is complex, the imaginary part of the complex is assigned\n"
       "   to the j imaginary part. So that Quaternion(z) == Quaternion(str(z)); or\n"
       "\n"
-      "c) from the string representation of a quaternion (cf float and complex).\n"
+      "d) from the string representation of a quaternion (cf float and complex).\n"
       "\n"
       "\n"
       "Attributes\n"
-      "r       - float - real/scalar part\n"
-      "i       - float - i imaginary part\n"
-      "j       - float - j imaginary part\n"
-      "k       - float - k imaginary part\n"
+      "w       - float - real/scalar part\n"
+      "x       - float - i imaginary part\n"
+      "y       - float - j imaginary part\n"
+      "z       - float - k imaginary part\n"
       "vector  - tuple - the tuple (i,j,k) \n"
-      "complex - complex - the complex number (r, j)\n"
+      "complex - complex - the complex number (w + y.j)\n"
       "\n"
       );
 
@@ -1509,7 +1515,7 @@ bool PyObject_AsCQuaternion(PyObject *obj, Py_quaternion* qval)
       if (t == -1.0 && PyErr_Occurred()) {
          return false;
       }
-      qval->s = t;
+      qval->w = t;
       qval->x = 0.0;
       qval->y = 0.0;
       qval->z = 0.0;
@@ -1517,7 +1523,7 @@ bool PyObject_AsCQuaternion(PyObject *obj, Py_quaternion* qval)
    }
 
    if (PyFloat_Check(obj)) {
-      qval->s = PyFloat_AsDouble(obj);
+      qval->w = PyFloat_AsDouble(obj);
       qval->x = 0.0;
       qval->y = 0.0;
       qval->z = 0.0;
@@ -1526,7 +1532,7 @@ bool PyObject_AsCQuaternion(PyObject *obj, Py_quaternion* qval)
 
    if (PyComplex_Check(obj)) {
       Py_complex z = PyComplex_AsCComplex (obj);
-      qval->s = z.real;
+      qval->w = z.real;
       qval->x = 0.0;
       qval->y = z.imag;
       qval->z = 0.0;

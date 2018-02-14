@@ -20,29 +20,29 @@ qlist = (Quaternion(+0.16, +0.32, +1.48, +0.80),
 
 def qfoo(q):
     """ Rotate axis by +tau/3 """
-    return Quaternion(q.r, q.j, q.k, q.i)
+    return Quaternion(q.w, q.y, q.z, q.x)
 
 
 def qbar(q):
     """ Rotate axis by -tau/3 """
-    return Quaternion(q.r, q.k, q.i, q.j)
+    return Quaternion(q.w, q.z, q.x, q.y)
 
 
 def check(rfn, cfn, qfn, q):
     """ compares the Quaternion function (qfn) with the equivilent
         real (rfn) and complex (cfn) functions
     """
-    a = Quaternion(rfn(q.r))
-    b = qfn(Quaternion(q.r))
+    a = Quaternion(rfn(q.real))
+    b = qfn(Quaternion(q.real))
     assert quaternion.isclose(a, b)
 
     a = Quaternion(cfn(q.complex))
     b = qfn(Quaternion(q.complex))
     assert quaternion.isclose(a, b)
 
-    # For single value functions, we can creae a z with same r and phi as the q
-    # Call the complex function, then create a Quaternion with f(r, phi) of the complex
-    # result merged in with the original axis.
+    # For single value functions, we can create a z with same r and phi as the q
+    # Call the complex function, then create a Quaternion with f(r, phi) of the
+    # complex result merged in with the original axis.
     #
     q_polar = quaternion.polar(q)
     z = cmath.rect (q_polar[0], q_polar[1])
@@ -133,12 +133,24 @@ def test_tan():
         check(math.tan, cmath.tan, quaternion.tan, q)
 
 
+def test_polar_rect():
+    for a in qlist:
+        t = quaternion.polar (a)
+        c = quaternion.rect(*t)
+        assert abs(a - c) < 1.0e-9
+
+
 if __name__ == "__main__":
     test_isclose()
+    test_exp()
+    test_log()
+    test_log10()
     test_log_exp()
+    test_sqrt()
     test_sin()
     test_cos()
     test_tan()
     test_pythagoras()
+    test_polar_rect()
 
 # end

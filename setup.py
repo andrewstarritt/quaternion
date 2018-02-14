@@ -31,7 +31,7 @@ m = Extension("quaternion",
                          "qtype/quaternion_module.c"])
 
 setup(name="quaternion",
-      version="1.0.6",
+      version="1.0.7",
       author="Andrew Starritt",
       author_email="starritt@netspace.net.au",
       license="GPL3",

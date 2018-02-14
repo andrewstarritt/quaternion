@@ -40,7 +40,7 @@ extern "C" {
  * the PyQuaternionObject definition.
  */
 typedef struct {
-   double s;                    /* real or scalar component */
+   double w;                    /* real or scalar component */
    double x;                    /* i component */
    double y;                    /* j component */
    double z;                    /* k component */

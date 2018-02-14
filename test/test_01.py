@@ -3,14 +3,10 @@
 
 import math
 import quaternion
-from quaternion import Quaternion
+from quaternion import Quaternion, one, i, j, k
 
 
 zero = Quaternion(0)
-one = Quaternion(1)
-i = Quaternion(0,i=1)
-j = Quaternion(0,j=1)
-k = Quaternion(0,k=1)
 
 a = Quaternion(1.2, -3.4, +5.6, -7.8)
 ac = Quaternion(1.2, +3.4, -5.6, +7.8)
@@ -19,26 +15,42 @@ b = Quaternion(+7.8, +9.0, -1.2, -3.4)
 
 def test_attributes():
 
-    assert zero.r == 0.0
-    assert zero.i == 0.0
-    assert zero.j == 0.0
-    assert zero.k == 0.0
+    assert zero.w == 0.0
+    assert zero.x == 0.0
+    assert zero.y == 0.0
+    assert zero.z == 0.0
 
-    assert one.r == 1.0
-    assert one.i == 0.0
-    assert one.j == 0.0
-    assert one.k == 0.0
+    assert one.w == 1.0
+    assert one.x == 0.0
+    assert one.y == 0.0
+    assert one.z == 0.0
 
-    assert a.r == +1.2
-    assert a.i == -3.4
-    assert a.j == +5.6
-    assert a.k == -7.8
+    assert i.w == 0.0
+    assert i.x == 1.0
+    assert i.y == 0.0
+    assert i.z == 0.0
 
-    assert b.r == +7.8
-    assert b.i == +9.0
-    assert b.j == -1.2
-    assert b.k == -3.4
+    assert j.w == 0.0
+    assert j.x == 0.0
+    assert j.y == 1.0
+    assert j.z == 0.0
 
+    assert k.w == 0.0
+    assert k.x == 0.0
+    assert k.y == 0.0
+    assert k.z == 1.0
+
+    assert a.w == +1.2
+    assert a.x == -3.4
+    assert a.y == +5.6
+    assert a.z == -7.8
+
+    assert b.w == +7.8
+    assert b.x == +9.0
+    assert b.y == -1.2
+    assert b.z == -3.4
+
+    assert a.imag   == (-3.4, +5.6, -7.8)
     assert a.vector == (-3.4, +5.6, -7.8)
     assert a.complex == 1.2 + 5.6j
 
@@ -61,10 +73,11 @@ def test_init():
 
     z = 11.2 - 25.6j
     zq = Quaternion(z)
-    assert zq.r == z.real
-    assert zq.j == z.imag
+    assert zq.w == z.real
+    assert zq.y == z.imag
 
     try:
+        # No spaces within number
         a2 = Quaternion("1.2 -3.4i +5.6j -7.8k")
         assert False, "Expecting ValueError"
     except ValueError:
@@ -122,12 +135,12 @@ def test_conjugate():
     assert a.conjugate().conjugate() == a
 
     d = a - a.conjugate()
-    assert d.r == 0.0
+    assert d.real == 0.0
 
     d = a + a.conjugate()
-    assert d.i == 0.0
-    assert d.j == 0.0
-    assert d.k == 0.0
+    assert d.x == 0.0
+    assert d.y == 0.0
+    assert d.z == 0.0
 
 
 def test_abs():
@@ -142,12 +155,12 @@ def test_abs():
 
     p = abs(a) * abs(a)
     q = a * a.conjugate()
-    assert math.isclose (p, q.r)
+    assert math.isclose (p, q.real)
     assert abs (p - q) < 1.0e-9
 
     p = abs(b) * abs(b)
     q = b * b.conjugate()
-    assert math.isclose (p, q.r)
+    assert math.isclose (p, q.real)
     assert abs (p - q) < 1.0e-9
 
 
@@ -160,13 +173,13 @@ def test_add():
 
     # arg conversion
     #
-    d = Quaternion (a.r + 7, a.i, a.j, a.k)
+    d = Quaternion (a.w + 7, a.x, a.y, a.z)
     assert d == a + 7
     assert d == a + 7.0
     assert d == a + (7.0+0j)
     assert d == a +  Quaternion (7, 0, 0, 0)
 
-    e = Quaternion (a.r + 7.3, a.i, a.j + 11.3, a.k)
+    e = Quaternion (a.w + 7.3, a.x, a.y + 11.3, a.z)
 
     assert e == a + (7.3+11.3j)
     assert e == a +  Quaternion (7.3, 0, 11.3, 0)
@@ -180,13 +193,13 @@ def test_sub():
 
     # arg conversion
     #
-    d = Quaternion (a.r - 7, a.i, a.j, a.k)
+    d = Quaternion (a.w - 7, a.x, a.y, a.z)
     assert d == a - 7
     assert d == a - 7.0
     assert d == a - (7.0+0j)
     assert d == a -  Quaternion (7, 0, 0, 0)
 
-    e = Quaternion (a.r - 7.3, a.i, a.j - 11.3, a.k)
+    e = Quaternion (a.w - 7.3, a.x, a.y - 11.3, a.z)
 
     assert e == a - (7.3+11.3j)
     assert e == a -  Quaternion (7.3, 0, 11.3, 0)
@@ -219,7 +232,7 @@ def test_mul():
 
     # arg conversion
     #
-    d = Quaternion (a.r * 7, a.i * 7, a.j * 7, a.k * 7)
+    d = Quaternion (a.w * 7, a.x * 7, a.y * 7, a.z * 7)
     assert d == a * 7
     assert d == a * 7.0
     assert d == a * (7.0+0j)
@@ -232,7 +245,7 @@ def test_div():
     assert (4.6 * a) / a == Quaternion(4.6)
 
     f = 1.3
-    assert (a / f) == Quaternion(a.r / f, a.i / f, a.j / f, a.k / f)
+    assert (a / f) == Quaternion(a.w / f, a.x / f, a.y / f, a.z / f)
 
     t = ((a / b) * b)
     assert abs (t - a) < 1.0e-9
@@ -242,7 +255,7 @@ def test_div():
 
     # arg conversion
     #
-    d = Quaternion (a.r / 7, a.i / 7, a.j / 7, a.k / 7)
+    d = Quaternion (a.w / 7, a.x / 7, a.y / 7, a.z / 7)
     assert d == a / 7
     assert d == a / 7.0
     assert d == a / (7.0+0j)
@@ -335,7 +348,7 @@ def run_stuff():
     print("p", p)
 
     p = 1.2 + 3 * i + 4.6 * j - 7.89 * k
-    print("p", p, p.r, p.i, p.j, p.k)
+    print("p", p, p.w, p.x, p.y, p.z)
 
     q = Quaternion(p)
     print("q", q)
