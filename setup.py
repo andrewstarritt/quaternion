@@ -22,7 +22,12 @@
 # PO Box 3118, Prahran East, Victoria 3181, Australia.
 #
 
+import sys
 from distutils.core import setup, Extension
+import re
+
+with open("qtype/quaternion_module.c", 'r') as f:
+    version = re.search(r'__version__ "(.*)"', f.read()).group(1)
 
 m = Extension("quaternion",
               sources = ["qtype/quaternion_basic.c",
@@ -31,7 +36,7 @@ m = Extension("quaternion",
                          "qtype/quaternion_module.c"])
 
 setup(name="quaternion",
-      version="1.0.7",
+      version=version,
       author="Andrew Starritt",
       author_email="starritt@netspace.net.au",
       license="GPL3",

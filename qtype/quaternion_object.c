@@ -1341,15 +1341,15 @@ static PyNumberMethods QuaternionAsNumber = {
 PyDoc_STRVAR(
       quaternion_doc,
       "Quaternion ()                                     -> quaternion zero\n"
-      "Quaternion (r[, i[, j[, k]]])                     -> quaternion number\n"
+      "Quaternion (w[, x[, y[, z]]])                     -> quaternion number\n"
       "Quaternion (angle=float,axis=(float,float,float)) -> quaternion rotation number\n"
       "Quaternion (number)                               -> quaternion number\n"
       "Quaternion (\"str representation\")                 -> quaternion number\n"
       "\n"
       "A Quaternion number may be created from:\n"
       "\n"
-      "a) the real part and an optional imaginary parts. r, i, j and k must be float\n"
-      "   or type which can be converted to float;\n"
+      "a) the real part and an optional imaginary parts. w, x, y and z must be float\n"
+      "   or a number type which can be converted to float;\n"
       "\n"
       "b) from an angle (radians) and a 3-tuple axis (automatically normalised),\n"
       "   which generates a rotator quaternion rotation that can be used with the \n"
@@ -1367,8 +1367,10 @@ PyDoc_STRVAR(
       "x       - float - i imaginary part\n"
       "y       - float - j imaginary part\n"
       "z       - float - k imaginary part\n"
-      "vector  - tuple - the tuple (i,j,k) \n"
+      "vector  - tuple - the tuple (x, y, z) \n"
       "complex - complex - the complex number (w + y.j)\n"
+      "real    - float - real/scalar part\n"
+      "imag    - tuple - the imaginary part, the same as vector.\n"
       "\n"
       );
 
