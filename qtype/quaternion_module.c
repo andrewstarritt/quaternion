@@ -25,7 +25,7 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.0.8"
+#define __version__ "1.0.9"
 
 
 /* Development environment:
@@ -63,7 +63,7 @@ static PyModuleDef QuaternionModule = {
    "    i.j = +k,  j.k = +i,  k.i = +j\n"
    "    j.i = -k,  k.j = -i,  i.k = -j\n"
    "\n"
-   "The Quaternion type has four member attributes has to access these coeffients.\n"
+   "The Quaternion type has four member attributes has to access these coefficients.\n"
    "These instance attributes are w, x, y and z respectively.\n"
    "\n"
    "A Quaternion may also be considered to be a real scalar part plus a vector (with\n"
@@ -105,7 +105,7 @@ static PyModuleDef QuaternionModule = {
    "zero.\n"
    "\n"
    "The choice of alligning the imaginary part of a complex number to the j imaginary\n"
-   "component as opposed to i or k is mathematically arbitary. However for Python. j\n"
+   "component as opposed to i or k is mathematically arbitary. However for Python, j\n"
    "is the natural choice because the following, bar any rounding errors, will then\n"
    "hold true:\n"
    "\n"
@@ -116,7 +116,7 @@ static PyModuleDef QuaternionModule = {
    "\n"
    "    q.complex = complex(q.w, q.y).\n"
    "\n"
-   "There is n_ complementary attribute to obtain q.x and q.z as a single item.\n"
+   "There is no complementary attribute to obtain q.x and q.z as a single item.\n"
    "\n"
    "\n"
    "Math functions\n"

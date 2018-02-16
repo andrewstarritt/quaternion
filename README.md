@@ -15,7 +15,7 @@ numbers such that:
     i.j = +k,  j.k = +i,  k.i = +j
     j.i = -k,  k.j = -i,  i.k = -j
 
-The Quaternion type has four member attributes has to access these coeffients.
+The Quaternion type has four member attributes has to access these coefficients.
 These instance attributes are w, x, y and z respectively.
 
 A Quaternion may also be considered to be a real scalar part plus a vector (with
@@ -31,6 +31,19 @@ a tuple of floats. The following Python expressions are equivilent:
 
 q.real and q.imag provide a "complex" like view of a Quaternion at the expense
 of providing an un-Pythonic duplication of q.w and q.vector respectively.
+
+## mathematical operations
+
+The expected mathematical operations are provided.
+
+unary: +, =, abs
+
+binary: +, -, *, /
+
+power: ** 
+
+There is no mod (%)  or integer division (//) available.
+Therefore the pow() function cal only take two arguments, and the exponent argument must be real.
 
 The Quaternion type is associative under both addition and multiplication, i.e.:
 
@@ -48,7 +61,6 @@ The quotient function returns the former, therefore:
 
     (p / q) * q = p
 
-
 ## mixed mode arithmetic
 
 Quaternions numbers and scalar numbers, i.e. int or float, are interoperable.
@@ -59,7 +71,7 @@ as a Quaternions, q, such that q.w = z.real, q.y = z.imag, and q.x and q.z are
 zero.
 
 The choice of alligning the imaginary part of a complex number to the j imaginary
-component as opposed to i or k is mathematically arbitary. However for Python. j
+component as opposed to i or k is mathematically arbitary. However for Python, j
 is the natural choice because the following, bar any rounding errors, will then
 hold true:
 
@@ -126,6 +138,25 @@ The following are invalid:
 * real    - float - real/scalar part
 * imag    - tuple - the imaginary part, the same as vector.
 
+
+## Quaternion instance functions
+
+### conjugate
+
+q.conjugate() returns the Quaternion conjugate of its argument.
+
+### inverse
+
+q.inverse ()  returns s such that s * q = q * s = 1
+
+### normalise
+
+q.normalise () returns the Quaternion q / abs (q)
+
+### rotate
+
+q.rotate (point, origin=None) -> point, where q is a rotation number, i.e. q = Quaternion (angle=a,axis=(x,y,z))
+The returned value is rotated by an angle a radians about the axis (x,y,z).
 
 ## math functions
 
