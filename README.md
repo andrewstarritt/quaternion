@@ -15,7 +15,7 @@ numbers such that:
     i.j = +k,  j.k = +i,  k.i = +j
     j.i = -k,  k.j = -i,  i.k = -j
 
-The Quaternion type has four member attributes has to access these coefficients.
+The Quaternion type has four member attributes to access these coefficients.
 These instance attributes are w, x, y and z respectively.
 
 A Quaternion may also be considered to be a real scalar part plus a vector (with
@@ -151,11 +151,12 @@ q.inverse ()  returns s such that s * q = q * s = 1
 
 ### normalise
 
-q.normalise () returns the Quaternion q / abs (q)
+q.normalise () returns s such that s = q / abs (q)
 
 ### rotate
 
-q.rotate (point, origin=None) -> point, where q is a rotation number, i.e. q = Quaternion (angle=a,axis=(x,y,z))
+q.rotate (point, origin=None) -> point, where q is a rotation number, 
+i.e. q = Quaternion (angle=a,axis=(x,y,z)).
 The returned value is rotated by an angle a radians about the axis (x,y,z).
 
 ## math functions
@@ -188,6 +189,7 @@ The functions provided are:
 * i   = Quaternion (0.0, 1.0, 0.0, 0.0)
 * j   = Quaternion (0.0, 0.0, 1.0, 0.0)
 * k   = Quaternion (0.0, 0.0, 0.0, 1.0)
+* \_\_version\_\_ = the version number as str.
 
 ## backround
 
