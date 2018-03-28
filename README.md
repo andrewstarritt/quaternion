@@ -22,7 +22,7 @@ A Quaternion may also be considered to be a real scalar part plus a vector (with
 real components). The real part accessable via the real attribute. Thus both
 q.w and q.real return the real or scalar part of q.
 
-The vector part is accessable via the vector and imag attributes which provides
+The vector part is accessable via both the vector and imag attributes which provide
 a tuple of floats. The following Python expressions are equivilent:
 
     q.vector
@@ -36,13 +36,13 @@ of providing an un-Pythonic duplication of q.w and q.vector respectively.
 
 The expected mathematical operations are provided.
 
-unary: +, =, abs
+unary: +, -, abs
 
 binary: +, -, *, /
 
 power: ** 
 
-There is no mod (%)  or integer division (//) available.
+There is no mod (%) or integer division (//) operation available.
 Therefore the pow() function cal only take two arguments, and the exponent argument must be real.
 
 The Quaternion type is associative under both addition and multiplication, i.e.:
@@ -50,8 +50,8 @@ The Quaternion type is associative under both addition and multiplication, i.e.:
     (p + q) + r  =  p + (q + r)
     (p * q) * r  =  p * (q * r)
 
-The Quaternion type is non-commutative with respect to multiplication (and division),
-i.e.  p \* q  and  q \* p in general provide different results. To divide one
+The Quaternion type is non-commutative with respect to multiplication and division,
+i.e.  p \* q  and  q \* p in general provide different values. To divide one
 Quaternion by another, there are two options:
 
     p * q.inverse() ; or
@@ -64,7 +64,7 @@ The quotient function returns the former, therefore:
 ## mixed mode arithmetic
 
 Quaternions numbers and scalar numbers, i.e. int or float, are interoperable.
-int and float are treated as Quaternions with zero imaginary components.
+int and float numbers are treated as Quaternions with zero imaginary components.
 
 Mixed mode with complex numbers is also allowed. A complex number, z, is treated
 as a Quaternions, q, such that q.w = z.real, q.y = z.imag, and q.x and q.z are
@@ -72,7 +72,7 @@ zero.
 
 The choice of alligning the imaginary part of a complex number to the j imaginary
 component as opposed to i or k is mathematically arbitary. However for Python, j
-is the natural choice because the following, bar any rounding errors, will then
+is the natural choice, and then the following, bar any rounding errors, will
 hold true:
 
     Quaternion(z) = Quaternion(str(z))
@@ -87,7 +87,7 @@ There is _no_ complementary attribute to obtain q.x and q.z as a single item.
 
 ## construction
 
-A Quaternion type may be constructions using one of the following forms:
+A Quaternion number may be constructed using one of the following forms:
 
 * Quaternion ()                                     -> quaternion zero
 * Quaternion (w[, x[, y[, z]]])                     -> quaternion number
@@ -101,14 +101,14 @@ a) the real part and an optional imaginary parts. w, x, y and z must be float
    or number types which can be converted to float;
 
 b) from an angle (radians) and a 3-tuple axis of rotation (which is automatically
-   normalised),  which generates a rotator Quaternion that can be used in
+   normalised), which generates a rotator Quaternion,  hhatcan then be used in
    conjuction with the rotate method;
 
 c) from a single number parameter: int, float, complex or another Quaternion.
    When the number is complex, the imaginary part of the complex number is
    assigned to the j imaginary part; or
 
-d) from the string representation of a quaternion (compare with complex).
+d) from the string representation of a quaternion (modelled on the complex type).
    The following are valid:
 
     Quaternion("1.2")
@@ -161,8 +161,8 @@ The returned value is rotated by an angle a radians about the axis (x,y,z).
 
 ## math functions
 
-A number of math functions that operate on Quaternions are also provided. Where
-provided, these provide the equivilent quaternion function as the functions of
+A number of math functions that operate on Quaternions are also provided.
+These functions provide the equivilent quaternion function as the functions of
 the same name out of the math and/or cmath module.
 
 The functions provided are:
@@ -198,7 +198,7 @@ that was a bit more challenging than just a "hello world" extension.
 
 Altough there are already a number of Quaternion Python implementations out there,
 this has the advantage of speed over the pure Python implementations and the advantage
-of no dependencies on other modules such as numpy.
+of no dependencies on any other modules such as numpy.
 
 ## references
 

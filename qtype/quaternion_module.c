@@ -25,7 +25,7 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.1.1"
+#define __version__ "1.1.2"
 
 
 /* Development environment:
@@ -70,7 +70,7 @@ static PyModuleDef QuaternionModule = {
    "real components). The real part accessable via the real attribute. Thus both\n"
    "q.w and q.real return the real or scalar part of q.\n"
    "\n"
-   "The vector part is accessable via the vector and imag attributes which provides\n"
+   "The vector part is accessable via both the vector and imag attributes which provide\n"
    "a tuple of floats. The following Python expressions are equivilent:\n"
    "\n"
    "    q.vector\n"
@@ -85,8 +85,8 @@ static PyModuleDef QuaternionModule = {
    "    (p + q) + r  =  p + (q + r)\n"
    "    (p * q) * r  =  p * (q * r)\n"
    "\n"
-   "The Quaternion type is non-commutative with respect to multiplication (and division),\n"
-   "i.e.  p * q  and  q * p in general provide different results. To divide one\n"
+   "The Quaternion type is non-commutative with respect to multiplication and division,\n"
+   "i.e.  p * q  and  q * p in general provide different values. To divide one\n"
    "Quaternion by another, there are two options:\n"
    "\n"
    "    p * q.inverse() ; or\n"
@@ -98,7 +98,7 @@ static PyModuleDef QuaternionModule = {
    "\n"
    "\n"
    "Quaternions numbers and scalar numbers, i.e. int or float, are interoperable.\n"
-   "int and float are treated as Quaternions with zero imaginary components.\n"
+   "int and float numbers are treated as Quaternions with zero imaginary components.\n"
    "\n"
    "Mixed mode with complex numbers is also allowed. A complex number, z, is treated\n"
    "as a Quaternions, q, such that q.w = z.real, q.y = z.imag, and q.x and q.z are\n"
@@ -106,7 +106,7 @@ static PyModuleDef QuaternionModule = {
    "\n"
    "The choice of alligning the imaginary part of a complex number to the j imaginary\n"
    "component as opposed to i or k is mathematically arbitary. However for Python, j\n"
-   "is the natural choice because the following, bar any rounding errors, will then\n"
+   "is the natural choice, and then the following, bar any rounding errors, will\n"
    "hold true:\n"
    "\n"
    "    Quaternion(z) = Quaternion(str(z))\n"
