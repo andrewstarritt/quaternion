@@ -393,7 +393,7 @@ double _Py_quat_abs (const Py_quaternion a)
       double sx = a.x / m;
       double sy = a.y / m;
       double sz = a.z / m;
-      result = m * sqrt (ss * ss + sx * sx + sy * sy + sz * sz);
+      result = m * sqrt ((ss * ss) + (sx * sx) + (sy * sy) + (sz * sz));
    } else {
       result = 0.0;
    }
@@ -402,6 +402,33 @@ double _Py_quat_abs (const Py_quaternion a)
       errno = ERANGE;
    else
       errno = 0;
+   return result;
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: the quadrance of a, i.e. abs(a)**2
+ */
+double _Py_quat_quadrance (const Py_quaternion a)
+{
+   double result;
+   errno = 0;
+   /* Needs checking as per abs
+    * Use _Py_quat_dot_prod (a, a) ??
+    */
+   result = (a.w*a.w) + (a.x*a.x) + (a.y*a.y) + (a.z*a.z);
+   return result;
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: inner product
+ */
+double _Py_quat_dot_prod (const Py_quaternion a, const Py_quaternion b)
+{
+   double result;
+   errno = 0;
+   /* Needs checking as per abs
+    */
+   result = (a.w*b.w) + (a.x*b.x) + (a.y*b.y) + (a.z*b.z);
    return result;
 }
 

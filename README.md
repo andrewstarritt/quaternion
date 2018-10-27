@@ -43,7 +43,7 @@ binary: +, -, *, /
 power: ** 
 
 There is no mod (%) or integer division (//) operation available.
-Therefore the pow() function cal only take two arguments, and the exponent argument must be real.
+Therefore the pow() function can only take two arguments, and the exponent argument must be real.
 
 The Quaternion type is associative under both addition and multiplication, i.e.:
 
@@ -93,7 +93,7 @@ A Quaternion number may be constructed using one of the following forms:
 * Quaternion (w[, x[, y[, z]]])                     -> quaternion number
 * Quaternion (angle=float,axis=(float,float,float)) -> quaternion rotation number
 * Quaternion (number)                               -> quaternion number
-* Quaternion ("str representation")                 -> quaternion number
+* Quaternion ("string representation")              -> quaternion number
 
 A Quaternion number may be created from:
 
@@ -101,7 +101,7 @@ a) the real part and an optional imaginary parts. w, x, y and z must be float
    or number types which can be converted to float;
 
 b) from an angle (radians) and a 3-tuple axis of rotation (which is automatically
-   normalised), which generates a rotator Quaternion,  hhatcan then be used in
+   normalised), which generates a rotator Quaternion,  that can then be used in
    conjuction with the rotate method;
 
 c) from a single number parameter: int, float, complex or another Quaternion.
@@ -190,6 +190,11 @@ The functions provided are:
 * j   = Quaternion (0.0, 0.0, 1.0, 0.0)
 * k   = Quaternion (0.0, 0.0, 0.0, 1.0)
 * \_\_version\_\_ = the version number as str.
+
+
+## hash function
+
+
 
 ## backround
 

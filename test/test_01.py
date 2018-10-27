@@ -15,6 +15,8 @@ b = Quaternion(+7.8, +9.0, -1.2, -3.4)
 
 def test_attributes():
 
+    print (quaternion.__version__)
+
     assert zero.w == 0.0
     assert zero.x == 0.0
     assert zero.y == 0.0
@@ -380,13 +382,13 @@ def run_stuff():
     s = Quaternion(1.2)
     print("s", s)
 
-    s = Quaternion(i=2.3)
+    s = Quaternion(x=2.3)
     print("s", s)
 
-    s = Quaternion(j=3.4)
+    s = Quaternion(y=3.4)
     print("s", s)
 
-    s = Quaternion(k=4.5)
+    s = Quaternion(z=4.5)
     print("s", s)
 
     print("")

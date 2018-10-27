@@ -122,7 +122,9 @@ BOOLEAN_ONE_ARGUMENT_FUNCTION (isnan)
 PyDoc_STRVAR(qmath_sqrt__doc__,
              "sqrt(q)\n"
              "\n"
-             "Return a sqare root of q.");
+             "Return a square root of q. When q is a negative real number with no\n"
+             "imaginary parts, the result used the j imaginary component, i.e.\n"
+             "   sqrt (Quaternion (-1, 0, 0, 0)) is Quaternion (0, 0, 1, 0)");
 
 BASIC_ONE_ARGUMENT_FUNCTION (sqrt)
 
@@ -402,9 +404,11 @@ PyDoc_STRVAR(qmath_polar__doc__,
              "\n"
              "Convert a Quaternion from rectangular coordinates to polar coordinates.\n"
              "The polar coordinates of Quaternion are a tuple (length, phase, axis)\n"
-             "such that q = length *(math.cos(phase) + axis*math.sin(phase))\n"
+             "such that:\n"
+             "    q = length * (math.cos(phase) + axis*math.sin(phase))\n"
+             "\n"
              "Note: axis is itself tuple = (x, y, z) and |axis| is 1\n"
-             "polar(q) is equivalent to (abs(q), phase(q), axis(q)).");
+             "      polar(q) is equivalent to (abs(q), phase(q), axis(q)).");
 
 static PyObject *
 qmath_polar(PyObject *module, PyObject *arg)
@@ -436,8 +440,9 @@ PyDoc_STRVAR(qmath_axis__doc__,
              "axis(q)\n"
              "\n"
              "Returns the axis part of the polar coordinates.\n"
-             "The polar coordinates of Quaternion are length, axis, and phase\n"
-             "such that q = length *(math.cos(phase) + axis*math.sin(phase))\n"
+             "The polar coordinates of a Quaternion are length, axis, and phase\n"
+             "such that:\n"
+             "    q = length * (math.cos(phase) + axis*math.sin(phase))\n"
              "Note: |axis| is 1");
 
 static PyObject *
@@ -470,8 +475,9 @@ PyDoc_STRVAR(qmath_phase__doc__,
              "phase(q)\n"
              "\n"
              "Return the phase or angle part of the polar coordinates of q.\n"
-             "The polar coordinates of Quaternion are length, axis, and phase\n"
-             "such that q = length *(math.cos(phase) + axis*math.sin(phase))");
+             "The polar coordinates of a Quaternion are length, axis, and phase\n"
+             "such that:\n"
+             "    q = length * (math.cos(phase) + axis*math.sin(phase))");
 
 static PyObject *
 qmath_phase(PyObject *module, PyObject *arg)
@@ -504,7 +510,8 @@ PyDoc_STRVAR(qmath_rect__doc__,
              "rect(length, phase, axis)\n"
              "\n"
              "Convert from polar coordinates to rectangular coordinates.\n"
-             "Equivalent to: length *(math.cos(phase) + axis*sin(math.phase))\n"
+             "This is equivalent to:\n"
+             "   length * (math.cos(phase) + axis*sin(math.phase))\n"
              "Note: axis is normalised such that |axis| = 1 if required.");
 
 static PyObject *
@@ -532,6 +539,71 @@ qmath_rect(PyObject *module, PyObject *args)
 }
 
 /* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_dot__doc__,
+             "dot(q,r)\n"
+             "\n"
+             "Returns the dot or inner product of q and r, i.e.:\n"
+             "   q.w*r.w + q.x*r.x + q.y*r.y + q.z*r.z");
+static PyObject *
+qmath_dot(PyObject *module, PyObject *args)
+{
+   PyObject *result = NULL;
+
+   PyObject *a = NULL;
+   PyObject *b = NULL;
+   int status;
+   bool sa;
+   bool sb;
+   Py_quaternion qa;
+   Py_quaternion qb;
+   double r;
+
+   status = PyArg_ParseTuple (args, "OO:quaternion.dot", &a, &b);
+   if (!status) {
+      return NULL;
+   }
+
+   /* Belts 'n' braces
+   */
+   if (a == NULL || b == NULL) {
+      PyErr_Format(PyExc_TypeError,
+                   "quaternion.dot() expects two arguments");
+      return NULL;
+   }
+
+   /* extarct the input value if we can
+    */
+   sa = PyObject_AsCQuaternion (a, &qa);
+   sb = PyObject_AsCQuaternion (b, &qb);
+   if (sa && sb) {
+      /* Do the basic dot product function.
+       */
+      r = _Py_quat_dot_prod (qa, qb);
+
+      result = PyFloat_FromDouble (r);
+
+   } else {
+      if (sa) {
+         PyErr_Format(PyExc_TypeError,
+                      "quaternion.dot() args must be Quaternion, got a '%.200s' for second argument",
+                      Py_TYPE(b)->tp_name);
+      } else if (sb) {
+         PyErr_Format(PyExc_TypeError,
+                      "quaternion.dot() args must be Quaternion, got a '%.200s' for first argument",
+                      Py_TYPE(a)->tp_name);
+      } else {
+         PyErr_Format(PyExc_TypeError,
+                      "quaternion.dot() args must be Quaternion, got a '%.200s' and a '%.200s'",
+                      Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
+      }
+   }
+
+   return result;
+}
+
+
+/* -----------------------------------------------------------------------------
  * METH_O - one argument,  (in addition to the module argument)
  */
 static PyMethodDef qmath_methods[] = {
@@ -547,10 +619,11 @@ static PyMethodDef qmath_methods[] = {
    {"tan",      (PyCFunction)qmath_tan,      METH_O,        qmath_tan__doc__},
    {"isclose",  (PyCFunction)qmath_isclose,  METH_KEYWORDS |
                                              METH_VARARGS,  qmath_isclose__doc__},
-   {"polar",   (PyCFunction)qmath_polar,     METH_O,        qmath_polar__doc__},
-   {"axis",    (PyCFunction)qmath_axis,      METH_O,        qmath_axis__doc__},
-   {"phase",   (PyCFunction)qmath_phase,     METH_O,        qmath_phase__doc__},
-   {"rect",    (PyCFunction)qmath_rect,      METH_VARARGS,  qmath_rect__doc__},
+   {"dot",      (PyCFunction)qmath_dot,      METH_VARARGS,  qmath_dot__doc__},
+   {"polar",    (PyCFunction)qmath_polar,    METH_O,        qmath_polar__doc__},
+   {"axis",     (PyCFunction)qmath_axis,     METH_O,        qmath_axis__doc__},
+   {"phase",    (PyCFunction)qmath_phase,    METH_O,        qmath_phase__doc__},
+   {"rect",     (PyCFunction)qmath_rect,     METH_VARARGS,  qmath_rect__doc__},
    {NULL, NULL}  /* sentinel */
 };
 

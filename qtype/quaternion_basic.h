@@ -88,6 +88,12 @@ Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b);
 
 Py_quaternion _Py_quat_pow  (const Py_quaternion a, const double x);
 
+/* Other functions
+ */
+double _Py_quat_quadrance (const Py_quaternion a);
+double _Py_quat_dot_prod (const Py_quaternion a, const Py_quaternion b);
+
+
 /* Rotation related functions
  */
 Py_quaternion _Py_quat_calc_rotation (const double angle,
@@ -97,7 +103,7 @@ Py_quat_triple _Py_quat_rotate (const Py_quaternion a,
                                 const Py_quat_triple point,
                                 const Py_quat_triple origin);
 
-/* To from polar
+/* To/from polar
  */
 void _Py_quat_into_polar (const Py_quaternion a,
                           double* m,

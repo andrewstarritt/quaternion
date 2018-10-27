@@ -25,7 +25,7 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.1.2"
+#define __version__ "1.1.3"
 
 
 /* Development environment:
@@ -63,7 +63,7 @@ static PyModuleDef QuaternionModule = {
    "    i.j = +k,  j.k = +i,  k.i = +j\n"
    "    j.i = -k,  k.j = -i,  i.k = -j\n"
    "\n"
-   "The Quaternion type has four member attributes has to access these coefficients.\n"
+   "The Quaternion type has four member attributes to access these coefficients.\n"
    "These instance attributes are w, x, y and z respectively.\n"
    "\n"
    "A Quaternion may also be considered to be a real scalar part plus a vector (with\n"
@@ -124,6 +124,8 @@ static PyModuleDef QuaternionModule = {
    "provided, these provide the equivilent quaternion function as the functions of\n"
    "the same name out of the math and/or cmath module.\n"
    "\n"
+   "Note: there is no qmath module equivilent of math and cmath, all math functions\n"
+   "are in the quaternion module.\n"
    "\n"
    "References\n"
    "http://onlinelibrary.wiley.com/doi/10.1002/9780470682906.app4/pdf\n"

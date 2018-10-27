@@ -1187,6 +1187,34 @@ quaternion_abs (PyQuaternionObject *v)
 
 /* -----------------------------------------------------------------------------
  */
+static PyObject *
+quaternion_quadrance (PyQuaternionObject *self)
+{
+   Py_quaternion c;
+   double result;
+
+   c = ((PyQuaternionObject *)self)->qval;
+   PyFPE_START_PROTECT("quaternion_quadrance", return 0);
+   errno = 0;
+   result = _Py_quat_quadrance(c);
+   PyFPE_END_PROTECT(result);
+   if (errno == ERANGE) {
+      PyErr_SetString(PyExc_OverflowError,
+                      "Quaternion quadrance value too large");
+      return NULL;
+   }
+   return PyFloat_FromDouble (result);
+}
+
+PyDoc_STRVAR(quaternion_quadrance_doc,
+             "quaternion.quadrance() -> float"
+             "\n"
+             "Return the quadrance of the quaternion argument,\n"
+             "such that: q.quadrance() == abs(q)**2.");
+
+
+/* -----------------------------------------------------------------------------
+ */
 static int
 quaternion_is_bool(PyQuaternionObject *v)
 {
@@ -1278,6 +1306,7 @@ static PyMethodDef QuaternionMethods [] = {
    {"__format__", (PyCFunction)quaternion__format__,  METH_VARARGS,  quaternion_format_doc},
    {"conjugate",  (PyCFunction)quaternion_conjugate,  METH_NOARGS,   quaternion_conjugate_doc},
    {"inverse",    (PyCFunction)quaternion_inverse,    METH_NOARGS,   quaternion_inverse_doc},
+   {"quadrance",  (PyCFunction)quaternion_quadrance,  METH_NOARGS,   quaternion_quadrance_doc},
    {"normalise",  (PyCFunction)quaternion_normalise,  METH_NOARGS,   quaternion_normalise_doc},
    {"rotate",     (PyCFunction)quaternion_rotate,     METH_VARARGS |
                                                       METH_KEYWORDS, quaternion_rotate_doc},
