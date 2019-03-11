@@ -11,7 +11,7 @@ Within _this_ module, a Quaternion q is defined to be:
 where the coefficients w, x, y and z are real; and i, j and k three imaginary
 numbers such that:
 
-    i.i = j.j = k.k = -1
+    i.i = j.j = k.k = i.j.k = -1
     i.j = +k,  j.k = +i,  k.i = +j
     j.i = -k,  k.j = -i,  i.k = -j
 
@@ -19,11 +19,11 @@ The Quaternion type has four member attributes to access these coefficients.
 These instance attributes are w, x, y and z respectively.
 
 A Quaternion may also be considered to be a real scalar part plus a vector (with
-real components). The real part accessable via the real attribute. Thus both
+real components). The real part accessible via the real attribute. Thus both
 q.w and q.real return the real or scalar part of q.
 
-The vector part is accessable via both the vector and imag attributes which provide
-a tuple of floats. The following Python expressions are equivilent:
+The vector part is accessible via both the vector and imag attributes which provide
+a tuple of floats. The following Python expressions are equivalent:
 
     q.vector
     q.imag
@@ -40,7 +40,7 @@ unary: +, -, abs
 
 binary: +, -, *, /
 
-power: ** 
+power: **
 
 There is no mod (%) or integer division (//) operation available.
 Therefore the pow() function can only take two arguments, and the exponent argument must be real.
@@ -63,15 +63,15 @@ The quotient function returns the former, therefore:
 
 ## mixed mode arithmetic
 
-Quaternions numbers and scalar numbers, i.e. int or float, are interoperable.
+Quaternions numbers and scalar numbers, i.e. int or float, are inter-operable.
 int and float numbers are treated as Quaternions with zero imaginary components.
 
 Mixed mode with complex numbers is also allowed. A complex number, z, is treated
 as a Quaternions, q, such that q.w = z.real, q.y = z.imag, and q.x and q.z are
 zero.
 
-The choice of alligning the imaginary part of a complex number to the j imaginary
-component as opposed to i or k is mathematically arbitary. However for Python, j
+The choice of aligning the imaginary part of a complex number to the j imaginary
+component as opposed to i or k is mathematically arbitrary. However for Python, j
 is the natural choice, and then the following, bar any rounding errors, will
 hold true:
 
@@ -108,7 +108,7 @@ c) from a single number parameter: int, float, complex or another Quaternion.
    When the number is complex, the imaginary part of the complex number is
    assigned to the j imaginary part; or
 
-d) from the string representation of a quaternion (modelled on the complex type).
+d) from the string representation of a quaternion (modeled on the complex type).
    The following are valid:
 
     Quaternion("1.2")
@@ -155,14 +155,14 @@ q.normalise () returns s such that s = q / abs (q)
 
 ### rotate
 
-q.rotate (point, origin=None) -> point, where q is a rotation number, 
+q.rotate (point, origin=None) -> point, where q is a rotation number,
 i.e. q = Quaternion (angle=a,axis=(x,y,z)).
 The returned value is rotated by an angle a radians about the axis (x,y,z).
 
 ## math functions
 
 A number of math functions that operate on Quaternions are also provided.
-These functions provide the equivilent quaternion function as the functions of
+These functions provide the equivalent quaternion function as the functions of
 the same name out of the math and/or cmath module.
 
 The functions provided are:
@@ -198,10 +198,10 @@ The functions provided are:
 
 ## backround
 
-This was initally more of an experiment to create a Python extension written in C
+This was initially more of an experiment to create a Python extension written in C
 that was a bit more challenging than just a "hello world" extension.
 
-Altough there are already a number of Quaternion Python implementations out there,
+Although there are already a number of Quaternion Python implementations out there,
 this has the advantage of speed over the pure Python implementations and the advantage
 of no dependencies on any other modules such as numpy.
 
@@ -213,7 +213,6 @@ of no dependencies on any other modules such as numpy.
 
 ## credits
 
-Guidence from https://docs.python.org/3.5/extending/newtypes.html
+Guidance from https://docs.python.org/3.5/extending/newtypes.html
 together with cribbing many code-snippets and ideas from the complex type,
-and not forgetting Sir William R. Hamilton.
-
+and last be _not least_ Sir William R. Hamilton.
