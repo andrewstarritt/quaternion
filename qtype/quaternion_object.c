@@ -43,9 +43,9 @@ quaternion_subtype_from_c_quaternion(PyTypeObject *type, Py_quaternion qval);
 /* ----------------------------------------------------------------------------
  */
 static
-void debugTrace (const char* function,
-                 const int line,
-                 const char* format, ...)
+void debugTrace(const char* function,
+                const int line,
+                const char* format, ...)
 {
    va_list args;
    char buffer [200];
@@ -68,7 +68,7 @@ void debugTrace (const char* function,
  * Pre-requisite - verify obj with PyNumber_Check ... but this includes complex.
  */
 static double
-_PyNumber_AsDouble (PyObject *obj, bool* is_okay)
+_PyNumber_AsDouble(PyObject *obj, bool* is_okay)
 {
    double result = 0.0;
    PyObject *float_obj = NULL;
@@ -87,7 +87,7 @@ _PyNumber_AsDouble (PyObject *obj, bool* is_okay)
    }
    return result;
 
-   // qtype/quaternion_object.c:40:13: warning: 'debugTrace' defined but not used [-Wunused-function]
+   // qtype/quaternion_object.c:46:13: warning: 'debugTrace' defined but not used [-Wunused-function]
    //
    DEBUG_TRACE ("make compiler warning go away");
 }
@@ -190,8 +190,8 @@ to_c_quaternion(PyObject **pobj, Py_quaternion *pc)
  * The 'function' and 'arg_name' arguments are for PyErr_Format.
  */
 static bool
-quaternion_parse_triple (PyObject *arg, Py_quat_triple* triple,
-                         char* function, char* arg_name)
+quaternion_parse_triple(PyObject *arg, Py_quat_triple* triple,
+                        char* function, char* arg_name)
 {
    bool result;
 

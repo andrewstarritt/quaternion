@@ -1,6 +1,5 @@
-# quaternion
+# quaternion test virtual env setup
 #
-=
 
  mkdir -p venv
 

@@ -52,8 +52,8 @@ typedef struct {
 PyAPI_FUNC (PyTypeObject*) PyQuaternionType ();
 
 /* Quaternion type check functions
- * We use functions as opposed to macro like the complex type
- * As we ned access to the PyQuaternionType anyway.
+ * We use functions as opposed to macros like the complex type
+ * as we need to access to the PyQuaternionType anyway.
  */
 PyAPI_FUNC (bool) PyQuaternion_Check (PyObject *op);
 PyAPI_FUNC (bool) PyQuaternion_CheckExact (PyObject *op);
