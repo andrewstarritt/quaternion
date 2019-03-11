@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It privides module
  * framework.
  *
- * Copyright (c) 2018  Andrew C. Starritt
+ * Copyright (c) 2018-2019  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * along with the quaternion module.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Contact details:
- * starritt@netspace.net.au
+ * andrew.starritt@gmail.com
  * PO Box 3118, Prahran East, Victoria 3181, Australia.
  */
 
@@ -59,7 +59,7 @@ static PyModuleDef QuaternionModule = {
    "where the coefficients w, x, y and z are real; and i, j and k three imaginary\n"
    "numbers such that:\n"
    "\n"
-   "    i.i = j.j = k.k = -1\n"
+   "    i.i = j.j = k.k = i.j.k = -1\n"
    "    i.j = +k,  j.k = +i,  k.i = +j\n"
    "    j.i = -k,  k.j = -i,  i.k = -j\n"
    "\n"
@@ -67,8 +67,8 @@ static PyModuleDef QuaternionModule = {
    "These instance attributes are w, x, y and z respectively.\n"
    "\n"
    "A Quaternion may also be considered to be a real scalar part plus a vector (with\n"
-   "real components). The real part accessable via the real attribute. Thus both\n"
-   "q.w and q.real return the real or scalar part of q.\n"
+   "three real components). The real part accessable via the real attribute. Thus\n"
+   "both q.w and q.real return the real or scalar part of q.\n"
    "\n"
    "The vector part is accessable via both the vector and imag attributes which provide\n"
    "a tuple of floats. The following Python expressions are equivilent:\n"
@@ -106,7 +106,7 @@ static PyModuleDef QuaternionModule = {
    "\n"
    "The choice of alligning the imaginary part of a complex number to the j imaginary\n"
    "component as opposed to i or k is mathematically arbitary. However for Python, j\n"
-   "is the natural choice, and then the following, bar any rounding errors, will\n"
+   "is the natural choice, such that the following, bar any rounding errors, will\n"
    "hold true:\n"
    "\n"
    "    Quaternion(z) = Quaternion(str(z))\n"

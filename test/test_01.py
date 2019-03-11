@@ -77,6 +77,11 @@ def test_init():
     zq = Quaternion(z)
     assert zq.w == z.real
     assert zq.y == z.imag
+    
+    q = Quaternion(a)
+    assert q == a
+    assert q is a
+    assert id(q) == id(a)
 
     try:
         # No spaces within number

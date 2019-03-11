@@ -2,7 +2,7 @@
  *
  * This file is part of the Python quaternion module.
  *
- * Copyright (c) 2018  Andrew C. Starritt
+ * Copyright (c) 2018-2019  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
  * along with the quaternion module.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Contact details:
- * starritt@netspace.net.au
+ * andrew.starritt@gmail.com
  * PO Box 3118, Prahran East, Victoria 3181, Australia.
  */
 
@@ -35,11 +35,17 @@
 #include <structmember.h>
 #include <string.h>
 
+/* Forward declarations
+ */
+static PyObject *
+quaternion_subtype_from_c_quaternion(PyTypeObject *type, Py_quaternion qval);
+
 /* ----------------------------------------------------------------------------
  */
-static void debugTrace (const char* function,
-                        const int line,
-                        const char* format, ...)
+static
+void debugTrace (const char* function,
+                 const int line,
+                 const char* format, ...)
 {
    va_list args;
    char buffer [200];
@@ -81,6 +87,8 @@ _PyNumber_AsDouble (PyObject *obj, bool* is_okay)
    }
    return result;
 
+   // qtype/quaternion_object.c:40:13: warning: 'debugTrace' defined but not used [-Wunused-function]
+   //
    DEBUG_TRACE ("make compiler warning go away");
 }
 
@@ -254,12 +262,12 @@ quaternion_parse_triple (PyObject *arg, Py_quat_triple* triple,
  * Leading/trailing "(" and ")" allowed.
  *
  * This mirrors the complex type behaviour.
- *
- * TODO: Handle under scores.
  */
-static int
-quaternion_init_from_string_inner (PyQuaternionObject *self, const char *s, Py_ssize_t len)
+static PyObject *
+quaternion_init_from_string_inner(const char *s, Py_ssize_t len, void *type)
 {
+   Py_quaternion qval = { 0.0, 0.0, 0.0, 0.0 };  /* initialised working copy - when needed */
+
    double r=0.0, x=0.0, y=0.0, z=0.0;
    double dval;
    int got_bracket=0;
@@ -293,7 +301,7 @@ quaternion_init_from_string_inner (PyQuaternionObject *self, const char *s, Py_s
          if (PyErr_ExceptionMatches(PyExc_ValueError))
             PyErr_Clear();
          else
-            return -1;
+            return NULL;
       }
 
       if (end == s) {
@@ -369,98 +377,85 @@ quaternion_init_from_string_inner (PyQuaternionObject *self, const char *s, Py_s
 
    /* all good = copy the values
     */
-   self->qval.w = r;
-   self->qval.x = x;
-   self->qval.y = y;
-   self->qval.z = z;
-   return 0;
+   qval.w = r;
+   qval.x = x;
+   qval.y = y;
+   qval.z = z;
+   return quaternion_subtype_from_c_quaternion (type, qval);
 
 parse_error:
    PyErr_SetString(PyExc_ValueError,
                    "Quaternion() arg is a malformed string");
-   return -1;
-}
-
-
-/* -----------------------------------------------------------------------------
- * The _Py_string_to_number_with_underscores finction expects the inner function
- * to return a new instance, where as we just initiliase an existing instance.
- * This is because we essentially override __init__, not __new__.
- * This is a wrapper function around quaternion_init_from_string_inner just
- * to meet the API requirements of _Py_string_to_number_with_underscores().
- */
-static PyObject *quaternion_init_from_string_wraper
-   (const char *s , Py_ssize_t len , void *self)
-{
-   int okay;
-   okay = quaternion_init_from_string_inner (self, s, len);
-
-   if (okay == 0)
-      return self;  // No increment - just a flag
-
-   return NULL;   // Not okay
+   return NULL;
 }
 
 /* -----------------------------------------------------------------------------
  */
-static int
-quaternion_init_from_string(PyQuaternionObject *self, PyObject *v)
+static PyObject *
+quaternion_init_from_string(PyTypeObject *type, PyObject *v)
 {
    const char *s;
+   PyObject *s_buffer = NULL, *result = NULL;
    Py_ssize_t len;
-   int result = -1;
 
-   s = PyUnicode_AsUTF8AndSize (v, &len);
+   if (PyUnicode_Check(v)) {
+       s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
+       if (s_buffer == NULL) {
+           return NULL;
+       }
+       s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
+       if (s == NULL) {
+           goto exit;
+       }
+   }
+   else {
+       PyErr_Format(PyExc_TypeError,
+           "complex() argument must be a string or a number, not '%.200s'",
+           Py_TYPE(v)->tp_name);
+       return NULL;
+   }
 
-#if PY_VERSION_HEX >= 0x03060000
-   /* Python understands underscores in numeric literals (cribbed from Ada83 ;-)
-    */
-   PyObject *status;
-   PyObject *type = (PyObject *) PyQuaternionType ();
-
-   status = _Py_string_to_number_with_underscores
-         (s, len, "Quaternion", type, self, quaternion_init_from_string_wraper);
-
-   result = (status == (PyObject *)self) ? 0 : -1;
-#else
-   /* 3.5 or earlier - go old school
-    */
-   result = quaternion_init_from_string_inner (self, s, len);
-#endif
-
+   result = _Py_string_to_number_with_underscores (s, len, "Quaternion", v, type,
+                                                   quaternion_init_from_string_inner);
+ exit:
+   Py_DECREF(s_buffer);
    return result;
 }
 
 /* -----------------------------------------------------------------------------
  */
-static int
-quaternion_init (PyQuaternionObject *self, PyObject *args, PyObject *kwds)
+static PyObject *
+quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-   static char *kwlist[] = {"w", "x", "y", "z", "angle", "axis", 0};
+   static char *kwlist[] = {"w", "x", "y", "z", "real", "imag", "angle", "axis", 0};
 
+//   PyQuaternionObject *self = NULL;
    PyObject *r = NULL, *i = NULL, *j = NULL, *k = NULL;
    PyObject *angle = NULL, *axis = NULL;
+   PyObject *real = NULL, *imag = NULL;
    unsigned int mask = 0;
    bool status;
-   PyQuaternionObject *other = NULL;
    PyComplexObject* z = NULL;
 
-   Py_quaternion qval = { 0.0, 0.0, 0.0, 0.0 };  /* working copy - when needed */
+   Py_quaternion qval = { 0.0, 0.0, 0.0, 0.0 };  /* initialised working copy - when needed */
 
-   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOOOO:Quaternion", kwlist,
-                                    &r, &i, &j, &k, &angle, &axis)) {
-      return -1;
+   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOOOOOO:Quaternion", kwlist,
+                                    &r, &i, &j, &k, &real, &imag, &angle, &axis)) {
+      return NULL;
    }
 
-   /* Create a mask of supplied parameters.
+   /* Create a mask of all supplied parameters.
+    * This allows us to easily do various parameter combination checks.
     */
-   mask = 0;
+   mask = 0x00;
    if (r) mask |= 0x01;
    if (i) mask |= 0x02;
    if (j) mask |= 0x04;
    if (k) mask |= 0x08;
    if (angle) mask |= 0x10;
    if (axis)  mask |= 0x20;
+   if (real)  mask |= 0x40;
+   if (imag)  mask |= 0x80;
 
    /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     * o - the object
@@ -472,13 +467,13 @@ quaternion_init (PyQuaternionObject *self, PyObject *args, PyObject *kwds)
          d = _PyNumber_AsDouble (o, &status);                                  \
          if (!status) {                                                        \
             PyErr_SetString(PyExc_TypeError, "float(" #o ") didn't return a float");  \
-            return -1;                                                         \
+            return NULL;                                                       \
          }                                                                     \
       } else {                                                                 \
          PyErr_Format(PyExc_TypeError,                                         \
                       "Quaternion() argument '"#o"' must be float, not '%.200s'", \
                       Py_TYPE(o)->tp_name);                                    \
-         return -1;                                                            \
+         return NULL;                                                          \
       }                                                                        \
    }
 
@@ -488,46 +483,56 @@ quaternion_init (PyQuaternionObject *self, PyObject *args, PyObject *kwds)
    if (mask == 0x00) {
       /* No arguments - null value - all parts are zero (set 0 by new function).
        */
-      return 0;
+      return quaternion_subtype_from_c_quaternion (type, qval);
    }
 
    if (mask == 0x01) {
       /* A single value as first parameter
        */
 
-      if (PyQuaternion_Check(r)) {
-         /* init from Quaternion */
-         other = (PyQuaternionObject *) r;
-         self->qval = other->qval;
-         return 0;
+      /* Special-case for a single argument when type(arg) is quaternion.
+       */
+      if (PyQuaternion_CheckExact(r)) {
+         /* Note that we can't know whether it's safe to return
+            a quaternion *subclass* instance as-is, hence the restriction
+            to exact quaternions here.  If either the input or the
+            output is a quaternion subclass, it will be handled below
+            as a non-orthogonal vector.
+         */
+         Py_INCREF(r);
+         return r;
       }
 
       if (PyComplex_Check(r)) {
          /* init from complex */
          z = (PyComplexObject*) (r);
-         self->qval.w = z->cval.real;
-         self->qval.y = z->cval.imag;
-         return 0;
+         qval.w = z->cval.real;
+         qval.y = z->cval.imag;
+         return quaternion_subtype_from_c_quaternion (type, qval);
       }
 
       if (PyNumber_Check(r)) {
          /* init from number */
-         MMM (r, self->qval.w);
-         return 0;
+         MMM (r, qval.w);
+         return quaternion_subtype_from_c_quaternion (type, qval);
       }
 
       if (PyUnicode_Check(r)) {
-         return quaternion_init_from_string (self, r);
+         return quaternion_init_from_string (type, r);
       }
 
       PyErr_Format (PyExc_TypeError, "Quaternion() argument r, type '%.200s',"
                     "cannot be converted to a Quaternion", Py_TYPE(r)->tp_name);
-      return -1;
+      return NULL;
    }
 
    /* Rectalinear components - we want up to four floats ?
     */
    if (mask == (mask & 0x0F)) {
+
+      /* mask == 0x01 already handled, but more trouble than worth it to
+       * explicitly not handle that case
+       */
 
       MMM (r, qval.w);
       MMM (i, qval.x);
@@ -535,8 +540,7 @@ quaternion_init (PyQuaternionObject *self, PyObject *args, PyObject *kwds)
       MMM (k, qval.z);
 
       /* All good */
-      self->qval = qval;
-      return 0;
+      return quaternion_subtype_from_c_quaternion (type, qval);
    }
 
    /* Angle and axis specification ?
@@ -546,12 +550,12 @@ quaternion_init (PyQuaternionObject *self, PyObject *args, PyObject *kwds)
        */
       if (angle == NULL) {
           PyErr_SetString(PyExc_TypeError, "Quaternion() missing 1 required named argument: 'angle'");
-         return -1;
+         return NULL;
       }
 
       if (axis == NULL) {
           PyErr_SetString(PyExc_TypeError, "Quaternion() missing 1 required named argument: 'axis'");
-         return -1;
+         return NULL;
       }
 
       double a = 0.0;
@@ -561,43 +565,58 @@ quaternion_init (PyQuaternionObject *self, PyObject *args, PyObject *kwds)
 
       status = quaternion_parse_triple (axis, &b, "Quaternion", "axis");
       if (!status) {
-         return -1;
+         return NULL;
       }
 
       errno = 0;
-      self->qval = _Py_quat_calc_rotation (a, b);  /* will normalise the axis */
+      qval = _Py_quat_calc_rotation (a, b);  /* will normalise the axis */
       if (errno == EDOM) {
          PyErr_SetString(PyExc_ValueError, "Quaternion() 'axis' argument has no direction - is zero");
-         return -1;
+         return NULL;
+      }
+      return quaternion_subtype_from_c_quaternion (type, qval);
+   }
+
+   /* real and imag specification ?
+    */
+   if (mask == (mask & 0xC0)) {
+      /* We have been given one or both - we need need both angle and axis.
+       */
+      if (real == NULL) {
+          PyErr_SetString(PyExc_TypeError, "Quaternion() missing 1 required named argument: 'real'");
+         return NULL;
       }
 
-      return 0;
+      double a = 0.0;
+      Py_quat_triple b;
+
+      MMM(real, a);
+
+      if (imag) {
+         status = quaternion_parse_triple (imag, &b, "Quaternion", "imag");
+         if (!status) {
+            return NULL;
+         }
+      } else {
+         b.x = b.y = b.z = 0.0;
+      }
+
+      errno = 0;
+      qval.w = a;
+      qval.x = b.x;
+      qval.y = b.y;
+      qval.z = b.z;
+      return quaternion_subtype_from_c_quaternion (type, qval);
    }
 
    /* If we get here, it's an error
+    * Be more disserning re allow combinations. 
     */
    PyErr_SetString(PyExc_TypeError,
-                   "Quaternion() can't take 'angle' or 'axis' arguments "
-                   "if any component arguments specified first");                                         \
-   return -1;
+                   "Quaternion() can't mix component arguments and/or 'angle'/'axis' arguments and/or 'real'/'imag' arguments");
+   return NULL;
 
 #undef MMM
-}
-
-/* -----------------------------------------------------------------------------
- */
-static PyObject *
-quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
-{
-   PyQuaternionObject *self;
-
-   self = (PyQuaternionObject *)type->tp_alloc(type, 0);
-   if (self != NULL) {
-      /* implicit ??? */
-      self->qval.w = self->qval.x = self->qval.y = self->qval.z = 0.0;
-   }
-
-   return (PyObject *)self;
 }
 
 /* =============================================================================
@@ -830,7 +849,7 @@ PyDoc_STRVAR(quaternion_rotate_doc,
              "quaternion.rotate (point, origin=None) -> point\n"
              "\n"
              "Rotates the point using self. Self should be constructed using the angle/axis.\n"
-             "option. At very least self should be normalised\n"
+             "option. At very least self should be normalised.\n"
              "\n"
              "point    - is the point to be rotated, expects a tuple with 3 float elements\n"
              "origin   - the point about which the rotation occurs; when not specified or\n"
@@ -938,8 +957,8 @@ quaternion_hash (PyQuaternionObject *v)
    Py_uhash_t hashz1, hashz2, combined;
 
    /* z1 is the complex part of v, z2 is the other part of v as a complex number
-   * This ensures that numbers that compare equal return same hash value.
-   */
+    * This ensures that numbers that compare equal return same hash value.
+    */
    z1 = (PyObject *) PyComplex_FromDoubles (v->qval.w, v->qval.y);
    z2 = (PyObject *) PyComplex_FromDoubles (v->qval.x, v->qval.z);
 
@@ -1371,6 +1390,7 @@ PyDoc_STRVAR(
       quaternion_doc,
       "Quaternion ()                                     -> quaternion zero\n"
       "Quaternion (w[, x[, y[, z]]])                     -> quaternion number\n"
+      "Quaternion (real=float[,imag=(float,float,float)])-> quaternion number\n"
       "Quaternion (angle=float,axis=(float,float,float)) -> quaternion rotation number\n"
       "Quaternion (number)                               -> quaternion number\n"
       "Quaternion (\"str representation\")                 -> quaternion number\n"
@@ -1380,15 +1400,17 @@ PyDoc_STRVAR(
       "a) the real part and an optional imaginary parts. w, x, y and z must be float\n"
       "   or a number type which can be converted to float;\n"
       "\n"
-      "b) from an angle (radians) and a 3-tuple axis of rotation (which is automatically\n"
+      "b) from an real part and optional a 3-tuple imaginary part;\n"
+      "\n"
+      "c) from an angle (radians) and a 3-tuple axis of rotation (which is automatically\n"
       "   normalised), which generates a rotator Quaternion that can be used in\n"
       "   conjuction with the rotate mothod;\n"
       "\n"
-      "c) from a single number parameter: int, float, complex or another Quaternion.\n"
+      "d) from a single number parameter: int, float, complex or another Quaternion.\n"
       "   When the number is complex, the imaginary part of the complex is assigned\n"
       "   to the j imaginary part. So that Quaternion(z) == Quaternion(str(z)); or\n"
       "\n"
-      "d) from the string representation of a quaternion (modelled on the complex type).\n"
+      "e) from the string representation of a quaternion (modelled on the complex type).\n"
       "\n"
       "\n"
       "Attributes\n"
@@ -1439,9 +1461,10 @@ static PyTypeObject QuaternionType = {
    0,                                         /* tp_descr_get */
    0,                                         /* tp_descr_set */
    0,                                         /* tp_dictoffset */
-   (initproc)quaternion_init,                 /* tp_init */
+   0,                                         /* tp_init */
    (allocfunc)PyType_GenericAlloc,            /* tp_alloc */
    (newfunc)quaternion_new,                   /* tp_new */
+   PyObject_Del                               /* tp_free */
 };
 
 /* Allow module defn code to access the Quaternion PyTypeObject.
@@ -1482,6 +1505,20 @@ Py_quaternion PyQuaternion_AsCQuaternion(PyObject *obj)
       r = ((PyQuaternionObject *)(obj))->qval;
    }
    return r;
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns a reference to a PyObject set to qval
+ */
+static PyObject *
+quaternion_subtype_from_c_quaternion(PyTypeObject *type, Py_quaternion qval)
+{
+    PyObject *op;
+
+    op = type->tp_alloc(type, 0);
+    if (op != NULL)
+        ((PyQuaternionObject *)op)->qval = qval;
+    return op;
 }
 
 /* -----------------------------------------------------------------------------

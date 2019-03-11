@@ -1,8 +1,11 @@
 *.local
 *.o
 *.so
+venv/
+ctype/
 creator/
 creator.d/
+quaternion.egg-info/
 qcreator
 *.creator.user
 *.creator.user.*
@@ -10,5 +13,3 @@ qcreator
 .cache/
 Makefile
 proto.py
-cmathmodule.c
-complexobject.c

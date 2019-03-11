@@ -1,9 +1,9 @@
 /* quaternion_object.h
  *
- * This file is part of the Python quaternion module. It privides the
+ * This file is part of the Python quaternion module. It provides the
  * Quaternion type.
  *
- * Copyright (c) 2018  Andrew C. Starritt
+ * Copyright (c) 2018-2019  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * along with the quaternion module.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Contact details:
- * starritt@netspace.net.au
+ * andrew.starritt@gmail.com
  * PO Box 3118, Prahran East, Victoria 3181, Australia.
  *
  * source formatting:
@@ -33,9 +33,13 @@
 #include <stdbool.h>
 #include "quaternion_basic.h"
 
-// -----------------------------------------------------------------------------
-// PyQuaternionObject : the Quaternion PyObject definition
-//
+/* Quaternion object interface */
+
+/* -----------------------------------------------------------------------------
+ * PyQuaternionObject : the Quaternion PyObject definition
+ * PyQuaternionObject represents a quaternion number with double-precision
+ * real and imaginary(3) parts.
+ */
 typedef struct {
    PyObject_HEAD
    /* Type-specific fields go here. */
@@ -43,23 +47,24 @@ typedef struct {
 } PyQuaternionObject;
 
 
-/* Use PyAPI_FUNC ?? */
-
-PyTypeObject* PyQuaternionType ();
+/* Used by module setup
+ */
+PyAPI_FUNC (PyTypeObject*) PyQuaternionType ();
 
 /* Quaternion type check functions
+ * We use functions as opposed to macro like the complex type
+ * As we ned access to the PyQuaternionType anyway.
  */
-bool PyQuaternion_Check (PyObject *op);
-
-bool PyQuaternion_CheckExact (PyObject *op);
+PyAPI_FUNC (bool) PyQuaternion_Check (PyObject *op);
+PyAPI_FUNC (bool) PyQuaternion_CheckExact (PyObject *op);
 
 /* Extract C quaternion value from Python Quaternion.
  */
-Py_quaternion PyQuaternion_AsCQuaternion(PyObject *);
+PyAPI_FUNC (Py_quaternion) PyQuaternion_AsCQuaternion(PyObject *op);
 
 /* Return Python Quaternion from C quaternion (new object)
  */
-PyObject * PyQuaternion_FromCQuaternion(const Py_quaternion);
+PyAPI_FUNC (PyObject *) PyQuaternion_FromCQuaternion(const Py_quaternion);
 
 /* Returns the obj converted to a Quaternion object on success or NULL on failure.
  * Allowed input object types are PyLong, PyFLoat, PyComplex and PyQuaternion.
@@ -71,13 +76,13 @@ PyObject * PyQuaternion_FromCQuaternion(const Py_quaternion);
  * be consistant with other number types, the only place where a string is
  * allowed to be used as a value in during object contruction/initialisation.
  */
-PyObject * PyObject_AsQuaternion(PyObject *obj);
+PyAPI_FUNC (PyObject *) PyObject_AsQuaternion(PyObject *obj);
 
 /* This effectively combines the functionality of PyObject_AsQuaternion and
  * PyQuaternion_AsCQuaternion without creating an intermediate object.
  * Returns true on success, and false on failure.
  * On failure, qval is untouched.
  */
-bool PyObject_AsCQuaternion(PyObject *obj,  Py_quaternion* qval);
+PyAPI_FUNC (bool) PyObject_AsCQuaternion(PyObject *obj,  Py_quaternion* qval);
 
 #endif /* QUATERNION_OBJECT_H */

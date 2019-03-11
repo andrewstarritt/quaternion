@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It provides basic
  * quaternion maths operation with minimalist reference to Python.
  *
- * Copyright (c) 2018  Andrew C. Starritt
+ * Copyright (c) 2018-2019  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * along with the quaternion module.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Contact details:
- * starritt@netspace.net.au
+ * andrew.starritt@gmail.com
  * PO Box 3118, Prahran East, Victoria 3181, Australia.
  *
  * source formatting:
@@ -29,6 +29,10 @@
 #include <Python.h>
 #include <pymath.h>
 #include "quaternion_basic.h"
+#include <math.h>
+#include <complex.h>
+
+#define ABS(a) ((a) >= 0  ? (a) : -(a))
 
 static const Py_quaternion q_one = { 1.0, 0.0, 0.0, 0.0 };
 static const double pi = 3.14159265358979323846;
@@ -37,21 +41,6 @@ static const double pi = 3.14159265358979323846;
 /* -----------------------------------------------------------------------------
  * PRIVATE FUNCTIONS
  * -----------------------------------------------------------------------------
- * normalise x in to range -pi .. +pi
- */
-static double angle_mod (double x) {
-
-   int long n = (long) (x / pi);  /* truncates towards 0 */
-   if (n >= 0) {
-       n = ((n+1)/2)*2;   /* ensure even n */
-   } else {
-       n = ((n-1)/2)*2;   /* ensure even n */
-   }
-   x = x - n*pi;          /* n*pi is m*tau */
-   return x;
-}
-
-/* -----------------------------------------------------------------------------
  * Find the largest absolute coefficient of a
  */
 static double quat_max_abs_elem (const Py_quaternion a)
@@ -88,7 +77,7 @@ static double length_triple (const Py_quat_triple t)
    if (m == 0.0)
       return m;
 
-   /* Scale coordinates - avoid overflow
+   /* Scale coordinates - avoid potential intermediate overflow
     */
    double x = t.x / m;
    double y = t.y / m;
@@ -96,6 +85,81 @@ static double length_triple (const Py_quat_triple t)
 
    return m * sqrt (x*x + y*y + z*z);
 }
+
+
+/* -----------------------------------------------------------------------------
+ * Returns: f(q) by leveraging of the equivilent complex function, e.g csin.
+ * We do not use a series expansion, but reply on the fact that because the
+ * the function can be defined as a series expansion, then the axis of f(q)
+ * is the same as the axis of q.
+ * Let v be the Quaternian (1, 0, 0, 0)
+ * Let u be the normalised Quternian (0, q.x, q.y, q.z), the imaginary part of q,
+ * then we can define q as:
+ *     q = A*v + B*u
+ * where A and B are the real and the imaginary coefficiants (both real).
+ * Define complex z to be A + B*I
+ * Invoke f(z) to yield fz = C + D*I
+ * Then f(q) = C*v + D*u
+ * Note: this is about 80% the time of the series expansion.
+ * 
+ * Question: is it koshar to use csin, ctan etc.? py complex does not.
+ * We may have create local wrapper function to do csin, ctan if needs be.
+ */
+typedef complex (*cfunc) (complex z);
+
+static Py_quaternion use_complex_func (const Py_quaternion q, const cfunc f)
+{
+   Py_quaternion result;
+   double a, b, c, d;
+   Py_quat_triple imag;
+   Py_quat_triple unit;
+   complex z;
+   complex fz;
+
+   a = q.w;
+
+   /* Extract and normalise the vector or imaginary part of a
+    */
+   imag.x = q.x;
+   imag.y = q.y;
+   imag.z = q.z;
+   b = length_triple (imag);
+
+   /* form unit/normalised imaginary part
+    */
+   if (b != 0.0) {
+      unit.x = imag.x / b;
+      unit.y = imag.y / b;
+      unit.z = imag.z / b;
+   } else {
+      /* any unit vector will do - go with j
+       */
+      unit.x = 0.0;
+      unit.y = 1.0;
+      unit.z = 0.0;
+   }
+
+   /* q = a + b*unit
+    * form the complex equivilent of q
+    */
+   z = a + I*b;
+
+   fz = f(z);   /* let f do the hard work */
+
+   c = creal(fz);
+   d = cimag(fz);
+
+   /* form the quaternion equivilent of f(q)
+    * f(q) = c + d*unit
+    */
+   result.w = c;
+   result.x = d * unit.x;
+   result.y = d * unit.y;
+   result.z = d * unit.z;
+
+   return result;
+}
+
 
 /* -----------------------------------------------------------------------------
  * PUBLIC FUNCTIONS
@@ -219,7 +283,8 @@ Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b)
       sbc.y = - sb.y;
       sbc.z = - sb.z;
 
-      /* form nominator = a * b^
+      /* form numerator = a * b^
+       * Note we use a*b^, not b^*a
        */
       nom = _Py_quat_prod (sa, sbc);
 
@@ -349,7 +414,7 @@ Py_quaternion _Py_quat_pow (const Py_quaternion a, const double x)
 }
 
 /* -----------------------------------------------------------------------------
- * Returns: abs (z) or |z|
+ * Returns: abs (a) or |a|
  */
 double _Py_quat_abs (const Py_quaternion a)
 {
@@ -447,7 +512,7 @@ Py_quaternion _Py_quat_calc_rotation (const double angle, const Py_quat_triple a
       errno = EDOM;     /** Needs Python.h **/
       r.w = r.x = r.y = r.z = 0.0;
    } else {
-      /* Scale to avoid over flows
+      /* Scale to avoid potential intermediate overflows
        */
       double sx = axis.x / m;
       double sy = axis.y / m;
@@ -455,13 +520,15 @@ Py_quaternion _Py_quat_calc_rotation (const double angle, const Py_quat_triple a
 
       double norm = sqrt (sx * sx + sy * sy + sz * sz);
 
+      /* Note: half the angle here
+       */
       double caot = cos (angle / 2.0);
       double saot = sin (angle / 2.0);
 
       r.w = caot;
-      r.x = sx * saot / norm;
-      r.y = sy * saot / norm;
-      r.z = sz * saot / norm;
+      r.x = saot * sx / norm;
+      r.y = saot * sy / norm;
+      r.z = saot * sz / norm;
    }
 
    return r;
@@ -601,226 +668,44 @@ Py_quaternion _Py_quat_from_polar (const double m,
 
 /* -----------------------------------------------------------------------------
  * Returns sqrt (q)
- * Based on: http://onlinelibrary.wiley.com/doi/10.1002/9780470682906.app4/pdf
  */
 Py_quaternion _Py_quat_sqrt (const Py_quaternion a)
 {
-   Py_quaternion r;
-   double m;
-   Py_quat_triple unit;
-   double angle;
-
-   _Py_quat_into_polar (a, &m, &unit, &angle);
-   r = _Py_quat_from_polar (sqrt (m), unit, angle/2.0);
-   return r;
+   return use_complex_func (a, csqrt);
 }
-
-/* Used by both exp and log.
- */
-static const double angle_limit = 1.0e-15;  // was 0.00001
 
 /* -----------------------------------------------------------------------------
  * Returns exp (q)
- * Based on: https://www.geometrictools.com/Documentation/Quaternions.pdf
  */
 Py_quaternion _Py_quat_exp (const Py_quaternion a)
 {
-   Py_quaternion r;
-   Py_quat_triple u;
-   double angle;
-   double eas;
-
-   /*  a = s + (xi + yj +zk) = s + v
-    *  exp (a) = exp (s + v)
-    *          = exp (s)*exp(v)
-    *          = exp (s)*exp(u.|v|)
-    *          = exp (s)*exp(u.angle)
-    *          = exp (s)*(cos(angle) + u.sin(angle))
-    */
-   eas = exp (a.w);
-   angle = sqrt (a.x*a.x + a.y*a.y + a.z*a.z);   /* size if the imaginary part */
-
-   if (fabs (angle) < angle_limit) {
-      /* Essentially real
-       */
-      r.w = eas;
-      r.x = r.y = r.z = 0.0;
-   } else {
-      double ca = cos (angle);
-      double sa = sin (angle);
-
-      /* Form unit vector
-       */
-      u.x = a.x / angle;
-      u.y = a.y / angle;
-      u.z = a.z / angle;
-
-      r.w = eas * ca;
-      r.x = eas * u.x * sa;
-      r.y = eas * u.y * sa;
-      r.z = eas * u.z * sa;
-   }
-
-   return r;
+   return use_complex_func (a, cexp);
 }
 
 /* -----------------------------------------------------------------------------
  * Returns log (a) to base e
- * Based on: https://www.geometrictools.com/Documentation/Quaternions.pdf
  */
 Py_quaternion _Py_quat_log (const Py_quaternion a)
 {
-   Py_quaternion r;
-   double m;
-   Py_quat_triple u;
-   double angle;
-
-   _Py_quat_into_polar (a, &m, &u, &angle);
-
-   if (fabs (angle) < angle_limit) {
-      /* Essentially real
-       */
-      if (a.w >= 0) {
-         r.w = log (a.w);
-         r.x = r.y = r.z = 0.0;
-      } else {
-         /* For -ve real, we need pi worth of imaginary, as exp (i.pi) == -1
-          * We allocate this to the j component, so that a quaternion behaves
-          * like complex numbers.
-          */
-         r.w = log (-a.w);
-         r.y = pi;
-         r.x = r.z = 0.0;
-      }
-
-   } else {
-      /* log (a) = log (m.v) = log(m) + log(v)
-       *                     = log(m) + log (cos(angle) + u.sin(angle))
-       *                     = log(m) + log (cos(angle) + u.sin(angle))
-       *                     = log(m) + log (exp (u.angle))
-       *                     = log(m) + u.angle
-       */
-      r.w = log (m);
-      r.x = u.x * angle;
-      r.y = u.y * angle;
-      r.z = u.z * angle;
-   }
-   return r;
+   return use_complex_func (a, clog);
 }
 
 /* -----------------------------------------------------------------------------
  * Returns: sine of a
- *
- * We use the standard seried expansion to finds the sine of a, i.e.:
- *
- *  a - a**3/3! + a**5/5! - a**7/7! + a**9/9! ...
+ * We do not use a series expansion, but leverage off the csin function.
  */
 Py_quaternion _Py_quat_sin (const Py_quaternion a)
 {
-   Py_quaternion an;
-   Py_quaternion r;
-   int sign;
-   double factorial;
-   double m;
-   double t2, r2;
-   Py_quaternion a_sqd;
-   Py_quaternion ap;
-   Py_quaternion t;
-   int j;
-
-   /* normalise the real part of a to range -pi .. +pi
-    */
-   an = a;
-   an.w = angle_mod (a.w);
-
-   a_sqd = _Py_quat_prod(an, an);
-
-   sign = +1;
-   factorial = 1.0;
-   ap = an;       /* first term */
-   r = ap;        /* initialise with first term */
-
-   for (j = 3; j < 51; j += 2) {
-      ap = _Py_quat_prod (ap, a_sqd);
-
-      sign = -sign;
-      factorial = factorial * j * (j - 1);
-      m = sign/factorial;
-
-      /* Don't use _Py_quat_prod as muliplying with a scalar, and inline add.
-       */
-      t.w = ap.w * m;  r.w += t.w;
-      t.x = ap.x * m;  r.x += t.x;
-      t.y = ap.y * m;  r.y += t.y;
-      t.z = ap.z * m;  r.z += t.z;
-
-      /* If term is now insignificant, exit loop
-       *
-       *    abs (term) <= 1.0e-20 * abs (r)
-       *
-       * To avoid the sqrt we examine squares of the abs values.
-       */
-      t2 = (t.w*t.w) + (t.x*t.x) + (t.y*t.y) + (t.z*t.z);
-      r2 = (r.w*r.w) + (r.x*r.x) + (r.y*r.y) + (r.z*r.z);
-
-      if (t2 <= 1.0e-40 * r2)
-         break;
-   }
-
-   return r;
+   return use_complex_func (a, csin);
 }
 
 /* -----------------------------------------------------------------------------
  * Returns: cosine of a
- *
- * We use the standard seried expansion to find the cosine of a, i.e.:
- *
- *  1 - a**2/2! + a**4/4! - a**6/6! + a**8/8! ...
+ * We do not use a series expansion, but leverage off the ccos function.
  */
 Py_quaternion _Py_quat_cos (const Py_quaternion a)
 {
-   /* see the sin function for detailed comments - they work the same way */
-   Py_quaternion an;
-   Py_quaternion r;
-   int sign;
-   double factorial;
-   double m;
-   double t2, r2;
-   Py_quaternion a_sqd;
-   Py_quaternion ap;
-   Py_quaternion t;
-   int j;
-
-   an = a;
-   an.w = angle_mod (a.w);
-
-   a_sqd = _Py_quat_prod(an, an);
-
-   sign = +1;
-   factorial = 1.0;
-   ap = q_one;    /* first term */
-   r = ap;        /* initialise with first term*/
-
-   for (j = 2; j < 50; j += 2) {
-      ap = _Py_quat_prod (ap, a_sqd);
-
-      sign = -sign;
-      factorial = factorial * j * (j - 1);
-      m = sign/factorial;
-
-      t.w = ap.w * m;  r.w += t.w;
-      t.x = ap.x * m;  r.x += t.x;
-      t.y = ap.y * m;  r.y += t.y;
-      t.z = ap.z * m;  r.z += t.z;
-
-      t2 = (t.w*t.w) + (t.x*t.x) + (t.y*t.y) + (t.z*t.z);
-      r2 = (r.w*r.w) + (r.x*r.x) + (r.y*r.y) + (r.z*r.z);
-
-      if (t2 <= 1.0e-40 * r2)
-         break;
-   }
-
-   return r;
+   return use_complex_func (a, ccos);
 }
 
 /* -----------------------------------------------------------------------------
@@ -828,17 +713,7 @@ Py_quaternion _Py_quat_cos (const Py_quaternion a)
  */
 Py_quaternion _Py_quat_tan (const Py_quaternion a)
 {
-   Py_quaternion s, c, r;
-
-   s = _Py_quat_sin (a);
-   c = _Py_quat_cos (a);
-
-   /* The axis of sin (a) and cos(a) are parallel, so the divide makes sense.
-    * That is s and c commute in this case, and (1/c)*s == s*(1/c)
-    */
-   r = _Py_quat_quot (s, c);
-
-   return r;
+   return use_complex_func (a, ctan);
 }
 
 /* end */
