@@ -1,0 +1,14 @@
+# quaternion test virtual env setup
+#
+
+ mkdir -p venv
+
+ # Ensure version 3.5 or later
+ #
+ python -m virtualenv  venv
+
+ . venv/bin/activate
+
+ pip install  --editable .
+
+# end

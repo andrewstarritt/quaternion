@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It privides basic
  * quaternion maths operation with minimalist reference to Python.
  *
- * Copyright (c) 2018  Andrew C. Starritt
+ * Copyright (c) 2018-2019  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
  * along with the quaternion module.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Contact details:
- * starritt@netspace.net.au
+ * andrew.starritt@gmail.com
  * PO Box 3118, Prahran East, Victoria 3181, Australia.
  *
  * source formatting:
@@ -34,6 +34,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* For the complex type, the equivilent of these operations are within the
+ * object definition file. I use a separate module.
+ */
 
 /* -----------------------------------------------------------------------------
  * Simple C type quaternion - it is the one and only type-specific field in
@@ -84,6 +88,8 @@ Py_quaternion _Py_quat_diff (const Py_quaternion a, const Py_quaternion b);
 
 /* note: multiplication does not commute: a*b != b*a */
 Py_quaternion _Py_quat_prod (const Py_quaternion a, const Py_quaternion b);
+
+/* note: division is p * inverse(q) */
 Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b);
 
 Py_quaternion _Py_quat_pow  (const Py_quaternion a, const double x);
@@ -92,7 +98,6 @@ Py_quaternion _Py_quat_pow  (const Py_quaternion a, const double x);
  */
 double _Py_quat_quadrance (const Py_quaternion a);
 double _Py_quat_dot_prod (const Py_quaternion a, const Py_quaternion b);
-
 
 /* Rotation related functions
  */
