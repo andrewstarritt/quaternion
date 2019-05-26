@@ -8,6 +8,7 @@ Within _this_ module, a Quaternion q is defined to be:
 
     q = w + x.i + y.j + z.k
 
+(_through out this document = means 'is equal to', as opposed to assignment_)<br>
 where the coefficients w, x, y and z are real; and i, j and k three imaginary
 numbers such that:
 
@@ -43,7 +44,7 @@ binary: +, -, *, /
 power: **
 
 There is no mod (%) or integer division (//) operation available.
-Therefore the pow() function can only take two arguments, and the exponent argument must be real.
+Therefore the pow() function can only take two arguments, and the exponent argument must be real or int.
 
 The Quaternion type is associative under both addition and multiplication, i.e.:
 
@@ -60,6 +61,11 @@ Quaternion by another, there are two options:
 The quotient function returns the former, therefore:
 
     (p / q) * q = p
+
+This non-commutative nature also explains why p ** q is undefined, as this could implemented as:
+
+    exp (q * log (p))  ; or
+    exp (log (p) * q)
 
 ## mixed mode arithmetic
 
@@ -91,6 +97,7 @@ A Quaternion number may be constructed using one of the following forms:
 
 * Quaternion ()                                     -> quaternion zero
 * Quaternion (w[, x[, y[, z]]])                     -> quaternion number
+* Quaternion (real=float,imag=(float,float,float))  -> quaternion number
 * Quaternion (angle=float,axis=(float,float,float)) -> quaternion rotation number
 * Quaternion (number)                               -> quaternion number
 * Quaternion ("string representation")              -> quaternion number
@@ -100,15 +107,17 @@ A Quaternion number may be created from:
 a) the real part and an optional imaginary parts. w, x, y and z must be float
    or number types which can be converted to float;
 
-b) from an angle (radians) and a 3-tuple axis of rotation (which is automatically
-   normalised), which generates a rotator Quaternion,  that can then be used in
-   conjuction with the rotate method;
+b) from a real number and a 3-tuple vector;
 
-c) from a single number parameter: int, float, complex or another Quaternion.
+c) from an angle (radians) and a 3-tuple axis of rotation (which is automatically
+   normalised), which generates a rotator Quaternion,  that can then be used in
+   conjunction with the rotate method;
+
+d) from a single number parameter: int, float, complex or another Quaternion.
    When the number is complex, the imaginary part of the complex number is
    assigned to the j imaginary part; or
 
-d) from the string representation of a quaternion (modeled on the complex type).
+e) from the string representation of a quaternion (modeled on the complex type).
    The following are valid:
 
     Quaternion("1.2")
@@ -147,11 +156,15 @@ q.conjugate() returns the Quaternion conjugate of its argument.
 
 ### inverse
 
-q.inverse ()  returns s such that s * q = q * s = 1
+q.inverse ()  returns s such that: s \* q = q \* s = 1
 
 ### normalise
 
-q.normalise () returns s such that s = q / abs (q)
+q.normalise () returns s such that: s = q / abs (q)
+
+### quadrance
+
+q.quadrance () returns s such that s = q.w\*q.w + q.x\*q.x + q.y\*q.y + q.z\*q.z
 
 ### rotate
 
@@ -178,10 +191,21 @@ The functions provided are:
     cos
     sin
     tan
+    acos
+    asin
+    atan
+    cosh
+    sinh
+    tanh
+    acosh
+    asinh
+    atanh
     polar
     phase
     axis
     rect
+
+Note: there is no separate qmath module.
 
 ## module variables
 
@@ -194,7 +218,9 @@ The functions provided are:
 
 ## hash function
 
-
+The hash of a quaternion folows the ideas used in the complex hash function such
+that if q = Quaternion (q.complex) then hash(q) = hash (q.complex), and
+if q = Quaternion (q.real) then hash(q) = hash (q.real)
 
 ## backround
 
@@ -216,3 +242,7 @@ of no dependencies on any other modules such as numpy.
 Guidance from https://docs.python.org/3.5/extending/newtypes.html
 together with cribbing many code-snippets and ideas from the complex type,
 and last be _not least_ Sir William R. Hamilton.
+
+
+<font size="-1">Last updated: Sun May 26 19:22:32 AEDT 2019</font>
+<br>

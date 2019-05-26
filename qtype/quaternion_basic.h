@@ -129,6 +129,18 @@ Py_quaternion _Py_quat_sin (const Py_quaternion a);
 Py_quaternion _Py_quat_cos (const Py_quaternion a);
 Py_quaternion _Py_quat_tan (const Py_quaternion a);
 
+Py_quaternion _Py_quat_asin (const Py_quaternion a);
+Py_quaternion _Py_quat_acos (const Py_quaternion a);
+Py_quaternion _Py_quat_atan (const Py_quaternion a);
+
+Py_quaternion _Py_quat_sinh (const Py_quaternion a);
+Py_quaternion _Py_quat_cosh (const Py_quaternion a);
+Py_quaternion _Py_quat_tanh (const Py_quaternion a);
+
+Py_quaternion _Py_quat_asinh (const Py_quaternion a);
+Py_quaternion _Py_quat_acosh (const Py_quaternion a);
+Py_quaternion _Py_quat_atanh (const Py_quaternion a);
+
 #ifdef __cplusplus
 }
 #endif

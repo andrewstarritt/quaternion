@@ -25,13 +25,13 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.1.3"
+#define __version__ "1.1.4"
 
 
 /* Development environment:
  * Python 3.6.3
- * CentOS Linux release 7.4.1708 (Core) x86_64
- * gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-16)
+ * CentOS Linux release 7.6.1810 (Core) x86_64
+ * gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-36)
  */
 
 #include <Python.h>

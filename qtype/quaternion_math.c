@@ -277,6 +277,86 @@ PyDoc_STRVAR(qmath_tan__doc__,
 
 BASIC_ONE_ARGUMENT_FUNCTION (tan)
 
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_acos__doc__,
+             "acos(q)\n"
+             "\n"
+             "Return the arccosine of q.");
+
+BASIC_ONE_ARGUMENT_FUNCTION (acos)
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_asin__doc__,
+             "asin(q)\n"
+             "\n"
+             "Return the arcsine of q.");
+
+BASIC_ONE_ARGUMENT_FUNCTION (asin)
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_atan__doc__,
+             "atan(q)\n"
+             "\n"
+             "Return the arctangent of q.");
+
+BASIC_ONE_ARGUMENT_FUNCTION (atan)
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_cosh__doc__,
+             "cosh(q)\n"
+             "\n"
+             "Return the hyperbolic cosine of q.");
+
+BASIC_ONE_ARGUMENT_FUNCTION (cosh)
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_sinh__doc__,
+             "sinh(q)\n"
+             "\n"
+             "Return the hyperbolic sine of q.");
+
+BASIC_ONE_ARGUMENT_FUNCTION (sinh)
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_tanh__doc__,
+             "tanh(q)\n"
+             "\n"
+             "Return the hyperbolic tangent of q.");
+
+BASIC_ONE_ARGUMENT_FUNCTION (tanh)
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_acosh__doc__,
+             "acosh(q)\n"
+             "\n"
+             "Return the inverse hyperbolic cosine of q.");
+
+BASIC_ONE_ARGUMENT_FUNCTION (acosh)
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_asinh__doc__,
+             "asinh(q)\n"
+             "\n"
+             "Return the inverse hyperbolic sine of q.");
+
+BASIC_ONE_ARGUMENT_FUNCTION (asinh)
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_atanh__doc__,
+             "atanh(q)\n"
+             "\n"
+             "Return the inverse hyperbolic tangent of q.");
+
+BASIC_ONE_ARGUMENT_FUNCTION (atanh)
 
 /* -----------------------------------------------------------------------------
  */
@@ -614,9 +694,23 @@ static PyMethodDef qmath_methods[] = {
    {"exp",      (PyCFunction)qmath_exp,      METH_O,        qmath_exp__doc__},
    {"log",      (PyCFunction)qmath_log,      METH_VARARGS,  qmath_log__doc__},
    {"log10",    (PyCFunction)qmath_log10,    METH_O,        qmath_log10__doc__},
+   
    {"cos",      (PyCFunction)qmath_cos,      METH_O,        qmath_cos__doc__},
    {"sin",      (PyCFunction)qmath_sin,      METH_O,        qmath_sin__doc__},
    {"tan",      (PyCFunction)qmath_tan,      METH_O,        qmath_tan__doc__},
+
+   {"acos",     (PyCFunction)qmath_acos,     METH_O,        qmath_acos__doc__},
+   {"asin",     (PyCFunction)qmath_asin,     METH_O,        qmath_asin__doc__},
+   {"atan",     (PyCFunction)qmath_atan,     METH_O,        qmath_atan__doc__},
+
+   {"cosh",     (PyCFunction)qmath_cosh,     METH_O,        qmath_cosh__doc__},
+   {"sinh",     (PyCFunction)qmath_sinh,     METH_O,        qmath_sinh__doc__},
+   {"tanh",     (PyCFunction)qmath_tanh,     METH_O,        qmath_tanh__doc__},
+
+   {"acosh",    (PyCFunction)qmath_acosh,    METH_O,        qmath_acosh__doc__},
+   {"asinh",    (PyCFunction)qmath_asinh,    METH_O,        qmath_asinh__doc__},
+   {"atanh",    (PyCFunction)qmath_atanh,    METH_O,        qmath_atanh__doc__},
+
    {"isclose",  (PyCFunction)qmath_isclose,  METH_KEYWORDS |
                                              METH_VARARGS,  qmath_isclose__doc__},
    {"dot",      (PyCFunction)qmath_dot,      METH_VARARGS,  qmath_dot__doc__},

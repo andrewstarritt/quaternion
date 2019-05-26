@@ -101,7 +101,7 @@ static double length_triple (const Py_quat_triple t)
  * Invoke f(z) to yield fz = C + D*I
  * Then f(q) = C*v + D*u
  * Note: this is about 80% the time of the series expansion.
- * 
+ *
  * Question: is it koshar to use csin, ctan etc.? py complex does not.
  * We may have create local wrapper function to do csin, ctan if needs be.
  */
@@ -714,6 +714,82 @@ Py_quaternion _Py_quat_cos (const Py_quaternion a)
 Py_quaternion _Py_quat_tan (const Py_quaternion a)
 {
    return use_complex_func (a, ctan);
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: arc cosine of a
+ */
+Py_quaternion _Py_quat_acos (const Py_quaternion a)
+{
+   return use_complex_func (a, cacos);
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: arc sine of a
+ */
+Py_quaternion _Py_quat_asin (const Py_quaternion a)
+{
+   return use_complex_func (a, casin);
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: arc tangent of a
+ */
+Py_quaternion _Py_quat_atan (const Py_quaternion a)
+{
+   return use_complex_func (a, catan);
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: hyperbolic sine of a
+ * We do not use a series expansion, but leverage off the csinh function.
+ */
+Py_quaternion _Py_quat_sinh (const Py_quaternion a)
+{
+   return use_complex_func (a, csinh);
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: hyperbolic cosine of a
+ * We do not use a series expansion, but leverage off the ccosh function.
+ */
+Py_quaternion _Py_quat_cosh (const Py_quaternion a)
+{
+   return use_complex_func (a, ccosh);
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: hyperbolic tangent of a
+ */
+Py_quaternion _Py_quat_tanh (const Py_quaternion a)
+{
+   return use_complex_func (a, ctanh);
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: inverse hyperbolic sine of a
+ * We do not use a series expansion, but leverage off the csinh function.
+ */
+Py_quaternion _Py_quat_asinh (const Py_quaternion a)
+{
+   return use_complex_func (a, casinh);
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: inverse hyperbolic cosine of a
+ * We do not use a series expansion, but leverage off the ccosh function.
+ */
+Py_quaternion _Py_quat_acosh (const Py_quaternion a)
+{
+   return use_complex_func (a, cacosh);
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: inverse hyperbolic tangent of a
+ */
+Py_quaternion _Py_quat_atanh (const Py_quaternion a)
+{
+   return use_complex_func (a, catanh);
 }
 
 /* end */
