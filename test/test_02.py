@@ -19,12 +19,12 @@ qlist = (Quaternion(+0.16, +0.32, +1.48, +0.80),
 
 
 def qfoo(q):
-    """ Rotate axis by +tau/3 """
+    """ Rotate axis by +tau/3 about axis (1,1,1) """
     return Quaternion(q.w, q.y, q.z, q.x)
 
 
 def qbar(q):
-    """ Rotate axis by -tau/3 """
+    """ Rotate axis by -tau/3 about axis (1,1,1) """
     return Quaternion(q.w, q.z, q.x, q.y)
 
 
@@ -45,11 +45,11 @@ def check(rfn, cfn, qfn, q):
     # complex result merged in with the original axis.
     #
     q_polar = quaternion.polar(q)
-    z = cmath.rect (q_polar[0], q_polar[1])
-    fz = cfn (z)
-    fz_polar = cmath.polar (fz)
-    fi = quaternion.rect(fz_polar[0], fz_polar [1], q_polar[2])
-    fd = qfn (q)
+    z = cmath.rect(q_polar[0], q_polar[1])
+    fz = cfn(z)
+    fz_polar = cmath.polar(fz)
+    fi = quaternion.rect(fz_polar[0], fz_polar[1], q_polar[2])
+    fd = qfn(q)
     assert quaternion.isclose(fi, fd)
 
     # Test cut'n'paste errors referenceing imaginary components
@@ -108,7 +108,7 @@ def test_sqrt():
     assert abs(a - c) < 1.0e-9
 
     for q in qlist:
-         check(math.sqrt, cmath.sqrt, quaternion.sqrt, q)
+        check(math.sqrt, cmath.sqrt, quaternion.sqrt, q)
 
 
 def test_sin():
@@ -121,6 +121,62 @@ def test_cos():
         check(math.cos, cmath.cos, quaternion.cos, q)
 
 
+def test_tan():
+    for q in qlist:
+        check(math.tan, cmath.tan, quaternion.tan, q)
+
+
+def test_asin():
+    for q in qlist:
+        q = q / 10.0
+        check(math.asin, cmath.asin, quaternion.asin, q)
+
+
+def test_acos():
+    for q in qlist:
+        q = q / 10.0
+        check(math.acos, cmath.acos, quaternion.acos, q)
+
+
+def test_atan():
+    for q in qlist:
+        q = q / 10.0
+        check(math.atan, cmath.atan, quaternion.atan, q)
+
+
+def test_sinh():
+    for q in qlist:
+        check(math.sinh, cmath.sinh, quaternion.sinh, q)
+
+
+def test_cosh():
+    for q in qlist:
+        check(math.cosh, cmath.cosh, quaternion.cosh, q)
+
+
+def test_tanh():
+    for q in qlist:
+        check(math.tanh, cmath.tanh, quaternion.tanh, q)
+
+
+def test_asinh():
+    for q in qlist:
+        q = q / 10.0
+        check(math.asinh, cmath.asinh, quaternion.asinh, q)
+
+
+def test_acosh():
+    for q in qlist:
+        q = q + 1.0
+        check(math.acosh, cmath.acosh, quaternion.acosh, q)
+
+
+def test_atanh():
+    for q in qlist:
+        q = q / 10.0
+        check(math.atanh, cmath.atanh, quaternion.atanh, q)
+
+
 def test_pythagoras():
     for a in qlist:
         u = quaternion.sin(a)**2 + quaternion.cos(a)**2
@@ -128,14 +184,9 @@ def test_pythagoras():
         assert v - 1.0 < 1.0e-3
 
 
-def test_tan():
-    for q in qlist:
-        check(math.tan, cmath.tan, quaternion.tan, q)
-
-
 def test_polar_rect():
     for a in qlist:
-        t = quaternion.polar (a)
+        t = quaternion.polar(a)
         c = quaternion.rect(*t)
         assert abs(a - c) < 1.0e-9
 
@@ -150,6 +201,15 @@ if __name__ == "__main__":
     test_sin()
     test_cos()
     test_tan()
+    test_asin()
+    test_acos()
+    test_atan()
+    test_sinh()
+    test_cosh()
+    test_tanh()
+    test_asinh()
+    test_acosh()
+    test_atanh()
     test_pythagoras()
     test_polar_rect()
 
