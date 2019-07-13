@@ -690,7 +690,7 @@ PyDoc_STRVAR(quaternion_inverse_doc,
              "quaternion.inverse() -> quaternion\n"
              "\n"
              "Return the quaternion inverse of its argument,\n"
-             "such that: q * q.inverse() == 1+0i+0j+0k.");
+             "such that: q * q.inverse() == q.inverse() * q == 1+0i+0j+0k.");
 
 /* -----------------------------------------------------------------------------
  */
