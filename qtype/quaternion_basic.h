@@ -92,7 +92,9 @@ Py_quaternion _Py_quat_prod (const Py_quaternion a, const Py_quaternion b);
 /* note: division is p * inverse(q) */
 Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b);
 
-Py_quaternion _Py_quat_pow  (const Py_quaternion a, const double x);
+/* calc a ** b */
+Py_quaternion _Py_quat_pow1  (const Py_quaternion a, const double b);
+Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b);
 
 /* Other functions
  */

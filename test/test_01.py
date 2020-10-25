@@ -3,7 +3,7 @@
 
 import math
 import quaternion
-from quaternion import Quaternion, one, i, j, k
+from quaternion import Quaternion, zero, one, i, j, k
 
 
 zero = Quaternion(0)
@@ -329,6 +329,16 @@ def test_pow():
     s = abs(b**2.3456)
     assert abs(t - s) <= 1.0e-12
    
+
+def test_pow2():
+    assert a.w ** zero == one
+    assert a.w ** one  == a.w
+
+    t1 = a.w ** b
+    t2 = quaternion.exp (math.log(a.w) * b)
+    p = t1 - t2
+    assert abs(p) <= 1.0e-12
+
 
 def test_hash():
     n = 234

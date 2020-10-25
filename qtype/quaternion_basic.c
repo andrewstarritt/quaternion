@@ -376,12 +376,12 @@ Py_quaternion _Py_quat_normalise (const Py_quaternion a)
 /* -----------------------------------------------------------------------------
  * Returns: a ** b
  */
-Py_quaternion _Py_quat_pow (const Py_quaternion a, const double x)
+Py_quaternion _Py_quat_pow1 (const Py_quaternion a, const double b)
 {
    Py_quaternion r;
 
    /* special cases */
-   if (x == 0.0) {
+   if (b == 0.0) {
       /* a ** 0 == 1 (even when a == 0) */
       r.w = 1.0;
       r.x = 0.0;
@@ -393,10 +393,10 @@ Py_quaternion _Py_quat_pow (const Py_quaternion a, const double x)
       r.w = r.x = r.y = r.z = 0.0;
 
       /* unless negative power */
-      if (x < 0.0)
+      if (b < 0.0)
          errno = EDOM;
 
-   } else if (x == 1) {
+   } else if (b == 1) {
       /* a ** 1 == a */
       r = a;
 
@@ -408,10 +408,58 @@ Py_quaternion _Py_quat_pow (const Py_quaternion a, const double x)
       double angle;
 
       _Py_quat_into_polar (a, &length, &unit, &angle);
-      r = _Py_quat_from_polar (pow (length, x), unit, angle*x);
+      r = _Py_quat_from_polar (pow (length, b), unit, angle*b);
    }
    return r;
 }
+
+
+/* -----------------------------------------------------------------------------
+ * Returns: a ** b
+ */
+Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b)
+{
+   Py_quaternion r;
+
+   /* special cases */
+   if (b.w == 0.0 && b.x == 0.0 && b.y == 0.0 && b.z == 0.0) {
+      /* a ** 0 == 1 (even when a == 0) */
+      r.w = 1.0;
+      r.x = 0.0;
+      r.y = 0.0;
+      r.z = 0.0;
+
+   } else if (a == 0.0) {
+      /* 0 ** a == 0 */
+      r.w = r.x = r.y = r.z = 0.0;
+
+      /* unless negative/imaginary power */
+      if (b.x < 0.0 || b.x != 0.0 || b.y != 0.0 || b.z != 0.0)
+         errno = EDOM;
+
+   } else if (b.w == 1.0 && b.x == 0.0 && b.y == 0.0 && b.z == 0.0) {
+      /* a ** 1 == a */
+      r.w = a;
+      r.x = 0.0;
+      r.y = 0.0;
+      r.z = 0.0;
+
+   } else {
+
+      // We calc exp (log(a)*q))
+      double la = log (a);
+      Py_quaternion t;  // = log(a)*q
+      t.w = la * b.w;
+      t.x = la * b.x;
+      t.y = la * b.y;
+      t.z = la * b.z;
+
+      r = _Py_quat_exp (t);
+   }
+
+   return r;
+}
+
 
 /* -----------------------------------------------------------------------------
  * Returns: abs (a) or |a|

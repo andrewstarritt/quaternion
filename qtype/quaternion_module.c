@@ -25,7 +25,7 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.1.4"
+#define __version__ "1.1.6"
 
 
 /* Development environment:
@@ -40,6 +40,7 @@
 #include "quaternion_object.h"
 #include "quaternion_math.h"
 
+static Py_quaternion q0 = {0.0, 0.0, 0.0, 0.0};
 static Py_quaternion q1 = {1.0, 0.0, 0.0, 0.0};
 static Py_quaternion qi = {0.0, 1.0, 0.0, 0.0};
 static Py_quaternion qj = {0.0, 0.0, 1.0, 0.0};
@@ -159,11 +160,18 @@ PyInit_quaternion(void)
 
    Py_INCREF(quaternionType);
    PyModule_AddObject(module, "Quaternion", (PyObject *)quaternionType);
+   PyModule_AddObject(module, "zero", PyQuaternion_FromCQuaternion(q0));
    PyModule_AddObject(module, "one", PyQuaternion_FromCQuaternion(q1));
    PyModule_AddObject(module, "i", PyQuaternion_FromCQuaternion(qi));
    PyModule_AddObject(module, "j", PyQuaternion_FromCQuaternion(qj));
    PyModule_AddObject(module, "k", PyQuaternion_FromCQuaternion(qk));
    PyModule_AddObject(module, "__version__", PyUnicode_FromString (__version__));
+
+   /* Replicate math/cmath constants
+    */
+   PyModule_AddObject(module, "e",   PyFloat_FromDouble (2.718281828459045));
+   PyModule_AddObject(module, "pi",  PyFloat_FromDouble (3.141592653589793));
+   PyModule_AddObject(module, "tau", PyFloat_FromDouble (6.283185307179586));
 
    return module;
 }

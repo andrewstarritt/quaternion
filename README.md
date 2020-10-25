@@ -20,8 +20,9 @@ The Quaternion type has four member attributes to access these coefficients.
 These instance attributes are w, x, y and z respectively.
 
 A Quaternion may also be considered to be a real scalar part plus a vector (with
-real components). The real part accessible via the real attribute. Thus both
-q.w and q.real return the real or scalar part of q.
+3 real components).
+The real part accessible via the real attribute.
+Both q.w and q.real return the real or scalar part of q.
 
 The vector part is accessible via both the vector and imag attributes which provide
 a tuple of floats. The following Python expressions are equivalent:
@@ -44,7 +45,8 @@ binary: +, -, *, /
 power: **
 
 There is no mod (%) or integer division (//) operation available.
-Therefore the pow() function can only take two arguments, and the exponent argument must be real or int.
+Therefore the pow() function can only take two arguments, and the exponent
+argument must be real or int.
 
 The Quaternion type is associative under both addition and multiplication, i.e.:
 
@@ -77,9 +79,9 @@ as a Quaternions, q, such that q.w = z.real, q.y = z.imag, and q.x and q.z are
 zero.
 
 The choice of aligning the imaginary part of a complex number to the j imaginary
-component as opposed to i or k is mathematically arbitrary. However for Python, j
-is the natural choice, and then the following, bar any rounding errors, will
-hold true:
+component as opposed to i or k is mathematically arbitrary.
+However for Python, j is the natural choice, and then the following, bar any
+rounding errors, will hold true:
 
     Quaternion(z) = Quaternion(str(z))
 
@@ -117,7 +119,7 @@ d) from a single number parameter: int, float, complex or another Quaternion.
    When the number is complex, the imaginary part of the complex number is
    assigned to the j imaginary part; or
 
-e) from the string representation of a quaternion (modeled on the complex type).
+e) from the string representation of a Quaternion (modeled on the complex type).
    The following are valid:
 
     Quaternion("1.2")
@@ -152,7 +154,7 @@ The following are invalid:
 
 ### conjugate
 
-q.conjugate() returns the Quaternion conjugate of its argument.
+q.conjugate() returns the Quaternion conjugate of q.
 
 ### inverse
 
@@ -213,16 +215,19 @@ Note: there is no separate qmath module.
 * i   = Quaternion (0.0, 1.0, 0.0, 0.0)
 * j   = Quaternion (0.0, 0.0, 1.0, 0.0)
 * k   = Quaternion (0.0, 0.0, 0.0, 1.0)
+* e   = Quaternion (e, 0.0, 0.0, 0.0)
+* pi  = Quaternion (pi, 0.0, 0.0, 0.0)
+* tau = Quaternion (tau, 0.0, 0.0, 0.0)
 * \_\_version\_\_ = the version number as str.
 
 
 ## hash function
 
-The hash of a quaternion folows the ideas used in the complex hash function such
+The hash of a quaternion follows the ideas used in the complex hash function such
 that if q = Quaternion (q.complex) then hash(q) = hash (q.complex), and
 if q = Quaternion (q.real) then hash(q) = hash (q.real)
 
-## backround
+## background
 
 This was initially more of an experiment to create a Python extension written in C
 that was a bit more challenging than just a "hello world" extension.
@@ -244,5 +249,5 @@ together with cribbing many code-snippets and ideas from the complex type,
 and last be _not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: Sun May 26 19:22:32 AEDT 2019</font>
+<font size="-1">Last updated: Sun Oct 11 21:05:12 AEDT 2020</font>
 <br>

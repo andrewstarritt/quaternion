@@ -690,7 +690,7 @@ PyDoc_STRVAR(quaternion_inverse_doc,
              "quaternion.inverse() -> quaternion\n"
              "\n"
              "Return the quaternion inverse of its argument,\n"
-             "such that: q * q.inverse() == 1+0i+0j+0k.");
+             "such that: q * q.inverse() == q.inverse() * q == 1+0i+0j+0k.");
 
 /* -----------------------------------------------------------------------------
  */
@@ -1098,42 +1098,77 @@ quaternion_divmod(PyObject *v, PyObject *w)
  * Unlike its complex counter part, a Quaternion cannot be raised to the
  * power of a Quaternion (except in special circumstances, e.g. no imarginary
  * parts). The usual exp (log(v)*w) does not work with Quaternions as this
- * yields a different result from exp (w*log(v))
+ * yields a different result from exp (w*log(v)).
+ * Special cases that are allowed are v or w are real (or int), i.e we can raise
+ * a quaternion number to a real power or raise a real number to a quaternion
+ * power. In both cases w*log(v) == log(v)*w, and therefore no ambiguity.
  */
 static PyObject *
 quaternion_pow(PyObject *v, PyObject *w, PyObject *z)
-{
-   Py_quaternion p;
-   Py_quaternion a;
+{   
+   Py_quaternion result;
+   Py_quaternion a;   /* v or w as appropriate */
+   double real;
+   bool real_is_okay;
 
-   double exponent;
-   bool x_is_okay;
-
-   /* Cannot modulo a Quaternion, 3rd parameter not allowed
+   /* Cannot modulo a Quaternion, 3rd parameter not allowed.
     */
    if (z != Py_None) {
       Py_INCREF(Py_NotImplemented);
       return Py_NotImplemented;
    }
 
-   /* In general case can only raise a Quaternion to a real power
+   /* In general case can only raise a Quaternion to a real power,
+    * or  raise a real number to a Quaternion power
     */
-   if (!PyFloat_Check (w) && !PyLong_Check (w)) {
+   if (PyQuaternion_Check(v)) {
+
+      /* v is a quaternion, check w is real (or int)
+       */
+      if (!PyFloat_Check (w) && !PyLong_Check (w)) {
+         Py_INCREF(Py_NotImplemented);
+         return Py_NotImplemented;
+      }
+
+      TO_C_QUATERNION(v, a);
+      real = _PyNumber_AsDouble (w, &real_is_okay);
+      if (!real_is_okay) {
+         PyErr_SetString(PyExc_TypeError, "Quaternion pow() argument 2 didn't return a float");
+         return NULL;
+      }
+
+      PyFPE_START_PROTECT("quaternion_pow", return 0);
+      errno = 0;
+      result = _Py_quat_pow1(a, real);
+      PyFPE_END_PROTECT(result);
+
+   } else if (PyQuaternion_Check(w)) {
+
+      /* w is a quaternion, check v is real (or int)
+       */
+      if (!PyFloat_Check (v) && !PyLong_Check (v)) {
+         Py_INCREF(Py_NotImplemented);
+         return Py_NotImplemented;
+      }
+
+      TO_C_QUATERNION(w, a);
+      real = _PyNumber_AsDouble (v, &real_is_okay);
+      if (!real_is_okay) {
+         PyErr_SetString(PyExc_TypeError, "Quaternion pow() argument 1 didn't return a float");
+         return NULL;
+      }
+
+      PyFPE_START_PROTECT("quaternion_pow", return 0);
+      errno = 0;
+      result = _Py_quat_pow2(real, a);
+      PyFPE_END_PROTECT(result);
+
+   } else {
+      /* Neither v nor w is a quaternion - will this ever happen??
+       */
       Py_INCREF(Py_NotImplemented);
       return Py_NotImplemented;
    }
-
-   TO_C_QUATERNION(v, a);
-   exponent = _PyNumber_AsDouble (w, &x_is_okay);
-   if (!x_is_okay) {
-      PyErr_SetString(PyExc_TypeError, "Quaternion pow()argument 2 didn't return a float");
-      return NULL;
-   }
-
-   PyFPE_START_PROTECT("quaternion_pow", return 0);
-   errno = 0;
-   p = _Py_quat_pow(a, exponent);
-   PyFPE_END_PROTECT(p);
 
    if (errno == EDOM) {
       PyErr_SetString(PyExc_ZeroDivisionError,
@@ -1141,25 +1176,25 @@ quaternion_pow(PyObject *v, PyObject *w, PyObject *z)
       return NULL;
    }
 
-   x_is_okay = true;
+   real_is_okay = true;
 
-   Py_ADJUST_ERANGE2(p.w, p.x);
+   Py_ADJUST_ERANGE2(result.w, result.x);
    if (errno == ERANGE) {
-      x_is_okay = false;
+      real_is_okay = false;
    }
 
-   Py_ADJUST_ERANGE2(p.y, p.z);
+   Py_ADJUST_ERANGE2(result.y, result.z);
    if (errno == ERANGE) {
-      x_is_okay = false;
+      real_is_okay = false;
    }
 
-   if (!x_is_okay) {
+   if (!real_is_okay) {
       PyErr_SetString(PyExc_OverflowError,
                       "Quaternion numerical result out of range");
       return NULL;
    }
 
-   return PyQuaternion_FromCQuaternion(p);
+   return PyQuaternion_FromCQuaternion(result);
 }
 
 /* -----------------------------------------------------------------------------
@@ -1201,6 +1236,23 @@ quaternion_abs (PyQuaternionObject *v)
                       "Quaternion absolute value too large");
       return NULL;
    }
+   return PyFloat_FromDouble (result);
+}
+
+/* -----------------------------------------------------------------------------
+ */
+static PyObject *
+quaternion_mat_mul (PyObject *v, PyObject *w)
+{
+   double result;
+
+   Py_quaternion a, b;
+   TO_C_QUATERNION(v, a);
+   TO_C_QUATERNION(w, b);
+   PyFPE_START_PROTECT("quaternion_mat_mul", return 0)
+   result = _Py_quat_dot_prod (a, b);
+   PyFPE_END_PROTECT(result)
+
    return PyFloat_FromDouble (result);
 }
 
@@ -1379,7 +1431,7 @@ static PyNumberMethods QuaternionAsNumber = {
    0,                                          /* nb_inplace_floor_divide */
    0,                                          /* nb_inplace_true_divide */
    0,                                          /* nb_index */
-   0,                                          /* nb_matrix_multiply */
+   (binaryfunc)quaternion_mat_mul,             /* nb_matrix_multiply */
    0,                                          /* nb_inplace_matrix_multiply */
 };
 
@@ -1469,7 +1521,8 @@ static PyTypeObject QuaternionType = {
 
 /* Allow module defn code to access the Quaternion PyTypeObject.
  */
-PyTypeObject* PyQuaternionType () {
+PyTypeObject* PyQuaternionType ()
+{
    return &QuaternionType;
 }
 

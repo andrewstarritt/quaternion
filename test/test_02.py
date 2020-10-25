@@ -75,7 +75,25 @@ def test_isclose():
 
 def test_exp():
     for q in qlist:
-        check(math.exp, cmath.exp, quaternion.exp, q)
+        # Do special for the zeroth term
+        #
+        t = quaternion.one
+        terms = [t]
+        for j in range(1, 1000):
+            t = t * q / j
+            terms.append(t)
+            if abs(t) < 1.0E-200:
+                break
+
+        # Add in reverse - smallest terms first
+        #
+        s = Quaternion(0.0)
+        m = len(terms) - 1
+        for j in range(m, -1, -1):
+            s += terms[j]
+
+        r = quaternion.exp(q)
+        assert quaternion.isclose(r, s)
 
 
 def test_log():
@@ -108,22 +126,73 @@ def test_sqrt():
     assert abs(a - c) < 1.0e-9
 
     for q in qlist:
-        check(math.sqrt, cmath.sqrt, quaternion.sqrt, q)
+        a = q * q
+        b = quaternion.sqrt(a)
+        assert quaternion.isclose(q, b)
+
+        a = quaternion.sqrt(q)
+        b = a * a
+        assert quaternion.isclose(q, b)
 
 
 def test_sin():
     for q in qlist:
         check(math.sin, cmath.sin, quaternion.sin, q)
 
+        # Do special for the zeroth term
+        #
+        t = q
+        terms = [t]
+        for j in range(3, 1000, 2):
+            t = - t * q * q / (float(j) * (j - 1))
+            terms.append(t)
+            if abs(t) < 1.0E-200:
+                break
+
+        # Add in reverse - smallest terms first
+        #
+        s = Quaternion(0.0)
+        m = len(terms) - 1
+        for j in range(m, -1, -1):
+            s += terms[j]
+
+        r = quaternion.sin(q)
+        assert quaternion.isclose(r, s)
+
 
 def test_cos():
     for q in qlist:
         check(math.cos, cmath.cos, quaternion.cos, q)
 
+        # Do special for the zeroth term
+        #
+        t = quaternion.one
+        terms = [t]
+        for j in range(2, 1000, 2):
+            t = - t * q * q / (float(j) * (j - 1))
+            terms.append(t)
+            if abs(t) < 1.0E-200:
+                break
+
+        # Add in reverse - smallest terms first
+        #
+        s = Quaternion(0.0)
+        m = len(terms) - 1
+        for j in range(m, -1, -1):
+            s += terms[j]
+
+        r = quaternion.cos(q)
+        assert quaternion.isclose(r, s)
+
 
 def test_tan():
     for q in qlist:
-        check(math.tan, cmath.tan, quaternion.tan, q)
+        s = quaternion.sin(q)
+        c = quaternion.cos(q)
+        t = s / c
+
+        r = quaternion.tan(q)
+        assert quaternion.isclose(r, t)
 
 
 def test_asin():
@@ -177,18 +246,34 @@ def test_atanh():
         check(math.atanh, cmath.atanh, quaternion.atanh, q)
 
 
+def test_dot():
+    b = Quaternion(+17.16, -1.32, -1.48, -2.80)
+    for a in qlist:
+        u = quaternion.dot(a, a)
+        v = a.quadrance()
+        assert abs(u - v) < 1.0e-15
+
+        u = a.w * b.w + a.x * b.x + a.y * b.y + a.z * b.z
+        v = quaternion.dot(a, b)
+        assert abs(u - v) < 1.0e-15
+
+        u = quaternion.dot(b, a)
+        v = quaternion.dot(a, b)
+        assert abs(u - v) < 1.0e-15
+
+
 def test_pythagoras():
     for a in qlist:
         u = quaternion.sin(a)**2 + quaternion.cos(a)**2
         v = abs(u)
-        assert v - 1.0 < 1.0e-3
+        assert v - 1.0 < 1.0e-10
 
 
 def test_polar_rect():
     for a in qlist:
         t = quaternion.polar(a)
         c = quaternion.rect(*t)
-        assert abs(a - c) < 1.0e-9
+        assert abs(a - c) < 1.0e-10
 
 
 if __name__ == "__main__":
@@ -210,6 +295,7 @@ if __name__ == "__main__":
     test_asinh()
     test_acosh()
     test_atanh()
+    test_dot()
     test_pythagoras()
     test_polar_rect()
 
