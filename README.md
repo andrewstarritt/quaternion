@@ -1,8 +1,21 @@
-# quaternion
+# <span style='color:#00c000'>quaternion</span>
 
 A Python extension to provide a Quaternion type and some associated math functions.
 
-## general
+[general](#general)<br>
+[mathematical operations](#mathops)<br>
+[mixed mode arithmetic](#mixedmode)<br>
+[construction](#construction)<br>
+[attributes](#attributes)<br>
+[instance functions](#instfuncs)<br>
+[math functions](#mathfuncs)<br>
+[module variables](#variables)<br>
+[hash function](#hash)<br>
+[background](#background)<br>
+[references](#references)<br>
+[credits](#credits)<br>
+
+## <a name = "general"/><span style='color:#00c000'>general</span>
 
 Within _this_ module, a Quaternion q is defined to be:
 
@@ -34,7 +47,7 @@ a tuple of floats. The following Python expressions are equivalent:
 q.real and q.imag provide a "complex" like view of a Quaternion at the expense
 of providing an un-Pythonic duplication of q.w and q.vector respectively.
 
-## mathematical operations
+## <a name = "mathops"/><span style='color:#00c000'>mathematical operations</span>
 
 The expected mathematical operations are provided.
 
@@ -45,8 +58,7 @@ binary: +, -, *, /
 power: **
 
 There is no mod (%) or integer division (//) operation available.
-Therefore the pow() function can only take two arguments, and the exponent
-argument must be real or int.
+Therefore the pow() function can only take two arguments - see below.
 
 The Quaternion type is associative under both addition and multiplication, i.e.:
 
@@ -69,10 +81,17 @@ This non-commutative nature also explains why p ** q is undefined, as this could
     exp (q * log (p))  ; or
     exp (log (p) * q)
 
-## mixed mode arithmetic
+However, it is possible to raise a quaternion to a real or integer power and it
+also possible to raise a positive real or integer number to a quaternion power.
+
+## <a name = "mixedmode"/><span style='color:#00c000'>mixed mode arithmetic</span>
 
 Quaternions numbers and scalar numbers, i.e. int or float, are inter-operable.
 int and float numbers are treated as Quaternions with zero imaginary components.
+Note: float numbers (a) and quaternions numbers (q) do commute under
+multiplication:
+
+    q * a = a * q
 
 Mixed mode with complex numbers is also allowed. A complex number, z, is treated
 as a Quaternions, q, such that q.w = z.real, q.y = z.imag, and q.x and q.z are
@@ -93,7 +112,7 @@ such that:
 There is _no_ complementary attribute to obtain q.x and q.z as a single item.
 
 
-## construction
+## <a name = "construction"/><span style='color:#00c000'>construction</span>
 
 A Quaternion number may be constructed using one of the following forms:
 
@@ -138,7 +157,7 @@ The following are invalid:
     Quaternion("(1.2+3.4i+2.6j-2k")      -- unmatched parenthesis
 
 
-## attributes
+## <a name = "attributes"/><span style='color:#00c000'>attributes</span>
 
 * w       - float - real/scalar part
 * x       - float - i imaginary part
@@ -150,31 +169,31 @@ The following are invalid:
 * imag    - tuple - the imaginary part, the same as vector.
 
 
-## Quaternion instance functions
+## <a name = "instfuncs"/><span style='color:#00c000'>instance functions</span>
 
-### conjugate
+### <span style='color:#00c000'>conjugate</span>
 
 q.conjugate() returns the Quaternion conjugate of q.
 
-### inverse
+### <span style='color:#00c000'>inverse</span>
 
 q.inverse ()  returns s such that: s \* q = q \* s = 1
 
-### normalise
+### <span style='color:#00c000'>normalise</span>
 
 q.normalise () returns s such that: s = q / abs (q)
 
-### quadrance
+### <span style='color:#00c000'>quadrance</span>
 
 q.quadrance () returns s such that s = q.w\*q.w + q.x\*q.x + q.y\*q.y + q.z\*q.z
 
-### rotate
+### <span style='color:#00c000'>rotate</span>
 
 q.rotate (point, origin=None) -> point, where q is a rotation number,
 i.e. q = Quaternion (angle=a,axis=(x,y,z)).
 The returned value is rotated by an angle a radians about the axis (x,y,z).
 
-## math functions
+## <a name = "mathfuncs"/><span style='color:#00c000'>math functions</span>
 
 A number of math functions that operate on Quaternions are also provided.
 These functions provide the equivalent quaternion function as the functions of
@@ -209,7 +228,7 @@ The functions provided are:
 
 Note: there is no separate qmath module.
 
-## module variables
+## <a name = "variables"/><span style='color:#00c000'>module variables</span>
 
 * one = Quaternion (1.0, 0.0, 0.0, 0.0)
 * i   = Quaternion (0.0, 1.0, 0.0, 0.0)
@@ -221,13 +240,13 @@ Note: there is no separate qmath module.
 * \_\_version\_\_ = the version number as str.
 
 
-## hash function
+## <a name = "hash"/><span style='color:#00c000'>hash function</span>
 
 The hash of a quaternion follows the ideas used in the complex hash function such
 that if q = Quaternion (q.complex) then hash(q) = hash (q.complex), and
 if q = Quaternion (q.real) then hash(q) = hash (q.real)
 
-## background
+## <a name = "background"/><span style='color:#00c000'>background</span>
 
 This was initially more of an experiment to create a Python extension written in C
 that was a bit more challenging than just a "hello world" extension.
@@ -236,18 +255,18 @@ Although there are already a number of Quaternion Python implementations out the
 this has the advantage of speed over the pure Python implementations and the advantage
 of no dependencies on any other modules such as numpy.
 
-## references
+## <a name = "references"/><span style='color:#00c000'>references</span>
 
 * http://onlinelibrary.wiley.com/doi/10.1002/9780470682906.app4/pdf
 * https://www.geometrictools.com/Documentation/Quaternions.pdf
 * https://en.wikipedia.org/wiki/Quaternion
 
-## credits
+## <a name = "credits"/><span style='color:#00c000'>credits</span>
 
 Guidance from https://docs.python.org/3.5/extending/newtypes.html
 together with cribbing many code-snippets and ideas from the complex type,
 and last be _not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: Sun Oct 11 21:05:12 AEDT 2020</font>
+<font size="-1">Last updated: Fri Oct 30 12:50:12 AEDT 2020</font>
 <br>

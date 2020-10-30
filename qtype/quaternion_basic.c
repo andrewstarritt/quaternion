@@ -26,9 +26,9 @@
  *    indent -kr -pcs -i3 -cli3 -nbbo -nut -l96
  */
 
+#include "quaternion_basic.h"
 #include <Python.h>
 #include <pymath.h>
-#include "quaternion_basic.h"
 #include <math.h>
 #include <complex.h>
 
@@ -389,7 +389,7 @@ Py_quaternion _Py_quat_pow1 (const Py_quaternion a, const double b)
       r.z = 0.0;
 
    } else if (a.w == 0.0 && a.x == 0.0 && a.y == 0.0 && a.z == 0.0) {
-      /* 0 ** a == 0 */
+      /* 0 ** b == 0 */
       r.w = r.x = r.y = r.z = 0.0;
 
       /* unless negative power */
@@ -417,25 +417,34 @@ Py_quaternion _Py_quat_pow1 (const Py_quaternion a, const double b)
 /* -----------------------------------------------------------------------------
  * Returns: a ** b
  */
-Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b)
+Py_quaternion _Py_quat_pow2 (const double a, const Py_quaternion b,
+                             Py_quat_status* status)
 {
    Py_quaternion r;
+   *status = pyQuatNoError;
 
    /* special cases */
-   if (b.w == 0.0 && b.x == 0.0 && b.y == 0.0 && b.z == 0.0) {
+   if (a == 0.0) {
+      /* 0 ** b == 0
+       * Unless -ve or has imaginary part a la complex.
+       */
+      r.w = r.x = r.y = r.z = 0.0;
+      if (b.w < 0.0 || b.x != 0.0 || b.y != 0.0 || b.z != 0.0) {
+         /* 0.0 to a negative or quaternion power. */
+         *status = pyQuatZeroDivisionError;
+      }
+
+   } else if (a < 0.0) {
+      r.w = r.x = r.y = r.z = 0.0;
+      /* TODO: unless b is effectively real whole number. */
+      *status = pyQuatValueError;
+
+   } else if (b.w == 0.0 && b.x == 0.0 && b.y == 0.0 && b.z == 0.0) {
       /* a ** 0 == 1 (even when a == 0) */
       r.w = 1.0;
       r.x = 0.0;
       r.y = 0.0;
       r.z = 0.0;
-
-   } else if (a == 0.0) {
-      /* 0 ** a == 0 */
-      r.w = r.x = r.y = r.z = 0.0;
-
-      /* unless negative/imaginary power */
-      if (b.x < 0.0 || b.x != 0.0 || b.y != 0.0 || b.z != 0.0)
-         errno = EDOM;
 
    } else if (b.w == 1.0 && b.x == 0.0 && b.y == 0.0 && b.z == 0.0) {
       /* a ** 1 == a */
@@ -445,16 +454,21 @@ Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b)
       r.z = 0.0;
 
    } else {
+      // We calc exp(log(a)*b) == exp(b*log(a))
+      //
+      double lna;
+      Py_quaternion tmp;
 
-      // We calc exp (log(a)*q))
-      double la = log (a);
-      Py_quaternion t;  // = log(a)*q
-      t.w = la * b.w;
-      t.x = la * b.x;
-      t.y = la * b.y;
-      t.z = la * b.z;
+      lna = log (a);  /* We know a > 0.0 */
 
-      r = _Py_quat_exp (t);
+      /* calc tmp = log(a)*b
+       */
+      tmp.w = lna*b.w;
+      tmp.x = lna*b.x;
+      tmp.y = lna*b.y;
+      tmp.z = lna*b.z;
+
+      r = _Py_quat_exp (tmp);
    }
 
    return r;
@@ -519,7 +533,7 @@ double _Py_quat_abs (const Py_quaternion a)
 }
 
 /* -----------------------------------------------------------------------------
- * Returns: the quadrance of a, i.e. abs(a)**2
+ * Returns: the quadrance of a, i.e. abs(a)**2, or a.a
  */
 double _Py_quat_quadrance (const Py_quaternion a)
 {

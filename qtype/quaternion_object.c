@@ -1142,6 +1142,12 @@ quaternion_pow(PyObject *v, PyObject *w, PyObject *z)
       result = _Py_quat_pow1(a, real);
       PyFPE_END_PROTECT(result);
 
+      if (errno == EDOM) {
+         PyErr_SetString(PyExc_ZeroDivisionError,
+                         "(0+0i+0j+0k) cannot be raised to a negative power");
+         return NULL;
+      }
+
    } else if (PyQuaternion_Check(w)) {
 
       /* w is a quaternion, check v is real (or int)
@@ -1160,20 +1166,27 @@ quaternion_pow(PyObject *v, PyObject *w, PyObject *z)
 
       PyFPE_START_PROTECT("quaternion_pow", return 0);
       errno = 0;
-      result = _Py_quat_pow2(real, a);
+      Py_quat_status status = pyQuatNoError;
+      result = _Py_quat_pow2(real, a, &status);
       PyFPE_END_PROTECT(result);
+
+      if (status == pyQuatZeroDivisionError) {
+         PyErr_SetString(PyExc_ZeroDivisionError,
+                         "0.0 to a negative or quaternion power");
+         return NULL;
+      }
+
+      if (status == pyQuatValueError) {
+         PyErr_SetString(PyExc_ValueError,
+                         "negative float cannot be raised to a quaternion power");
+         return NULL;
+      }
 
    } else {
       /* Neither v nor w is a quaternion - will this ever happen??
        */
       Py_INCREF(Py_NotImplemented);
       return Py_NotImplemented;
-   }
-
-   if (errno == EDOM) {
-      PyErr_SetString(PyExc_ZeroDivisionError,
-                      "(0+0i+0j+0k) cannot be raised to a negative power");
-      return NULL;
    }
 
    real_is_okay = true;

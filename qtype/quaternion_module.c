@@ -25,7 +25,7 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.1.6"
+#define __version__ "1.1.5"
 
 
 /* Development environment:
@@ -35,6 +35,7 @@
  */
 
 #include <Python.h>
+#include <pymath.h>
 
 #include "quaternion_basic.h"
 #include "quaternion_object.h"
@@ -169,9 +170,9 @@ PyInit_quaternion(void)
 
    /* Replicate math/cmath constants
     */
-   PyModule_AddObject(module, "e",   PyFloat_FromDouble (2.718281828459045));
-   PyModule_AddObject(module, "pi",  PyFloat_FromDouble (3.141592653589793));
-   PyModule_AddObject(module, "tau", PyFloat_FromDouble (6.283185307179586));
+   PyModule_AddObject(module, "e",   PyFloat_FromDouble (Py_MATH_El));  // 2.718281828459045));
+   PyModule_AddObject(module, "pi",  PyFloat_FromDouble (Py_MATH_PIl)); // 3.141592653589793));
+   PyModule_AddObject(module, "tau", PyFloat_FromDouble (Py_MATH_TAU)); // 6.283185307179586));
 
    return module;
 }
