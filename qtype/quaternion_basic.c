@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It provides basic
  * quaternion maths operation with minimalist reference to Python.
  *
- * Copyright (c) 2018-2019  Andrew C. Starritt
+ * Copyright (c) 2018-2021  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -370,6 +370,33 @@ Py_quaternion _Py_quat_normalise (const Py_quaternion a)
       r.y = a.y / m;
       r.z = a.z / m;
    }
+   return r;
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: round of each component.
+ */
+Py_quaternion _Py_quat_round (const Py_quaternion a, const int n)
+{
+   Py_quaternion r;
+   double t;
+   int j;
+
+   t = 1.0;
+   if (n > 0) {
+      for (j = 0; j < n; j++)
+         t *= 10.0;
+   } else if (n < 0) {
+      for (j = 0; j > n; j--)
+         t *= 10.0;
+      t = 1.0/t;
+   }
+
+   r.w = round (a.w * t) / t;
+   r.x = round (a.x * t) / t;
+   r.y = round (a.y * t) / t;
+   r.z = round (a.z * t) / t;
+
    return r;
 }
 

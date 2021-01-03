@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It privides basic
  * quaternion maths operation with minimalist reference to Python.
  *
- * Copyright (c) 2018-2019  Andrew C. Starritt
+ * Copyright (c) 2018-2021  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -90,6 +90,7 @@ Py_quaternion _Py_quat_neg (const Py_quaternion a);
 Py_quaternion _Py_quat_conjugate (const Py_quaternion a);
 Py_quaternion _Py_quat_inverse   (const Py_quaternion a);
 Py_quaternion _Py_quat_normalise (const Py_quaternion a);
+Py_quaternion _Py_quat_round     (const Py_quaternion a, const int n);
 
 Py_quaternion _Py_quat_sum  (const Py_quaternion a, const Py_quaternion b);
 Py_quaternion _Py_quat_diff (const Py_quaternion a, const Py_quaternion b);
