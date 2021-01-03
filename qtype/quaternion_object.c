@@ -2,7 +2,7 @@
  *
  * This file is part of the Python quaternion module.
  *
- * Copyright (c) 2018-2019  Andrew C. Starritt
+ * Copyright (c) 2018-2021  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -845,11 +845,65 @@ PyDoc_STRVAR(quaternion_format_doc,
 
 /* -----------------------------------------------------------------------------
  */
+static PyObject *
+quaternion__round__(PyObject *self, PyObject *args, PyObject *kwds)
+{
+   static char* kwlist[] = {"ndigits", NULL};
+
+   Py_quaternion c, r;
+   int s;
+   PyObject* ndigits = NULL;
+   int n;
+
+   /* Parse into one optional argument
+    */
+   s = PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &ndigits);
+   if (!s) {
+      return NULL;
+   }
+
+   if (ndigits) {
+      /* Caller supplied a parameter
+       */
+      if (PyLong_Check (ndigits)) {
+         /* and is long
+          */
+         n = PyLong_AsLong (ndigits);
+      } else {
+         PyErr_Format(PyExc_TypeError,
+                      "quaternion round: '%s' object cannot be interpreted as an integer",
+                      Py_TYPE(ndigits)->tp_name);
+
+         return NULL;
+      }
+   } else {
+      n = 0;  /* default */
+   }
+
+   c = ((PyQuaternionObject *)self)->qval;
+   PyFPE_START_PROTECT("quaternion__round__", return 0);
+   r = _Py_quat_round(c, n);
+   PyFPE_END_PROTECT(pr);
+   return PyQuaternion_FromCQuaternion(r);
+}
+
+PyDoc_STRVAR(quaternion_round_doc,
+             "quaternion.__round__(ndigits=0) -> quaternion\n"
+             "\n"
+             "Returns the quaternion with rounded members, perhaps most useful\n"
+             "when printing.\n"
+             "\n"
+             "ndigits - number of digits to round by, may be positive or negative.\n"
+             "round(q,n) == Quaterion (round(q.w,n), round (q.x,n), round (q.y,n), round(q.z.n))");
+
+
+/* -----------------------------------------------------------------------------
+ */
 PyDoc_STRVAR(quaternion_rotate_doc,
              "quaternion.rotate (point, origin=None) -> point\n"
              "\n"
              "Rotates the point using self. Self should be constructed using the angle/axis.\n"
-             "option. At very least self should be normalised.\n"
+             "option. At the very least self should be normalised.\n"
              "\n"
              "point    - is the point to be rotated, expects a tuple with 3 float elements\n"
              "origin   - the point about which the rotation occurs; when not specified or\n"
@@ -1388,6 +1442,8 @@ quaternion_getattro(PyObject *self, PyObject *attr)
  */
 static PyMethodDef QuaternionMethods [] = {
    {"__format__", (PyCFunction)quaternion__format__,  METH_VARARGS,  quaternion_format_doc},
+   {"__round__",  (PyCFunction)quaternion__round__,   METH_VARARGS |
+                                                      METH_KEYWORDS,  quaternion_round_doc},
    {"conjugate",  (PyCFunction)quaternion_conjugate,  METH_NOARGS,   quaternion_conjugate_doc},
    {"inverse",    (PyCFunction)quaternion_inverse,    METH_NOARGS,   quaternion_inverse_doc},
    {"quadrance",  (PyCFunction)quaternion_quadrance,  METH_NOARGS,   quaternion_quadrance_doc},
