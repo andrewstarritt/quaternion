@@ -715,6 +715,19 @@ PyDoc_STRVAR(quaternion_normalise_doc,
 /* -----------------------------------------------------------------------------
  */
 static PyObject *
+quaternion_getnewargs(PyComplexObject* self)
+{
+    Py_quaternion q;
+    q = ((PyQuaternionObject *)self)->qval;
+
+    return Py_BuildValue("(dddd)", q.w, q.x, q.y, q.z);
+}
+
+/* no doc string */
+
+/* -----------------------------------------------------------------------------
+ */
+static PyObject *
 quaternion__format__(PyObject *self, PyObject *args)
 {
    /* Wrapper around Py_DECREF that checks the ref exists.
@@ -1441,6 +1454,7 @@ quaternion_getattro(PyObject *self, PyObject *attr)
  * =============================================================================
  */
 static PyMethodDef QuaternionMethods [] = {
+   {"__getnewargs__", (PyCFunction)quaternion_getnewargs, METH_NOARGS, NULL},
    {"__format__", (PyCFunction)quaternion__format__,  METH_VARARGS,  quaternion_format_doc},
    {"__round__",  (PyCFunction)quaternion__round__,   METH_VARARGS |
                                                       METH_KEYWORDS,  quaternion_round_doc},
