@@ -8,6 +8,7 @@ A Python extension to provide a Quaternion type and some associated math functio
 [construction](#construction)<br>
 [attributes](#attributes)<br>
 [instance functions](#instfuncs)<br>
+[magic functions](#magicfuncs)<br>
 [math functions](#mathfuncs)<br>
 [module variables](#variables)<br>
 [hash function](#hash)<br>
@@ -53,9 +54,9 @@ The expected mathematical operations are provided.
 
 unary: +, -, abs
 
-binary: +, -, *, /
+binary: +, -, \*, /
 
-power: **
+power: \*\*
 
 There is no mod (%) or integer division (//) operation available.
 Therefore the pow() function can only take two arguments - see below.
@@ -81,14 +82,21 @@ This non-commutative nature also explains why p ** q is undefined, as this could
     exp (q * log (p))  ; or
     exp (log (p) * q)
 
-However, it is possible to raise a quaternion to a real or integer power and it
-also possible to raise a positive real or integer number to a quaternion power.
+However, mixed-mode ** is possible - see below.
+
+___Experimental/tentative___
+
+matrix mult: @
+
+p @ q is the same a dot (p, q) and returns the dot product of two Quaternians
+treated as a normal 4-tuple.
+Is this a sensible use of @ ??
 
 ## <a name = "mixedmode"/><span style='color:#00c000'>mixed mode arithmetic</span>
 
 Quaternions numbers and scalar numbers, i.e. int or float, are inter-operable.
 int and float numbers are treated as Quaternions with zero imaginary components.
-Note: float numbers (a) and quaternions numbers (q) do commute under
+Note: float numbers (a) and Quaternion numbers (q) do commute under
 multiplication:
 
     q * a = a * q
@@ -99,8 +107,8 @@ zero.
 
 The choice of aligning the imaginary part of a complex number to the j imaginary
 component as opposed to i or k is mathematically arbitrary.
-However for Python, j is the natural choice, and then the following, bar any
-rounding errors, will hold true:
+However for Python, j is the natural choice and then the following, bar any
+rounding errors, will hold true for any complex value z:
 
     Quaternion(z) = Quaternion(str(z))
 
@@ -110,6 +118,13 @@ such that:
     q.complex = complex(q.w, q.y).
 
 There is _no_ complementary attribute to obtain q.x and q.z as a single item.
+
+Mixed mode is also available for the ** operator.
+If a is a float or integer number, then with some restrictions the following
+are both provided:
+
+     q ** a
+     a ** q           -- a must be > 0.0
 
 
 ## <a name = "construction"/><span style='color:#00c000'>construction</span>
@@ -131,7 +146,7 @@ a) the real part and an optional imaginary parts. w, x, y and z must be float
 b) from a real number and a 3-tuple vector;
 
 c) from an angle (radians) and a 3-tuple axis of rotation (which is automatically
-   normalised), which generates a rotator Quaternion,  that can then be used in
+   normalised), which generates a rotator Quaternion, which can then be used in
    conjunction with the rotate method;
 
 d) from a single number parameter: int, float, complex or another Quaternion.
@@ -193,6 +208,41 @@ q.rotate (point, origin=None) -> point, where q is a rotation number,
 i.e. q = Quaternion (angle=a,axis=(x,y,z)).
 The returned value is rotated by an angle a radians about the axis (x,y,z).
 
+
+## <a name = "magicfuncs"/><span style='color:#00c000'>magic functions</span>
+
+### <span style='color:#00c000'>\_\_format\_\_</span>
+
+q.\_\_format\_\_ (fmtstr) -> str
+
+Format to a string according to format_spec. This allows, for example:
+
+    q = Quaternion(...)
+    s1 = "... {p:20.2f} ...".format(p=q)
+    s2 = f"... {q:20.2f} ..."
+
+### <span style='color:#00c000'>\_\_getnewargs\_\_</span>
+
+q.\_\_getnewargs\_\_ () returns a 4-tuple s, such that s = (q.w, q.x, q.y, q.z)
+
+This allows Quaternion numbers to be pickled.
+
+### <span style='color:#00c000'>\_\_round\_\_</span>
+
+q.\_\_round\_\_ (ndigits=0) returns a Quaternion with each component rounded,
+e.g. round (q.w, ndigits).
+While the method can be called directly, one would normally invoke
+
+    round(q)
+    round(q, n)
+
+This is the equivalent of round (float, [ndigits]), and ndigits may be either
+positive of negative. This is perhaps most useful as an alternative to
+using format when printing Quaternion, e.g.
+
+    print("result : %s" % round(q,2))
+
+
 ## <a name = "mathfuncs"/><span style='color:#00c000'>math functions</span>
 
 A number of math functions that operate on Quaternions are also provided.
@@ -205,6 +255,7 @@ The functions provided are:
     isinf
     isnan
     isclose
+    dot
     sqrt
     exp
     log
@@ -234,9 +285,9 @@ Note: there is no separate qmath module.
 * i   = Quaternion (0.0, 1.0, 0.0, 0.0)
 * j   = Quaternion (0.0, 0.0, 1.0, 0.0)
 * k   = Quaternion (0.0, 0.0, 0.0, 1.0)
-* e   = Quaternion (e, 0.0, 0.0, 0.0)
-* pi  = Quaternion (pi, 0.0, 0.0, 0.0)
-* tau = Quaternion (tau, 0.0, 0.0, 0.0)
+* e   = 2.718281828459045 - float
+* pi  = 3.141592653589793 - float
+* tau = 6.283185307179586 - float
 * \_\_version\_\_ = the version number as str.
 
 
@@ -248,12 +299,13 @@ if q = Quaternion (q.real) then hash(q) = hash (q.real)
 
 ## <a name = "background"/><span style='color:#00c000'>background</span>
 
-This was initially more of an experiment to create a Python extension written in C
-that was a bit more challenging than just a "hello world" extension.
+This was initially developed more of an experiment to create a Python
+extension written in C that was a bit more challenging than just a
+"hello world" extension.
 
-Although there are already a number of Quaternion Python implementations out there,
-this has the advantage of speed over the pure Python implementations and the advantage
-of no dependencies on any other modules such as numpy.
+Although there are already a number of Quaternion Python implementations out
+there, this has the advantage of speed over the pure Python implementations
+and the advantage of no dependencies on any other modules such as numpy.
 
 ## <a name = "references"/><span style='color:#00c000'>references</span>
 
@@ -265,8 +317,8 @@ of no dependencies on any other modules such as numpy.
 
 Guidance from https://docs.python.org/3.5/extending/newtypes.html
 together with cribbing many code-snippets and ideas from the complex type,
-and last be _not least_ Sir William R. Hamilton.
+and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: Fri Oct 30 12:50:12 AEDT 2020</font>
+<font size="-1">Last updated: Mon Jan  4 21:02:11 AEDT 2021</font>
 <br>
