@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It privides module
  * framework.
  *
- * Copyright (c) 2018-2019  Andrew C. Starritt
+ * Copyright (c) 2018-2021  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

@@ -1322,23 +1322,6 @@ quaternion_abs (PyQuaternionObject *v)
 /* -----------------------------------------------------------------------------
  */
 static PyObject *
-quaternion_mat_mul (PyObject *v, PyObject *w)
-{
-   double result;
-
-   Py_quaternion a, b;
-   TO_C_QUATERNION(v, a);
-   TO_C_QUATERNION(w, b);
-   PyFPE_START_PROTECT("quaternion_mat_mul", return 0)
-   result = _Py_quat_dot_prod (a, b);
-   PyFPE_END_PROTECT(result)
-
-   return PyFloat_FromDouble (result);
-}
-
-/* -----------------------------------------------------------------------------
- */
-static PyObject *
 quaternion_quadrance (PyQuaternionObject *self)
 {
    Py_quaternion c;
@@ -1514,7 +1497,7 @@ static PyNumberMethods QuaternionAsNumber = {
    0,                                          /* nb_inplace_floor_divide */
    0,                                          /* nb_inplace_true_divide */
    0,                                          /* nb_index */
-   (binaryfunc)quaternion_mat_mul,             /* nb_matrix_multiply */
+   0,                                          /* nb_matrix_multiply @ */
    0,                                          /* nb_inplace_matrix_multiply */
 };
 

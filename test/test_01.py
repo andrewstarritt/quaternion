@@ -325,9 +325,20 @@ def test_pow():
     p = (t * t * t * t - a) / abs(a)
     assert abs(p) <= 1.0e-12
 
-    t = abs(b)**2.3456
-    s = abs(b**2.3456)
+    r = 2.3456
+    t = abs(b)**r
+    s = abs(b**r)
     assert abs(t - s) <= 1.0e-12
+
+
+    p = a ** r
+    q = quaternion.exp (quaternion.log(a) * r)
+    assert quaternion.isclose(p, q)
+       
+    
+    p = r ** a
+    q = quaternion.exp (math.log(r) * a)
+    assert quaternion.isclose(p, q)
    
 
 def test_pow2():
