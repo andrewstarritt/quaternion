@@ -1,13 +1,13 @@
 # quaternion test virtual env setup
 #
 
- mkdir -p venv
+ mkdir -p /asp/apps/quaternion/venv
 
  # Ensure version 3.5 or later
  #
- python -m virtualenv  venv
+ python3 -m virtualenv  venv
 
- . venv/bin/activate
+ .  /asp/apps/quaternion/venv/bin/activate
 
  pip install  --editable .
 

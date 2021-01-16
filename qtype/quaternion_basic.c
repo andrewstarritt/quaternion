@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It provides basic
  * quaternion maths operation with minimalist reference to Python.
  *
- * Copyright (c) 2018-2019  Andrew C. Starritt
+ * Copyright (c) 2018-2021  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,9 +26,9 @@
  *    indent -kr -pcs -i3 -cli3 -nbbo -nut -l96
  */
 
+#include "quaternion_basic.h"
 #include <Python.h>
 #include <pymath.h>
-#include "quaternion_basic.h"
 #include <math.h>
 #include <complex.h>
 
@@ -374,14 +374,41 @@ Py_quaternion _Py_quat_normalise (const Py_quaternion a)
 }
 
 /* -----------------------------------------------------------------------------
+ * Returns: round of each component.
+ */
+Py_quaternion _Py_quat_round (const Py_quaternion a, const int n)
+{
+   Py_quaternion r;
+   double t;
+   int j;
+
+   t = 1.0;
+   if (n > 0) {
+      for (j = 0; j < n; j++)
+         t *= 10.0;
+   } else if (n < 0) {
+      for (j = 0; j > n; j--)
+         t *= 10.0;
+      t = 1.0/t;
+   }
+
+   r.w = round (a.w * t) / t;
+   r.x = round (a.x * t) / t;
+   r.y = round (a.y * t) / t;
+   r.z = round (a.z * t) / t;
+
+   return r;
+}
+
+/* -----------------------------------------------------------------------------
  * Returns: a ** b
  */
-Py_quaternion _Py_quat_pow (const Py_quaternion a, const double x)
+Py_quaternion _Py_quat_pow1 (const Py_quaternion a, const double b)
 {
    Py_quaternion r;
 
    /* special cases */
-   if (x == 0.0) {
+   if (b == 0.0) {
       /* a ** 0 == 1 (even when a == 0) */
       r.w = 1.0;
       r.x = 0.0;
@@ -389,14 +416,14 @@ Py_quaternion _Py_quat_pow (const Py_quaternion a, const double x)
       r.z = 0.0;
 
    } else if (a.w == 0.0 && a.x == 0.0 && a.y == 0.0 && a.z == 0.0) {
-      /* 0 ** a == 0 */
+      /* 0 ** b == 0 */
       r.w = r.x = r.y = r.z = 0.0;
 
       /* unless negative power */
-      if (x < 0.0)
+      if (b < 0.0)
          errno = EDOM;
 
-   } else if (x == 1) {
+   } else if (b == 1) {
       /* a ** 1 == a */
       r = a;
 
@@ -408,10 +435,72 @@ Py_quaternion _Py_quat_pow (const Py_quaternion a, const double x)
       double angle;
 
       _Py_quat_into_polar (a, &length, &unit, &angle);
-      r = _Py_quat_from_polar (pow (length, x), unit, angle*x);
+      r = _Py_quat_from_polar (pow (length, b), unit, angle*b);
    }
    return r;
 }
+
+
+/* -----------------------------------------------------------------------------
+ * Returns: a ** b
+ */
+Py_quaternion _Py_quat_pow2 (const double a, const Py_quaternion b,
+                             Py_quat_status* status)
+{
+   Py_quaternion r;
+   *status = pyQuatNoError;
+
+   /* special cases */
+   if (a == 0.0) {
+      /* 0 ** b == 0
+       * Unless -ve or has imaginary part a la complex.
+       */
+      r.w = r.x = r.y = r.z = 0.0;
+      if (b.w < 0.0 || b.x != 0.0 || b.y != 0.0 || b.z != 0.0) {
+         /* 0.0 to a negative or quaternion power. */
+         *status = pyQuatZeroDivisionError;
+      }
+
+   } else if (a < 0.0) {
+      r.w = r.x = r.y = r.z = 0.0;
+      /* TODO: unless b is effectively real whole number. */
+      *status = pyQuatValueError;
+
+   } else if (b.w == 0.0 && b.x == 0.0 && b.y == 0.0 && b.z == 0.0) {
+      /* a ** 0 == 1 (even when a == 0) */
+      r.w = 1.0;
+      r.x = 0.0;
+      r.y = 0.0;
+      r.z = 0.0;
+
+   } else if (b.w == 1.0 && b.x == 0.0 && b.y == 0.0 && b.z == 0.0) {
+      /* a ** 1 == a */
+      r.w = a;
+      r.x = 0.0;
+      r.y = 0.0;
+      r.z = 0.0;
+
+   } else {
+      // We calc exp(log(a)*b) == exp(b*log(a))
+      //
+      double lna;
+      Py_quaternion tmp;
+
+      lna = log (a);  /* We know a > 0.0 */
+
+      /* calc tmp = log(a)*b
+       */
+      tmp.w = lna*b.w;
+      tmp.x = lna*b.x;
+      tmp.y = lna*b.y;
+      tmp.z = lna*b.z;
+
+      r = _Py_quat_exp (tmp);
+   }
+
+   return r;
+}
+
 
 /* -----------------------------------------------------------------------------
  * Returns: abs (a) or |a|
@@ -471,7 +560,7 @@ double _Py_quat_abs (const Py_quaternion a)
 }
 
 /* -----------------------------------------------------------------------------
- * Returns: the quadrance of a, i.e. abs(a)**2
+ * Returns: the quadrance of a, i.e. abs(a)**2, or a.a
  */
 double _Py_quat_quadrance (const Py_quaternion a)
 {

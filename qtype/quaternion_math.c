@@ -4,7 +4,7 @@
  * mathematic Quaternian functions. Where such functins are defined, they aim
  * to mimic the equivilent functions out of the math/cmath module.
  *
- * Copyright (c) 2018-2019  Andrew C. Starritt
+ * Copyright (c) 2018-2021  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -123,7 +123,7 @@ PyDoc_STRVAR(qmath_sqrt__doc__,
              "sqrt(q)\n"
              "\n"
              "Return a square root of q. When q is a negative real number with no\n"
-             "imaginary parts, the result used the j imaginary component, i.e.\n"
+             "imaginary parts, the result uses the j imaginary component, i.e.\n"
              "   sqrt (Quaternion (-1, 0, 0, 0)) is Quaternion (0, 0, 1, 0)");
 
 BASIC_ONE_ARGUMENT_FUNCTION (sqrt)
@@ -718,7 +718,7 @@ static PyMethodDef qmath_methods[] = {
    {"axis",     (PyCFunction)qmath_axis,     METH_O,        qmath_axis__doc__},
    {"phase",    (PyCFunction)qmath_phase,    METH_O,        qmath_phase__doc__},
    {"rect",     (PyCFunction)qmath_rect,     METH_VARARGS,  qmath_rect__doc__},
-   {NULL, NULL}  /* sentinel */
+   {NULL, NULL, 0, NULL}  /* sentinel */
 };
 
 

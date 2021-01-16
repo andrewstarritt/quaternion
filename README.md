@@ -1,8 +1,22 @@
-# quaternion
+# <span style='color:#00c000'>quaternion</span>
 
 A Python extension to provide a Quaternion type and some associated math functions.
 
-## general
+[general](#general)<br>
+[mathematical operations](#mathops)<br>
+[mixed mode arithmetic](#mixedmode)<br>
+[construction](#construction)<br>
+[attributes](#attributes)<br>
+[instance functions](#instfuncs)<br>
+[magic functions](#magicfuncs)<br>
+[math functions](#mathfuncs)<br>
+[module variables](#variables)<br>
+[hash function](#hash)<br>
+[background](#background)<br>
+[references](#references)<br>
+[credits](#credits)<br>
+
+## <a name = "general"/><span style='color:#00c000'>general</span>
 
 Within _this_ module, a Quaternion q is defined to be:
 
@@ -20,8 +34,9 @@ The Quaternion type has four member attributes to access these coefficients.
 These instance attributes are w, x, y and z respectively.
 
 A Quaternion may also be considered to be a real scalar part plus a vector (with
-real components). The real part accessible via the real attribute. Thus both
-q.w and q.real return the real or scalar part of q.
+3 real components).
+The real part accessible via the real attribute.
+Both q.w and q.real return the real or scalar part of q.
 
 The vector part is accessible via both the vector and imag attributes which provide
 a tuple of floats. The following Python expressions are equivalent:
@@ -33,18 +48,18 @@ a tuple of floats. The following Python expressions are equivalent:
 q.real and q.imag provide a "complex" like view of a Quaternion at the expense
 of providing an un-Pythonic duplication of q.w and q.vector respectively.
 
-## mathematical operations
+## <a name = "mathops"/><span style='color:#00c000'>mathematical operations</span>
 
 The expected mathematical operations are provided.
 
 unary: +, -, abs
 
-binary: +, -, *, /
+binary: +, -, \*, /
 
-power: **
+power: \*\*
 
 There is no mod (%) or integer division (//) operation available.
-Therefore the pow() function can only take two arguments, and the exponent argument must be real or int.
+Therefore the pow() function can only take two arguments - see below.
 
 The Quaternion type is associative under both addition and multiplication, i.e.:
 
@@ -67,19 +82,33 @@ This non-commutative nature also explains why p ** q is undefined, as this could
     exp (q * log (p))  ; or
     exp (log (p) * q)
 
-## mixed mode arithmetic
+However, mixed-mode ** is possible - see below.
+
+___Experimental/tentative___
+
+matrix mult: @
+
+p @ q is the same a dot (p, q) and returns the dot product of two Quaternians
+treated as a normal 4-tuple.
+Is this a sensible use of @ ??
+
+## <a name = "mixedmode"/><span style='color:#00c000'>mixed mode arithmetic</span>
 
 Quaternions numbers and scalar numbers, i.e. int or float, are inter-operable.
 int and float numbers are treated as Quaternions with zero imaginary components.
+Note: float numbers (a) and Quaternion numbers (q) do commute under
+multiplication:
+
+    q * a = a * q
 
 Mixed mode with complex numbers is also allowed. A complex number, z, is treated
 as a Quaternions, q, such that q.w = z.real, q.y = z.imag, and q.x and q.z are
 zero.
 
 The choice of aligning the imaginary part of a complex number to the j imaginary
-component as opposed to i or k is mathematically arbitrary. However for Python, j
-is the natural choice, and then the following, bar any rounding errors, will
-hold true:
+component as opposed to i or k is mathematically arbitrary.
+However for Python, j is the natural choice and then the following, bar any
+rounding errors, will hold true for any complex value z:
 
     Quaternion(z) = Quaternion(str(z))
 
@@ -90,8 +119,15 @@ such that:
 
 There is _no_ complementary attribute to obtain q.x and q.z as a single item.
 
+Mixed mode is also available for the ** operator.
+If a is a float or integer number, then with some restrictions the following
+are both provided:
 
-## construction
+     q ** a
+     a ** q           -- a must be > 0.0
+
+
+## <a name = "construction"/><span style='color:#00c000'>construction</span>
 
 A Quaternion number may be constructed using one of the following forms:
 
@@ -110,14 +146,14 @@ a) the real part and an optional imaginary parts. w, x, y and z must be float
 b) from a real number and a 3-tuple vector;
 
 c) from an angle (radians) and a 3-tuple axis of rotation (which is automatically
-   normalised), which generates a rotator Quaternion,  that can then be used in
+   normalised), which generates a rotator Quaternion, which can then be used in
    conjunction with the rotate method;
 
 d) from a single number parameter: int, float, complex or another Quaternion.
    When the number is complex, the imaginary part of the complex number is
    assigned to the j imaginary part; or
 
-e) from the string representation of a quaternion (modeled on the complex type).
+e) from the string representation of a Quaternion (modeled on the complex type).
    The following are valid:
 
     Quaternion("1.2")
@@ -136,7 +172,7 @@ The following are invalid:
     Quaternion("(1.2+3.4i+2.6j-2k")      -- unmatched parenthesis
 
 
-## attributes
+## <a name = "attributes"/><span style='color:#00c000'>attributes</span>
 
 * w       - float - real/scalar part
 * x       - float - i imaginary part
@@ -148,31 +184,66 @@ The following are invalid:
 * imag    - tuple - the imaginary part, the same as vector.
 
 
-## Quaternion instance functions
+## <a name = "instfuncs"/><span style='color:#00c000'>instance functions</span>
 
-### conjugate
+### <span style='color:#00c000'>conjugate</span>
 
-q.conjugate() returns the Quaternion conjugate of its argument.
+q.conjugate() returns the Quaternion conjugate of q.
 
-### inverse
+### <span style='color:#00c000'>inverse</span>
 
 q.inverse ()  returns s such that: s \* q = q \* s = 1
 
-### normalise
+### <span style='color:#00c000'>normalise</span>
 
 q.normalise () returns s such that: s = q / abs (q)
 
-### quadrance
+### <span style='color:#00c000'>quadrance</span>
 
 q.quadrance () returns s such that s = q.w\*q.w + q.x\*q.x + q.y\*q.y + q.z\*q.z
 
-### rotate
+### <span style='color:#00c000'>rotate</span>
 
 q.rotate (point, origin=None) -> point, where q is a rotation number,
 i.e. q = Quaternion (angle=a,axis=(x,y,z)).
 The returned value is rotated by an angle a radians about the axis (x,y,z).
 
-## math functions
+
+## <a name = "magicfuncs"/><span style='color:#00c000'>magic functions</span>
+
+### <span style='color:#00c000'>\_\_format\_\_</span>
+
+q.\_\_format\_\_ (fmtstr) -> str
+
+Format to a string according to format_spec. This allows, for example:
+
+    q = Quaternion(...)
+    s1 = "... {p:20.2f} ...".format(p=q)
+    s2 = f"... {q:20.2f} ..."
+
+### <span style='color:#00c000'>\_\_getnewargs\_\_</span>
+
+q.\_\_getnewargs\_\_ () returns a 4-tuple s, such that s = (q.w, q.x, q.y, q.z)
+
+This allows Quaternion numbers to be pickled.
+
+### <span style='color:#00c000'>\_\_round\_\_</span>
+
+q.\_\_round\_\_ (ndigits=0) returns a Quaternion with each component rounded,
+e.g. round (q.w, ndigits).
+While the method can be called directly, one would normally invoke
+
+    round(q)
+    round(q, n)
+
+This is the equivalent of round (float, [ndigits]), and ndigits may be either
+positive of negative. This is perhaps most useful as an alternative to
+using format when printing Quaternion, e.g.
+
+    print("result : %s" % round(q,2))
+
+
+## <a name = "mathfuncs"/><span style='color:#00c000'>math functions</span>
 
 A number of math functions that operate on Quaternions are also provided.
 These functions provide the equivalent quaternion function as the functions of
@@ -184,6 +255,7 @@ The functions provided are:
     isinf
     isnan
     isclose
+    dot
     sqrt
     exp
     log
@@ -207,42 +279,46 @@ The functions provided are:
 
 Note: there is no separate qmath module.
 
-## module variables
+## <a name = "variables"/><span style='color:#00c000'>module variables</span>
 
 * one = Quaternion (1.0, 0.0, 0.0, 0.0)
 * i   = Quaternion (0.0, 1.0, 0.0, 0.0)
 * j   = Quaternion (0.0, 0.0, 1.0, 0.0)
 * k   = Quaternion (0.0, 0.0, 0.0, 1.0)
+* e   = 2.718281828459045 - float
+* pi  = 3.141592653589793 - float
+* tau = 6.283185307179586 - float
 * \_\_version\_\_ = the version number as str.
 
 
-## hash function
+## <a name = "hash"/><span style='color:#00c000'>hash function</span>
 
-The hash of a quaternion folows the ideas used in the complex hash function such
+The hash of a quaternion follows the ideas used in the complex hash function such
 that if q = Quaternion (q.complex) then hash(q) = hash (q.complex), and
 if q = Quaternion (q.real) then hash(q) = hash (q.real)
 
-## backround
+## <a name = "background"/><span style='color:#00c000'>background</span>
 
-This was initially more of an experiment to create a Python extension written in C
-that was a bit more challenging than just a "hello world" extension.
+This was initially developed more of an experiment to create a Python
+extension written in C that was a bit more challenging than just a
+"hello world" extension.
 
-Although there are already a number of Quaternion Python implementations out there,
-this has the advantage of speed over the pure Python implementations and the advantage
-of no dependencies on any other modules such as numpy.
+Although there are already a number of Quaternion Python implementations out
+there, this has the advantage of speed over the pure Python implementations
+and the advantage of no dependencies on any other modules such as numpy.
 
-## references
+## <a name = "references"/><span style='color:#00c000'>references</span>
 
 * http://onlinelibrary.wiley.com/doi/10.1002/9780470682906.app4/pdf
 * https://www.geometrictools.com/Documentation/Quaternions.pdf
 * https://en.wikipedia.org/wiki/Quaternion
 
-## credits
+## <a name = "credits"/><span style='color:#00c000'>credits</span>
 
 Guidance from https://docs.python.org/3.5/extending/newtypes.html
 together with cribbing many code-snippets and ideas from the complex type,
-and last be _not least_ Sir William R. Hamilton.
+and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: Sun May 26 19:22:32 AEDT 2019</font>
+<font size="-1">Last updated: Mon Jan  4 21:02:11 AEDT 2021</font>
 <br>

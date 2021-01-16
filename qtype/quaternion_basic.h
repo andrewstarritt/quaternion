@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It privides basic
  * quaternion maths operation with minimalist reference to Python.
  *
- * Copyright (c) 2018-2019  Andrew C. Starritt
+ * Copyright (c) 2018-2021  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,6 +59,14 @@ typedef struct {
 } Py_quat_triple;
 
 
+/* Where needed, these functions set a status
+ */
+typedef enum Py_quat_status {
+   pyQuatNoError = 0,
+   pyQuatValueError,
+   pyQuatZeroDivisionError
+} Py_quat_status;
+
 /* Infinities and NaNs
  */
 
@@ -82,6 +90,7 @@ Py_quaternion _Py_quat_neg (const Py_quaternion a);
 Py_quaternion _Py_quat_conjugate (const Py_quaternion a);
 Py_quaternion _Py_quat_inverse   (const Py_quaternion a);
 Py_quaternion _Py_quat_normalise (const Py_quaternion a);
+Py_quaternion _Py_quat_round     (const Py_quaternion a, const int n);
 
 Py_quaternion _Py_quat_sum  (const Py_quaternion a, const Py_quaternion b);
 Py_quaternion _Py_quat_diff (const Py_quaternion a, const Py_quaternion b);
@@ -89,10 +98,12 @@ Py_quaternion _Py_quat_diff (const Py_quaternion a, const Py_quaternion b);
 /* note: multiplication does not commute: a*b != b*a */
 Py_quaternion _Py_quat_prod (const Py_quaternion a, const Py_quaternion b);
 
-/* note: division is p * inverse(q) */
+/* note: division is a * inverse(b) */
 Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b);
 
-Py_quaternion _Py_quat_pow  (const Py_quaternion a, const double x);
+/* calc a ** b - two forms */
+Py_quaternion _Py_quat_pow1  (const Py_quaternion a, const double b);
+Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b, Py_quat_status* status);
 
 /* Other functions
  */
@@ -109,6 +120,7 @@ Py_quat_triple _Py_quat_rotate (const Py_quaternion a,
                                 const Py_quat_triple origin);
 
 /* To/from polar
+ * unit is an imaginary unit vector.
  */
 void _Py_quat_into_polar (const Py_quaternion a,
                           double* m,

@@ -2,7 +2,7 @@
  *
  * This file is part of the Python quaternion module.
  *
- * Copyright (c) 2018-2019  Andrew C. Starritt
+ * Copyright (c) 2018-2021  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -715,6 +715,19 @@ PyDoc_STRVAR(quaternion_normalise_doc,
 /* -----------------------------------------------------------------------------
  */
 static PyObject *
+quaternion_getnewargs(PyComplexObject* self)
+{
+    Py_quaternion q;
+    q = ((PyQuaternionObject *)self)->qval;
+
+    return Py_BuildValue("(dddd)", q.w, q.x, q.y, q.z);
+}
+
+/* no doc string */
+
+/* -----------------------------------------------------------------------------
+ */
+static PyObject *
 quaternion__format__(PyObject *self, PyObject *args)
 {
    /* Wrapper around Py_DECREF that checks the ref exists.
@@ -845,11 +858,65 @@ PyDoc_STRVAR(quaternion_format_doc,
 
 /* -----------------------------------------------------------------------------
  */
+static PyObject *
+quaternion__round__(PyObject *self, PyObject *args, PyObject *kwds)
+{
+   static char* kwlist[] = {"ndigits", NULL};
+
+   Py_quaternion c, r;
+   int s;
+   PyObject* ndigits = NULL;
+   int n;
+
+   /* Parse into one optional argument
+    */
+   s = PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &ndigits);
+   if (!s) {
+      return NULL;
+   }
+
+   if (ndigits) {
+      /* Caller supplied a parameter
+       */
+      if (PyLong_Check (ndigits)) {
+         /* and is long
+          */
+         n = PyLong_AsLong (ndigits);
+      } else {
+         PyErr_Format(PyExc_TypeError,
+                      "quaternion round: '%s' object cannot be interpreted as an integer",
+                      Py_TYPE(ndigits)->tp_name);
+
+         return NULL;
+      }
+   } else {
+      n = 0;  /* default */
+   }
+
+   c = ((PyQuaternionObject *)self)->qval;
+   PyFPE_START_PROTECT("quaternion__round__", return 0);
+   r = _Py_quat_round(c, n);
+   PyFPE_END_PROTECT(pr);
+   return PyQuaternion_FromCQuaternion(r);
+}
+
+PyDoc_STRVAR(quaternion_round_doc,
+             "quaternion.__round__(ndigits=0) -> quaternion\n"
+             "\n"
+             "Returns the quaternion with rounded members, perhaps most useful\n"
+             "when printing.\n"
+             "\n"
+             "ndigits - number of digits to round by, may be positive or negative.\n"
+             "round(q,n) == Quaterion (round(q.w,n), round (q.x,n), round (q.y,n), round(q.z.n))");
+
+
+/* -----------------------------------------------------------------------------
+ */
 PyDoc_STRVAR(quaternion_rotate_doc,
              "quaternion.rotate (point, origin=None) -> point\n"
              "\n"
              "Rotates the point using self. Self should be constructed using the angle/axis.\n"
-             "option. At very least self should be normalised.\n"
+             "option. At the very least self should be normalised.\n"
              "\n"
              "point    - is the point to be rotated, expects a tuple with 3 float elements\n"
              "origin   - the point about which the rotation occurs; when not specified or\n"
@@ -1098,68 +1165,116 @@ quaternion_divmod(PyObject *v, PyObject *w)
  * Unlike its complex counter part, a Quaternion cannot be raised to the
  * power of a Quaternion (except in special circumstances, e.g. no imarginary
  * parts). The usual exp (log(v)*w) does not work with Quaternions as this
- * yields a different result from exp (w*log(v))
+ * yields a different result from exp (w*log(v)).
+ * Special cases that are allowed are v or w are real (or int), i.e we can raise
+ * a quaternion number to a real power or raise a real number to a quaternion
+ * power. In both cases w*log(v) == log(v)*w, and therefore no ambiguity.
  */
 static PyObject *
 quaternion_pow(PyObject *v, PyObject *w, PyObject *z)
-{
-   Py_quaternion p;
-   Py_quaternion a;
+{   
+   Py_quaternion result;
+   Py_quaternion a;   /* v or w as appropriate */
+   double real;
+   bool real_is_okay;
 
-   double exponent;
-   bool x_is_okay;
-
-   /* Cannot modulo a Quaternion, 3rd parameter not allowed
+   /* Cannot modulo a Quaternion, 3rd parameter not allowed.
     */
    if (z != Py_None) {
       Py_INCREF(Py_NotImplemented);
       return Py_NotImplemented;
    }
 
-   /* In general case can only raise a Quaternion to a real power
+   /* In general case can only raise a Quaternion to a real power,
+    * or  raise a real number to a Quaternion power
     */
-   if (!PyFloat_Check (w) && !PyLong_Check (w)) {
+   if (PyQuaternion_Check(v)) {
+
+      /* v is a quaternion, check w is real (or int)
+       */
+      if (!PyFloat_Check (w) && !PyLong_Check (w)) {
+         Py_INCREF(Py_NotImplemented);
+         return Py_NotImplemented;
+      }
+
+      TO_C_QUATERNION(v, a);
+      real = _PyNumber_AsDouble (w, &real_is_okay);
+      if (!real_is_okay) {
+         PyErr_SetString(PyExc_TypeError, "Quaternion pow() argument 2 didn't return a float");
+         return NULL;
+      }
+
+      PyFPE_START_PROTECT("quaternion_pow", return 0);
+      errno = 0;
+      result = _Py_quat_pow1(a, real);
+      PyFPE_END_PROTECT(result);
+
+      if (errno == EDOM) {
+         PyErr_SetString(PyExc_ZeroDivisionError,
+                         "(0+0i+0j+0k) cannot be raised to a negative power");
+         return NULL;
+      }
+
+   } else if (PyQuaternion_Check(w)) {
+
+      /* w is a quaternion, check v is real (or int)
+       */
+      if (!PyFloat_Check (v) && !PyLong_Check (v)) {
+         Py_INCREF(Py_NotImplemented);
+         return Py_NotImplemented;
+      }
+
+      TO_C_QUATERNION(w, a);
+      real = _PyNumber_AsDouble (v, &real_is_okay);
+      if (!real_is_okay) {
+         PyErr_SetString(PyExc_TypeError, "Quaternion pow() argument 1 didn't return a float");
+         return NULL;
+      }
+
+      PyFPE_START_PROTECT("quaternion_pow", return 0);
+      errno = 0;
+      Py_quat_status status = pyQuatNoError;
+      result = _Py_quat_pow2(real, a, &status);
+      PyFPE_END_PROTECT(result);
+
+      if (status == pyQuatZeroDivisionError) {
+         PyErr_SetString(PyExc_ZeroDivisionError,
+                         "0.0 to a negative or quaternion power");
+         return NULL;
+      }
+
+      if (status == pyQuatValueError) {
+         PyErr_SetString(PyExc_ValueError,
+                         "negative float cannot be raised to a quaternion power");
+         return NULL;
+      }
+
+   } else {
+      /* Neither v nor w is a quaternion - will this ever happen??
+       */
       Py_INCREF(Py_NotImplemented);
       return Py_NotImplemented;
    }
 
-   TO_C_QUATERNION(v, a);
-   exponent = _PyNumber_AsDouble (w, &x_is_okay);
-   if (!x_is_okay) {
-      PyErr_SetString(PyExc_TypeError, "Quaternion pow()argument 2 didn't return a float");
-      return NULL;
-   }
+   real_is_okay = true;
 
-   PyFPE_START_PROTECT("quaternion_pow", return 0);
-   errno = 0;
-   p = _Py_quat_pow(a, exponent);
-   PyFPE_END_PROTECT(p);
-
-   if (errno == EDOM) {
-      PyErr_SetString(PyExc_ZeroDivisionError,
-                      "(0+0i+0j+0k) cannot be raised to a negative power");
-      return NULL;
-   }
-
-   x_is_okay = true;
-
-   Py_ADJUST_ERANGE2(p.w, p.x);
+   Py_ADJUST_ERANGE2(result.w, result.x);
    if (errno == ERANGE) {
-      x_is_okay = false;
+      real_is_okay = false;
    }
 
-   Py_ADJUST_ERANGE2(p.y, p.z);
+   Py_ADJUST_ERANGE2(result.y, result.z);
    if (errno == ERANGE) {
-      x_is_okay = false;
+      real_is_okay = false;
    }
 
-   if (!x_is_okay) {
+   if (!real_is_okay) {
       PyErr_SetString(PyExc_OverflowError,
                       "Quaternion numerical result out of range");
       return NULL;
    }
 
-   return PyQuaternion_FromCQuaternion(p);
+   return PyQuaternion_FromCQuaternion(result);
 }
 
 /* -----------------------------------------------------------------------------
@@ -1322,7 +1437,10 @@ quaternion_getattro(PyObject *self, PyObject *attr)
  * =============================================================================
  */
 static PyMethodDef QuaternionMethods [] = {
+   {"__getnewargs__", (PyCFunction)quaternion_getnewargs, METH_NOARGS, NULL},
    {"__format__", (PyCFunction)quaternion__format__,  METH_VARARGS,  quaternion_format_doc},
+   {"__round__",  (PyCFunction)quaternion__round__,   METH_VARARGS |
+                                                      METH_KEYWORDS,  quaternion_round_doc},
    {"conjugate",  (PyCFunction)quaternion_conjugate,  METH_NOARGS,   quaternion_conjugate_doc},
    {"inverse",    (PyCFunction)quaternion_inverse,    METH_NOARGS,   quaternion_inverse_doc},
    {"quadrance",  (PyCFunction)quaternion_quadrance,  METH_NOARGS,   quaternion_quadrance_doc},
@@ -1379,7 +1497,7 @@ static PyNumberMethods QuaternionAsNumber = {
    0,                                          /* nb_inplace_floor_divide */
    0,                                          /* nb_inplace_true_divide */
    0,                                          /* nb_index */
-   0,                                          /* nb_matrix_multiply */
+   0,                                          /* nb_matrix_multiply @ */
    0,                                          /* nb_inplace_matrix_multiply */
 };
 
@@ -1469,7 +1587,8 @@ static PyTypeObject QuaternionType = {
 
 /* Allow module defn code to access the Quaternion PyTypeObject.
  */
-PyTypeObject* PyQuaternionType () {
+PyTypeObject* PyQuaternionType ()
+{
    return &QuaternionType;
 }
 

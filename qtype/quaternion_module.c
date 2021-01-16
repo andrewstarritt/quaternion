@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It privides module
  * framework.
  *
- * Copyright (c) 2018-2019  Andrew C. Starritt
+ * Copyright (c) 2018-2021  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.1.4"
+#define __version__ "1.1.5"
 
 
 /* Development environment:
@@ -35,11 +35,13 @@
  */
 
 #include <Python.h>
+#include <pymath.h>
 
 #include "quaternion_basic.h"
 #include "quaternion_object.h"
 #include "quaternion_math.h"
 
+static Py_quaternion q0 = {0.0, 0.0, 0.0, 0.0};
 static Py_quaternion q1 = {1.0, 0.0, 0.0, 0.0};
 static Py_quaternion qi = {0.0, 1.0, 0.0, 0.0};
 static Py_quaternion qj = {0.0, 0.0, 1.0, 0.0};
@@ -159,11 +161,18 @@ PyInit_quaternion(void)
 
    Py_INCREF(quaternionType);
    PyModule_AddObject(module, "Quaternion", (PyObject *)quaternionType);
+   PyModule_AddObject(module, "zero", PyQuaternion_FromCQuaternion(q0));
    PyModule_AddObject(module, "one", PyQuaternion_FromCQuaternion(q1));
    PyModule_AddObject(module, "i", PyQuaternion_FromCQuaternion(qi));
    PyModule_AddObject(module, "j", PyQuaternion_FromCQuaternion(qj));
    PyModule_AddObject(module, "k", PyQuaternion_FromCQuaternion(qk));
    PyModule_AddObject(module, "__version__", PyUnicode_FromString (__version__));
+
+   /* Replicate math/cmath constants
+    */
+   PyModule_AddObject(module, "e",   PyFloat_FromDouble (Py_MATH_El));  // 2.718281828459045));
+   PyModule_AddObject(module, "pi",  PyFloat_FromDouble (Py_MATH_PIl)); // 3.141592653589793));
+   PyModule_AddObject(module, "tau", PyFloat_FromDouble (Py_MATH_TAU)); // 6.283185307179586));
 
    return module;
 }

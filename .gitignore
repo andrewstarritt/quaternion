@@ -13,3 +13,5 @@ qcreator
 .cache/
 Makefile
 proto.py
+MANIFEST
+_pip.conf
