@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 
-/* For the complex type, the equivilent of these operations are within the
+/* For the complex type, the equivalent of these operations are within the
  * object definition file. I use a separate module.
  */
 
@@ -58,14 +58,6 @@ typedef struct {
    double z;
 } Py_quat_triple;
 
-
-/* Where needed, these functions set a status
- */
-typedef enum Py_quat_status {
-   pyQuatNoError = 0,
-   pyQuatValueError,
-   pyQuatZeroDivisionError
-} Py_quat_status;
 
 /* Infinities and NaNs
  */
@@ -103,7 +95,7 @@ Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b);
 
 /* calc a ** b - two forms */
 Py_quaternion _Py_quat_pow1  (const Py_quaternion a, const double b);
-Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b, Py_quat_status* status);
+Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b);
 
 /* Other functions
  */

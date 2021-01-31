@@ -2,7 +2,7 @@
  *
  * This file is part of the Python quaternion module. It provides a number of
  * mathematic Quaternian functions. Where such functins are defined, they aim
- * to mimic the equivilent functions out of the math/cmath module.
+ * to mimic the equivalent functions out of the math/cmath module.
  *
  * Copyright (c) 2018-2021  Andrew C. Starritt
  *
