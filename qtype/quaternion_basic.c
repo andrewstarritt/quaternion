@@ -88,12 +88,71 @@ static double length_triple (const Py_quat_triple t)
 
 
 /* -----------------------------------------------------------------------------
- * Returns: f(q) by leveraging of the equivilent complex function, e.g csin.
+ * Decomposes q to return real, imag and unit as follows:
+ * Let v be the Quaternion (1, 0, 0, 0)
+ * Let unit be the Quaternion (0, q.x, q.y, q.z) normalised,
+ * i.e. the imaginary part of q normalised,
+ * then we can define q as:
+ *     q = real*v + imag*u
+ * where real and imag are the real and the imaginary coefficiants (both real).
+ */
+static void decompose (const Py_quaternion q,
+                       double* real, double* imag,
+                       Py_quat_triple* unit)
+{
+   Py_quat_triple temp;
+
+   /* Extract the real part of q
+    */
+   *real = q.w;
+
+   /* Extract and normalise the vector or imaginary part of q
+    */
+   temp.x = q.x;
+   temp.y = q.y;
+   temp.z = q.z;
+   *imag = length_triple (temp);
+
+   /* Form unit/normalised imaginary part
+    */
+   if (*imag != 0.0) {
+      unit->x = q.x / (*imag);
+      unit->y = q.y / (*imag);
+      unit->z = q.z / (*imag);
+   } else {
+      /* Any unit vector will do - go with j.
+       */
+      unit->x = 0.0;
+      unit->y = 1.0;
+      unit->z = 0.0;
+   }
+
+   /* q = real + imag*unit */
+}
+
+/* -----------------------------------------------------------------------------
+ */
+static Py_quaternion compose (const double real, const double imag,
+                              const Py_quat_triple unit)
+{
+   Py_quaternion result;
+
+   result.w = real;
+   result.x = imag * unit.x;
+   result.y = imag * unit.y;
+   result.z = imag * unit.z;
+
+   return result;
+}
+
+
+/* -----------------------------------------------------------------------------
+ * Returns: f(q) by leveraging of the equivalent complex function, e.g csin.
  * We do not use a series expansion, but reply on the fact that because the
  * the function can be defined as a series expansion, then the axis of f(q)
  * is the same as the axis of q.
- * Let v be the Quaternian (1, 0, 0, 0)
- * Let u be the normalised Quternian (0, q.x, q.y, q.z), the imaginary part of q,
+ * Let v be the Quaternion (1, 0, 0, 0)
+ * Let u be the normalised Quaternion (0, q.x, q.y, q.z), the imaginary part of q,
  * then we can define q as:
  *     q = A*v + B*u
  * where A and B are the real and the imaginary coefficiants (both real).
@@ -110,37 +169,18 @@ typedef complex (*cfunc) (complex z);
 static Py_quaternion use_complex_func (const Py_quaternion q, const cfunc f)
 {
    Py_quaternion result;
-   double a, b, c, d;
-   Py_quat_triple imag;
+   double a, b;
    Py_quat_triple unit;
    complex z;
    complex fz;
+   double c, d;
 
-   a = q.w;
-
-   /* Extract and normalise the vector or imaginary part of a
+   /* First decompse q
     */
-   imag.x = q.x;
-   imag.y = q.y;
-   imag.z = q.z;
-   b = length_triple (imag);
-
-   /* form unit/normalised imaginary part
-    */
-   if (b != 0.0) {
-      unit.x = imag.x / b;
-      unit.y = imag.y / b;
-      unit.z = imag.z / b;
-   } else {
-      /* any unit vector will do - go with j
-       */
-      unit.x = 0.0;
-      unit.y = 1.0;
-      unit.z = 0.0;
-   }
+   decompose (q, &a, &b, &unit);
 
    /* q = a + b*unit
-    * form the complex equivilent of q
+    * form the complex equivalent of q
     */
    z = a + I*b;
 
@@ -149,14 +189,10 @@ static Py_quaternion use_complex_func (const Py_quaternion q, const cfunc f)
    c = creal(fz);
    d = cimag(fz);
 
-   /* form the quaternion equivilent of f(q)
+   /* form the quaternion equivalent of f(q)
     * f(q) = c + d*unit
     */
-   result.w = c;
-   result.x = d * unit.x;
-   result.y = d * unit.y;
-   result.z = d * unit.z;
-
+   result = compose (c, d, unit);
    return result;
 }
 
@@ -248,7 +284,7 @@ Py_quaternion _Py_quat_prod (const Py_quaternion a, const Py_quaternion b)
 }
 
 /* -----------------------------------------------------------------------------
- * Returns: a / b
+ * Returns: a / b, technically a * inverse (b)
  */
 Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b)
 {
@@ -406,98 +442,111 @@ Py_quaternion _Py_quat_round (const Py_quaternion a, const int n)
 Py_quaternion _Py_quat_pow1 (const Py_quaternion a, const double b)
 {
    Py_quaternion r;
+   double ar, ai;
+   Py_quat_triple unit;
+   complex za, zb;
+   complex zr;
+   double rr, ri;
 
    /* special cases */
    if (b == 0.0) {
-      /* a ** 0 == 1 (even when a == 0) */
+      /* b == 0: a ** 0 == 1 (even when a == 0) */
       r.w = 1.0;
       r.x = 0.0;
       r.y = 0.0;
       r.z = 0.0;
 
    } else if (a.w == 0.0 && a.x == 0.0 && a.y == 0.0 && a.z == 0.0) {
-      /* 0 ** b == 0 */
+      /* a == 0: 0 ** b == 0 */
       r.w = r.x = r.y = r.z = 0.0;
 
       /* unless negative power */
       if (b < 0.0)
          errno = EDOM;
 
-   } else if (b == 1) {
+   } else if (b == 1.0) {
       /* a ** 1 == a */
       r = a;
 
    } else {
-      /* convert to polar coordinates
-       */
-      double length;
-      Py_quat_triple unit;
-      double angle;
 
-      _Py_quat_into_polar (a, &length, &unit, &angle);
-      r = _Py_quat_from_polar (pow (length, b), unit, angle*b);
+      /* Form complex equivalent of a
+       */
+      decompose(a, &ar, &ai, &unit);
+      za = ar + I*ai;
+
+      /* Form complex equivalent of b
+    */
+      zb = b + I*0.0;
+
+      zr = cpow (za, zb);   /* Let cpow do all the hard work */
+
+      /* form the quaternion equivalent of zr
+    * r = rr + ri*unit
+    */
+      rr = creal (zr);
+      ri = cimag (zr);
+      r = compose (rr, ri, unit);
+
    }
    return r;
 }
 
-
 /* -----------------------------------------------------------------------------
  * Returns: a ** b
  */
-Py_quaternion _Py_quat_pow2 (const double a, const Py_quaternion b,
-                             Py_quat_status* status)
+Py_quaternion _Py_quat_pow2 (const double a, const Py_quaternion b)
 {
    Py_quaternion r;
-   *status = pyQuatNoError;
+   double br, bi;
+   Py_quat_triple unit;
+   complex za, zb;
+   complex zr;
+   double rr, ri;
 
    /* special cases */
-   if (a == 0.0) {
-      /* 0 ** b == 0
-       * Unless -ve or has imaginary part a la complex.
-       */
-      r.w = r.x = r.y = r.z = 0.0;
-      if (b.w < 0.0 || b.x != 0.0 || b.y != 0.0 || b.z != 0.0) {
-         /* 0.0 to a negative or quaternion power. */
-         *status = pyQuatZeroDivisionError;
-      }
-
-   } else if (a < 0.0) {
-      r.w = r.x = r.y = r.z = 0.0;
-      /* TODO: unless b is effectively real whole number. */
-      *status = pyQuatValueError;
-
-   } else if (b.w == 0.0 && b.x == 0.0 && b.y == 0.0 && b.z == 0.0) {
-      /* a ** 0 == 1 (even when a == 0) */
+   if (b.w == 0.0 && b.x == 0.0 && b.y == 0.0 && b.z == 0.0) {
+      /* b == 0: a ** 0 == 1 (even when a == 0) */
       r.w = 1.0;
       r.x = 0.0;
       r.y = 0.0;
       r.z = 0.0;
 
+   } else if (a == 0.0) {
+      /* a == 0: 0 ** b == 0 */
+      r.w = r.x = r.y = r.z = 0.0;
+
+      /* unless negative or has imaginary part a la complex */
+      if (b.w < 0.0 || b.x != 0.0 || b.y != 0.0 || b.z != 0.0)
+         errno = EDOM;
+
    } else if (b.w == 1.0 && b.x == 0.0 && b.y == 0.0 && b.z == 0.0) {
-      /* a ** 1 == a */
+      /* b == 1: a ** 1 == a */
       r.w = a;
       r.x = 0.0;
       r.y = 0.0;
       r.z = 0.0;
 
    } else {
-      // We calc exp(log(a)*b) == exp(b*log(a))
-      //
-      double lna;
-      Py_quaternion tmp;
 
-      lna = log (a);  /* We know a > 0.0 */
-
-      /* calc tmp = log(a)*b
+      /* Form complex equivalent of a
        */
-      tmp.w = lna*b.w;
-      tmp.x = lna*b.x;
-      tmp.y = lna*b.y;
-      tmp.z = lna*b.z;
+      za = a + I*0.0;
 
-      r = _Py_quat_exp (tmp);
+      /* Form complex equivalent of b
+    */
+      decompose(b, &br, &bi, &unit);
+      zb = br + I*bi;
+
+      zr = cpow (za, zb);   /* Let cpow do all the hard work */
+
+      /* form the quaternion equivalent of zr
+    * r = rr + ri*unit
+    */
+      rr = creal (zr);
+      ri = cimag (zr);
+      r = compose (rr, ri, unit);
    }
-
    return r;
 }
 

@@ -64,7 +64,7 @@ void debugTrace(const char* function,
 
 
 /* ----------------------------------------------------------------------------
- * Sort of equivilent to PyFloat_AsDouble(PyNumber_Float))
+ * Sort of equivalent to PyFloat_AsDouble(PyNumber_Float))
  * Pre-requisite - verify obj with PyNumber_Check ... but this includes complex.
  */
 static double
@@ -1233,21 +1233,15 @@ quaternion_pow(PyObject *v, PyObject *w, PyObject *z)
 
       PyFPE_START_PROTECT("quaternion_pow", return 0);
       errno = 0;
-      Py_quat_status status = pyQuatNoError;
-      result = _Py_quat_pow2(real, a, &status);
+      result = _Py_quat_pow2(real, a);
       PyFPE_END_PROTECT(result);
 
-      if (status == pyQuatZeroDivisionError) {
+      if (errno == EDOM) {
          PyErr_SetString(PyExc_ZeroDivisionError,
                          "0.0 to a negative or quaternion power");
          return NULL;
       }
 
-      if (status == pyQuatValueError) {
-         PyErr_SetString(PyExc_ValueError,
-                         "negative float cannot be raised to a quaternion power");
-         return NULL;
-      }
 
    } else {
       /* Neither v nor w is a quaternion - will this ever happen??

@@ -495,6 +495,7 @@ if __name__ == "__main__":
     test_mul()
     test_div()
     test_pow()
+    test_pow2()
     test_hash()
 #   run_stuff()
 
