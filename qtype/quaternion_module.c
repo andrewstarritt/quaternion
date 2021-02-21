@@ -25,7 +25,7 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.1.5"
+#define __version__ "1.1.6"
 
 
 /* Development environment:

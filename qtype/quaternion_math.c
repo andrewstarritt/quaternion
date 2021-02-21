@@ -684,6 +684,66 @@ qmath_dot(PyObject *module, PyObject *args)
 
 
 /* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_matix__doc__,
+             "matrix(q)\n"
+             "\n"
+             "Convert a rotation Quaternion to the equivilent 3D rotation matrix.\n"
+             "Returns a 3-tuple of 3-tuples.\n"
+             "The retured value can then be turned into numpy array.\n"
+             "Example: \n"
+             "    rot_mat = np.array(quaternion.matrix(q))");
+
+static PyObject *
+qmath_matrix(PyObject *module, PyObject *arg)
+{
+   PyObject* result = NULL;
+   Py_quaternion q;
+   bool s;
+
+   s = PyObject_AsCQuaternion (arg, &q);
+   if (s) {
+      /* Based on:
+       * https://automaticaddison.com/how-to-convert-a-quaternion-to-a-rotation-matrix/
+       */
+      double r11, r12, r13;
+      double r21, r22, r23;
+      double r31, r32, r33;
+
+      /* First row of the rotation matrix
+       */
+      r11 = 2 * (q.w * q.w + q.x * q.x) - 1.0;
+      r12 = 2 * (q.x * q.y - q.w * q.z);
+      r13 = 2 * (q.x * q.z + q.w * q.y);
+
+      /* Second row of the rotation matrix
+       */
+      r21 = 2 * (q.x * q.y + q.w * q.z);
+      r22 = 2 * (q.w * q.w + q.y * q.y) - 1.0;
+      r23 = 2 * (q.y * q.z - q.w * q.x);
+
+      /* Third row of the rotation matrix
+       */
+      r31 = 2 * (q.x * q.z - q.w * q.y);
+      r32 = 2 * (q.y * q.z + q.w * q.x);
+      r33 = 2 * (q.w * q.w + q.z * q.z) - 1.0;
+
+      result = Py_BuildValue("((ddd)(ddd)(ddd))",
+                             r11, r12, r13,
+                             r21, r22, r23,
+                             r31, r32, r33);
+
+   } else {
+      PyErr_Format(PyExc_TypeError,
+                   "matrix() argument must be a number, not '%.200s'",
+                   Py_TYPE(arg)->tp_name);
+   }
+
+   return result;
+}
+
+
+/* -----------------------------------------------------------------------------
  * METH_O - one argument,  (in addition to the module argument)
  */
 static PyMethodDef qmath_methods[] = {
@@ -718,6 +778,9 @@ static PyMethodDef qmath_methods[] = {
    {"axis",     (PyCFunction)qmath_axis,     METH_O,        qmath_axis__doc__},
    {"phase",    (PyCFunction)qmath_phase,    METH_O,        qmath_phase__doc__},
    {"rect",     (PyCFunction)qmath_rect,     METH_VARARGS,  qmath_rect__doc__},
+
+   {"matrix",   (PyCFunction)qmath_matrix,   METH_O,        qmath_matix__doc__},
+
    {NULL, NULL, 0, NULL}  /* sentinel */
 };
 

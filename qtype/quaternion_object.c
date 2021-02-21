@@ -26,8 +26,8 @@
  * together with cribbing many code-snippets and ideas from the complex type.
  *
  * Development environment:
- * Python 3.6.3
- * CentOS Linux release 7.4.1708 (Core) x86_64
+ * Python 3.6.3 and since 21 Feb 2021 Python 3.9.2
+ * CentOS Linux release 7.4.1708 to 7.9.2009 (Core) x86_64
  * gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-16)
  */
 
