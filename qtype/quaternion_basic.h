@@ -93,7 +93,7 @@ Py_quaternion _Py_quat_prod (const Py_quaternion a, const Py_quaternion b);
 /* note: division is a * inverse(b) */
 Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b);
 
-/* calc a ** b - two forms */
+/* calc a ** b - two specialforms */
 Py_quaternion _Py_quat_pow1  (const Py_quaternion a, const double b);
 Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b);
 
@@ -117,11 +117,11 @@ Py_quat_triple _Py_quat_rotate (const Py_quaternion a,
 void _Py_quat_into_polar (const Py_quaternion a,
                           double* m,
                           Py_quat_triple* unit,
-                          double* angle);
+                          double* phase);
 
 Py_quaternion _Py_quat_from_polar (const double m,
                                    const Py_quat_triple unit,
-                                   const double angle);
+                                   const double phase);
 
 /* Math functions
  */

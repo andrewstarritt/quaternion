@@ -148,33 +148,53 @@ def test_rotation3():
 
     # Choose quazi random point
     #
-    line = (2.7, -7.2, 3.4)
+    c = (2.7, -7.2, 3.4)
 
-    # Rotate using:  r*line*r.conjugate
+    # Rotate using:  r*c*r.conjugate
     #
-    t1 = r.rotate(line)
+    t1 = r.rotate(c)
 
     # Extract rotation matrix
     #
-    m = qn.matrix(r)
+    m = qn.rotation_matrix(r)
 
     # And perform a matrix multiply
     #
-    tx = m[0][0] * line[0] + m[0][1] * line[1] + m[0][2] * line[2]
-    ty = m[1][0] * line[0] + m[1][1] * line[1] + m[1][2] * line[2]
-    tz = m[2][0] * line[0] + m[2][1] * line[1] + m[2][2] * line[2]
+    tx = m[0][0] * c[0] + m[0][1] * c[1] + m[0][2] * c[2]
+    ty = m[1][0] * c[0] + m[1][1] * c[1] + m[1][2] * c[2]
+    tz = m[2][0] * c[0] + m[2][1] * c[1] + m[2][2] * c[2]
     t2 = (tx, ty, tz)
 
     # ... and compare the result.
     #
-    s = abs(t1[0] - t2[0])
-    assert s < 1.0e-9
+    assert abs(t1[0] - t2[0]) < 1.0e-9
+    assert abs(t1[1] - t2[1]) < 1.0e-9
+    assert abs(t1[2] - t2[2]) < 1.0e-9
 
-    s = abs(t1[1] - t2[1])
-    assert s < 1.0e-9
 
-    s = abs(t1[2] - t2[2])
-    assert s < 1.0e-9
+def test_rotation4():
+    # Choose quazi random angle and axis
+    #
+    a1 = 0.54321
+
+    x, y, z = 0.12, -0.34, -0.56
+    s = (x*x + y*y + z*z)**0.5
+    u1 = (x/s, y/s, z/s)
+
+    r = Qn(angle=a1, axis=u1)
+
+    a2 = qn.angle(r)
+    u2 = qn.axis(r)
+
+    print(u1, u1[0]**2 + u1[1]**2 + u1[2]**2)
+    print(u2, u2[0]**2 + u2[1]**2 + u2[2]**2)
+
+    # ... and compare the result.
+    #
+    assert abs(a1    - a2)    < 1.0e-9
+    assert abs(u1[0] - u2[0]) < 1.0e-9
+    assert abs(u1[1] - u2[1]) < 1.0e-9
+    assert abs(u1[2] - u2[2]) < 1.0e-9
 
 
 if __name__ == "__main__":
@@ -183,5 +203,6 @@ if __name__ == "__main__":
     test_rotation1()
     test_rotation2()
     test_rotation3()
+    test_rotation4()
 
 # end

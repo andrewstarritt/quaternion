@@ -778,10 +778,10 @@ quaternion__format__(PyObject *self, PyObject *args)
 
          /* Convert to utf8 strings
           */
-         char *utf8_r = PyUnicode_AsUTF8 (fr);
-         char *utf8_i = PyUnicode_AsUTF8 (fi);
-         char *utf8_j = PyUnicode_AsUTF8 (fj);
-         char *utf8_k = PyUnicode_AsUTF8 (fk);
+         const char *utf8_r = PyUnicode_AsUTF8 (fr);
+         const char *utf8_i = PyUnicode_AsUTF8 (fi);
+         const char *utf8_j = PyUnicode_AsUTF8 (fj);
+         const char *utf8_k = PyUnicode_AsUTF8 (fk);
 
          /* Save required length - the formatting of r on its own will
           * capture ther overall required length.
@@ -1385,7 +1385,7 @@ static PyObject *
 quaternion_getattro(PyObject *self, PyObject *attr)
 {
    PyObject *result = NULL;
-   char* name = NULL;
+   const char* name = NULL;
 
    if (PyUnicode_Check(attr)) {
       /* The returned buffer always has an extra null byte appended

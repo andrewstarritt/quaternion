@@ -554,7 +554,7 @@ qmath_axis(PyObject *module, PyObject *arg)
 PyDoc_STRVAR(qmath_phase__doc__,
              "phase(q)\n"
              "\n"
-             "Return the phase or angle part of the polar coordinates of q.\n"
+             "Return argument, also known as the phase angle, of q.\n"
              "The polar coordinates of a Quaternion are length, axis, and phase\n"
              "such that:\n"
              "    q = length * (math.cos(phase) + axis*math.sin(phase))");
@@ -685,17 +685,55 @@ qmath_dot(PyObject *module, PyObject *args)
 
 /* -----------------------------------------------------------------------------
  */
-PyDoc_STRVAR(qmath_matix__doc__,
-             "matrix(q)\n"
+PyDoc_STRVAR(qmath_angle__doc__,
+             "angle(q)\n"
+             "\n"
+             "Return the rotation angle of a rotation quaternion q, i.e. a\n"
+             "quaternion constructed as:\n"
+             "   q = Quaternion(angle=angle, axis=(...))\n"
+             "\n"
+             "Note: None-rotation quaternions may lead to a maths error.\n"
+             "Note: this angle should not be confused with the polor\n"
+             "co-ordinate's phase angle or argument");
+static PyObject *
+qmath_angle(PyObject *module, PyObject *arg)
+{
+   PyObject * result = NULL;
+   Py_quaternion q;
+   bool s;
+
+   s = PyObject_AsCQuaternion (arg, &q);
+   if (s) {
+      if (q.w >= -1 && q.w <= +1) {
+         double angle;
+         angle = acos (q.w) * 2.0;
+         result = PyFloat_FromDouble (angle);
+      } else {
+         PyErr_Format(PyExc_ValueError,
+                      "angle() math domain error");
+      }
+   } else {
+      PyErr_Format(PyExc_TypeError,
+                   "angle() argument must be a number, not '%.200s'",
+                   Py_TYPE(arg)->tp_name);
+   }
+
+   return result;
+}
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_rotation_matrix__doc__,
+             "rotation_matrix(q)\n"
              "\n"
              "Convert a rotation Quaternion to the equivilent 3D rotation matrix.\n"
              "Returns a 3-tuple of 3-tuples.\n"
-             "The retured value can then be turned into numpy array.\n"
+             "The returned value may then be turned into numpy array.\n"
              "Example: \n"
-             "    rot_mat = np.array(quaternion.matrix(q))");
+             "    rot_mat = np.array(quaternion.rotation_matrix(q))");
 
 static PyObject *
-qmath_matrix(PyObject *module, PyObject *arg)
+qmath_rotation_matrix(PyObject *module, PyObject *arg)
 {
    PyObject* result = NULL;
    Py_quaternion q;
@@ -779,7 +817,10 @@ static PyMethodDef qmath_methods[] = {
    {"phase",    (PyCFunction)qmath_phase,    METH_O,        qmath_phase__doc__},
    {"rect",     (PyCFunction)qmath_rect,     METH_VARARGS,  qmath_rect__doc__},
 
-   {"matrix",   (PyCFunction)qmath_matrix,   METH_O,        qmath_matix__doc__},
+   {"angle",    (PyCFunction)qmath_angle,    METH_O,        qmath_angle__doc__},
+   {"rotation_matrix",
+                (PyCFunction)qmath_rotation_matrix,
+                                             METH_O,        qmath_rotation_matrix__doc__},
 
    {NULL, NULL, 0, NULL}  /* sentinel */
 };

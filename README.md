@@ -225,7 +225,8 @@ Format to a string according to format_spec. This allows, for example:
 
 q.\_\_getnewargs\_\_ () returns a 4-tuple s, such that s = (q.w, q.x, q.y, q.z)
 
-This allows Quaternion numbers to be pickled.
+This allows Quaternion numbers to be pickled and unpickled, and hence used
+with jsonpickle.
 
 ### <span style='color:#00c000'>\_\_round\_\_</span>
 
@@ -246,8 +247,8 @@ using format when printing Quaternion, e.g.
 ## <a name = "mathfuncs"/><span style='color:#00c000'>math functions</span>
 
 A number of math functions that operate on Quaternions are also provided.
-These functions provide the equivalent quaternion function as the functions of
-the same name out of the math and/or cmath module.
+Most of these functions provide the equivalent quaternion function as the
+functions of the same name out of the math and/or cmath module.
 
 The functions provided are:
 
@@ -276,6 +277,8 @@ The functions provided are:
     phase
     axis
     rect
+    angle
+    rotation_matrix
 
 Note: there is no separate qmath module.
 
@@ -320,5 +323,5 @@ together with cribbing many code-snippets and ideas from the complex type,
 and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: Mon Jan  4 21:02:11 AEDT 2021</font>
+<font size="-1">Last updated: Mon Feb 22 15:24:34 AEDT 2021</font>
 <br>
