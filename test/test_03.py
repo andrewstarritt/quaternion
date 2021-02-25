@@ -156,7 +156,7 @@ def test_rotation3():
 
     # Extract rotation matrix
     #
-    m = qn.rotation_matrix(r)
+    m = r.rotation_matrix()
 
     # And perform a matrix multiply
     #
@@ -183,7 +183,7 @@ def test_rotation4():
 
     r = Qn(angle=a1, axis=u1)
 
-    a2 = qn.angle(r)
+    a2 = r.rotation_angle()
     u2 = qn.axis(r)
 
     print(u1, u1[0]**2 + u1[1]**2 + u1[2]**2)

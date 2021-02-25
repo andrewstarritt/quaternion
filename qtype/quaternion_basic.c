@@ -665,8 +665,38 @@ Py_quaternion _Py_quat_calc_rotation (const double angle, const Py_quat_triple a
    return r;
 }
 
+
 /* -----------------------------------------------------------------------------
  * Returns:
+ */
+void _Py_quat_rotation_matrix (const Py_quaternion a,
+                               Py_quat_matrix* matrix)
+{
+   /* Based on:
+    * https://automaticaddison.com/how-to-convert-a-quaternion-to-a-rotation-matrix/
+    */
+
+   /* First row of the rotation matrix
+    */
+   matrix->r11 = 2 * (a.w * a.w + a.x * a.x) - 1.0;
+   matrix->r12 = 2 * (a.x * a.y - a.w * a.z);
+   matrix->r13 = 2 * (a.x * a.z + a.w * a.y);
+
+   /* Second row of the rotation matrix
+    */
+   matrix->r21 = 2 * (a.x * a.y + a.w * a.z);
+   matrix->r22 = 2 * (a.w * a.w + a.y * a.y) - 1.0;
+   matrix->r23 = 2 * (a.y * a.z - a.w * a.x);
+
+   /* Third row of the rotation matrix
+    */
+   matrix->r31 = 2 * (a.x * a.z - a.w * a.y);
+   matrix->r32 = 2 * (a.y * a.z + a.w * a.x);
+   matrix->r33 = 2 * (a.w * a.w + a.z * a.z) - 1.0;
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: 3-tuple representing rotation of point about origin
  */
 Py_quat_triple _Py_quat_rotate (const Py_quaternion a,
                                 const Py_quat_triple point,

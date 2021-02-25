@@ -59,6 +59,15 @@ typedef struct {
 } Py_quat_triple;
 
 
+/* Used for 3x3 matricies
+ */
+typedef struct {
+   double r11, r12, r13;
+   double r21, r22, r23;
+   double r31, r32, r33;
+} Py_quat_matrix;
+
+
 /* Infinities and NaNs
  */
 
@@ -106,6 +115,11 @@ double _Py_quat_dot_prod (const Py_quaternion a, const Py_quaternion b);
  */
 Py_quaternion _Py_quat_calc_rotation (const double angle,
                                       const Py_quat_triple axis);
+
+/* Determine equivilent 3D rotation matrix of a rotation quaternion
+ */
+void _Py_quat_rotation_matrix (const Py_quaternion a,
+                               Py_quat_matrix* matrix);
 
 Py_quat_triple _Py_quat_rotate (const Py_quaternion a,
                                 const Py_quat_triple point,

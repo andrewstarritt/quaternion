@@ -701,7 +701,7 @@ quaternion_normalise(PyObject *self)
    c = ((PyQuaternionObject *)self)->qval;
    PyFPE_START_PROTECT("quaternion_normalise", return 0);
    r = _Py_quat_normalise(c);
-   PyFPE_END_PROTECT(pr);
+   PyFPE_END_PROTECT(r);
    return PyQuaternion_FromCQuaternion(r);
 }
 
@@ -711,6 +711,61 @@ PyDoc_STRVAR(quaternion_normalise_doc,
              "Return the normalised quaternion of the argument such that\n"
              "abs (q.normalise()) == 1.0");
 
+
+/* -----------------------------------------------------------------------------
+ */
+static PyObject *
+quaternion_rotation_matrix(PyObject *self)
+{
+   Py_quaternion c;
+   Py_quat_matrix matrix;
+   c = ((PyQuaternionObject *)self)->qval;
+   PyFPE_START_PROTECT("quaternion_rotation_matrix", return 0);
+   _Py_quat_rotation_matrix (c, &matrix);
+   PyFPE_END_PROTECT(c);
+   return Py_BuildValue("((ddd)(ddd)(ddd))",
+                        matrix.r11, matrix.r12, matrix.r13,
+                        matrix.r21, matrix.r22, matrix.r23,
+                        matrix.r31, matrix.r32, matrix.r33);
+}
+
+PyDoc_STRVAR(quaternion_rotation_matrix_doc,
+             "quaternion.rotation_matrix() -> 3x3 float matrix"
+             "\n"
+             "Returns the equivilent 3D rotation matrix of a rotation Quaternion.\n"
+             "Returns a 3-tuple of 3-tuples.\n"
+             "The returned value may then be turned into numpy array.\n"
+             "Example: \n"
+             "    rot_mat = np.array(q.rotation_matrix())");
+
+/* -----------------------------------------------------------------------------
+ */
+static PyObject *
+quaternion_rotation_angle(PyObject *self)
+{
+   Py_quaternion c;
+   double angle;
+   c = ((PyQuaternionObject *)self)->qval;
+   if (c.w >= -1 && c.w <= +1) {
+      angle = acos (c.w) * 2.0;
+   } else {
+      PyErr_Format(PyExc_ValueError,
+                   "rotation_angle() math domain error");
+      return NULL;
+   }
+   return PyFloat_FromDouble (angle);
+}
+
+PyDoc_STRVAR(quaternion_rotation_angle_doc,
+             "quaternion.rotation_angle() -> float"
+             "\n"
+             "Return the rotation angle of a rotation quaternion q, i.e. a\n"
+             "quaternion constructed as:\n"
+             "   q = Quaternion(angle=angle, axis=(...))\n"
+             "\n"
+             "Note: None-rotation quaternions may lead to a maths error.\n"
+             "Note: this angle should not be confused with the polor\n"
+             "co-ordinate's argument or phase angle");
 
 /* -----------------------------------------------------------------------------
  */
@@ -896,7 +951,7 @@ quaternion__round__(PyObject *self, PyObject *args, PyObject *kwds)
    c = ((PyQuaternionObject *)self)->qval;
    PyFPE_START_PROTECT("quaternion__round__", return 0);
    r = _Py_quat_round(c, n);
-   PyFPE_END_PROTECT(pr);
+   PyFPE_END_PROTECT(r);
    return PyQuaternion_FromCQuaternion(r);
 }
 
@@ -907,7 +962,7 @@ PyDoc_STRVAR(quaternion_round_doc,
              "when printing.\n"
              "\n"
              "ndigits - number of digits to round by, may be positive or negative.\n"
-             "round(q,n) == Quaterion (round(q.w,n), round (q.x,n), round (q.y,n), round(q.z.n))");
+             "round(q,n) == Quaterion(round(q.w,n), round(q.x,n), round(q.y,n), round(q.z.n))");
 
 
 /* -----------------------------------------------------------------------------
@@ -966,6 +1021,58 @@ quaternion_rotate(PyObject *self, PyObject *args, PyObject *kwds)
  */
 static PyObject *
 quaternion_repr (PyQuaternionObject *v)
+{
+   int prec = 0;
+   char format = 'r';
+
+   PyObject *result = NULL;
+
+   /* If these are non-NULL, they'll need to be freed.
+    */
+   char *ps = NULL;
+   char *px = NULL;
+   char *py = NULL;
+   char *pz = NULL;
+
+   ps = PyOS_double_to_string(v->qval.w, format, prec, 0, NULL);
+   if (!ps) {
+      PyErr_NoMemory();
+      goto done;
+   }
+
+   px = PyOS_double_to_string(v->qval.x, format, prec, Py_DTSF_SIGN, NULL);
+   if (!px) {
+      PyErr_NoMemory();
+      goto done;
+   }
+
+   py = PyOS_double_to_string(v->qval.y, format, prec, Py_DTSF_SIGN, NULL);
+   if (!px) {
+      PyErr_NoMemory();
+      goto done;
+   }
+
+   pz = PyOS_double_to_string(v->qval.z, format, prec, Py_DTSF_SIGN, NULL);
+   if (!px) {
+      PyErr_NoMemory();
+      goto done;
+   }
+
+   result = PyUnicode_FromFormat("Quaternion(%s,%s,%s,%s)", ps, px, py, pz);
+
+done:
+   PyMem_Free(ps);
+   PyMem_Free(px);
+   PyMem_Free(py);
+   PyMem_Free(pz);
+
+   return result;
+}
+
+/* -----------------------------------------------------------------------------
+ */
+static PyObject *
+quaternion_str (PyQuaternionObject *v)
 {
    int prec = 0;
    char format = 'r';
@@ -1431,17 +1538,21 @@ quaternion_getattro(PyObject *self, PyObject *attr)
  * =============================================================================
  */
 static PyMethodDef QuaternionMethods [] = {
-   {"__getnewargs__", (PyCFunction)quaternion_getnewargs, METH_NOARGS, NULL},
-   {"__format__", (PyCFunction)quaternion__format__,  METH_VARARGS,  quaternion_format_doc},
-   {"__round__",  (PyCFunction)quaternion__round__,   METH_VARARGS |
-                                                      METH_KEYWORDS,  quaternion_round_doc},
-   {"conjugate",  (PyCFunction)quaternion_conjugate,  METH_NOARGS,   quaternion_conjugate_doc},
-   {"inverse",    (PyCFunction)quaternion_inverse,    METH_NOARGS,   quaternion_inverse_doc},
-   {"quadrance",  (PyCFunction)quaternion_quadrance,  METH_NOARGS,   quaternion_quadrance_doc},
-   {"normalise",  (PyCFunction)quaternion_normalise,  METH_NOARGS,   quaternion_normalise_doc},
-   {"rotate",     (PyCFunction)quaternion_rotate,     METH_VARARGS |
-                                                      METH_KEYWORDS, quaternion_rotate_doc},
-   {NULL},  /* sentinel */
+   {"__getnewargs__", (PyCFunction)quaternion_getnewargs, METH_NOARGS,   NULL},
+   {"__format__",     (PyCFunction)quaternion__format__,  METH_VARARGS,  quaternion_format_doc},
+   {"__round__",      (PyCFunction)quaternion__round__,   METH_VARARGS |
+                                                          METH_KEYWORDS, quaternion_round_doc},
+   {"conjugate",      (PyCFunction)quaternion_conjugate,  METH_NOARGS,   quaternion_conjugate_doc},
+   {"inverse",        (PyCFunction)quaternion_inverse,    METH_NOARGS,   quaternion_inverse_doc},
+   {"quadrance",      (PyCFunction)quaternion_quadrance,  METH_NOARGS,   quaternion_quadrance_doc},
+   {"normalise",      (PyCFunction)quaternion_normalise,  METH_NOARGS,   quaternion_normalise_doc},
+   {"rotation_matrix",
+               (PyCFunction)quaternion_rotation_matrix,   METH_NOARGS,   quaternion_rotation_matrix_doc},
+   {"rotation_angle",
+               (PyCFunction)quaternion_rotation_angle,    METH_NOARGS,   quaternion_rotation_angle_doc},
+   {"rotate",         (PyCFunction)quaternion_rotate,     METH_VARARGS |
+                                                          METH_KEYWORDS, quaternion_rotate_doc},
+   {NULL, NULL, 0, NULL},  /* sentinel */
 };
 
 /* -----------------------------------------------------------------------------
@@ -1553,7 +1664,7 @@ static PyTypeObject QuaternionType = {
    0,                                         /* tp_as_mapping */
    (hashfunc)quaternion_hash,                 /* tp_hash */
    0,                                         /* tp_call */
-   (reprfunc)quaternion_repr,                 /* tp_str */
+   (reprfunc)quaternion_str,                  /* tp_str */
    (getattrofunc)quaternion_getattro,         /* tp_getattro */
    0,                                         /* tp_setattro */
    0,                                         /* tp_as_buffer */
