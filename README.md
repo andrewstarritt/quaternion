@@ -202,6 +202,18 @@ q.normalise () returns s such that: s = q / abs (q)
 
 q.quadrance () returns s such that s = q.w\*q.w + q.x\*q.x + q.y\*q.y + q.z\*q.z
 
+### <span style='color:#00c000'>rotation_matrix</span>
+
+q.rotation_matrix () returns 3-tuple of 3-tuple of floats representing the 3x3
+rotation matrix equivalent of q.
+q should be a rotation quaternion.
+
+### <span style='color:#00c000'>rotation_angle</span>
+
+q.rotation_angle () returns the angle (float, in radians) of quaternion.
+q should be a rotation quaternion.
+This method may raise a ValueError is q is not a rotation quaternion.
+
 ### <span style='color:#00c000'>rotate</span>
 
 q.rotate (point, origin=None) -> point, where q is a rotation number,
@@ -323,5 +335,5 @@ together with cribbing many code-snippets and ideas from the complex type,
 and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: Mon Feb 22 15:24:34 AEDT 2021</font>
+<font size="-1">Last updated: Fri Feb 26 18:25:00 AEDT 2021</font>
 <br>

@@ -182,6 +182,14 @@ def test_abs():
     assert abs(p - q) < 1.0e-9
 
 
+def test_normalise():
+    s = abs(a.normalise() - a/abs(a))
+    assert s < 1.0e-9
+    
+    s = abs(b.normalise() - b/abs(b))
+    assert s < 1.0e-9
+
+
 def test_quadrance():
     p = abs(a) * abs(a)
     q = a.quadrance()
@@ -492,6 +500,7 @@ if __name__ == "__main__":
     test_equal()
     test_conjugate()
     test_quadrance()
+    test_normalise()
     test_abs()
     test_add()
     test_sub()

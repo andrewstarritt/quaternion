@@ -102,7 +102,7 @@ Py_quaternion _Py_quat_prod (const Py_quaternion a, const Py_quaternion b);
 /* note: division is a * inverse(b) */
 Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b);
 
-/* calc a ** b - two specialforms */
+/* calc a ** b - two special forms */
 Py_quaternion _Py_quat_pow1  (const Py_quaternion a, const double b);
 Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b);
 

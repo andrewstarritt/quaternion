@@ -1058,7 +1058,7 @@ quaternion_repr (PyQuaternionObject *v)
       goto done;
    }
 
-   result = PyUnicode_FromFormat("Quaternion(%s,%s,%s,%s)", ps, px, py, pz);
+   result = PyUnicode_FromFormat("quaternion.Quaternion(%s, %s, %s, %s)", ps, px, py, pz);
 
 done:
    PyMem_Free(ps);
