@@ -5,7 +5,7 @@
 
  # Ensure version 3.5 or later
  #
- python3 -m virtualenv  venv
+ python3 -m virtualenv  /asp/apps/quaternion/venv
 
  .  /asp/apps/quaternion/venv/bin/activate
 
