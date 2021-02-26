@@ -182,6 +182,14 @@ def test_abs():
     assert abs(p - q) < 1.0e-9
 
 
+def test_normalise():
+    s = abs(a.normalise() - a/abs(a))
+    assert s < 1.0e-9
+    
+    s = abs(b.normalise() - b/abs(b))
+    assert s < 1.0e-9
+
+
 def test_quadrance():
     p = abs(a) * abs(a)
     q = a.quadrance()
@@ -306,7 +314,8 @@ def test_inverse():
     assert (quaternion.isclose(b.inverse()*b, one))
 
 
-def test_pow():
+def test_pow1():
+    # quaternion ** float
     assert a ** 0 == one
     assert a ** 1 == a
     assert abs(a ** 2 - (a * a)) <= 1.0e-12
@@ -342,13 +351,15 @@ def test_pow():
    
 
 def test_pow2():
-    assert a.w ** zero == one
-    assert a.w ** one  == a.w
+    # float ** quaternion
+    f = 1.43
+    assert f ** zero == one
+    assert f ** one  == f
 
-    t1 = a.w ** b
-    t2 = quaternion.exp (math.log(a.w) * b)
+    t1 = f ** b
+    t2 = quaternion.exp (math.log(f) * b)
     p = t1 - t2
-    assert abs(p) <= 1.0e-12
+    assert abs(p) <= 1.0e-9
 
 
 def test_hash():
@@ -489,12 +500,13 @@ if __name__ == "__main__":
     test_equal()
     test_conjugate()
     test_quadrance()
+    test_normalise()
     test_abs()
     test_add()
     test_sub()
     test_mul()
     test_div()
-    test_pow()
+    test_pow1()
     test_pow2()
     test_hash()
 #   run_stuff()
