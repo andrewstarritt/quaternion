@@ -554,7 +554,7 @@ qmath_axis(PyObject *module, PyObject *arg)
 PyDoc_STRVAR(qmath_phase__doc__,
              "phase(q)\n"
              "\n"
-             "Return the phase or angle part of the polar coordinates of q.\n"
+             "Return argument, also known as the phase angle, of q.\n"
              "The polar coordinates of a Quaternion are length, axis, and phase\n"
              "such that:\n"
              "    q = length * (math.cos(phase) + axis*math.sin(phase))");
@@ -713,16 +713,18 @@ static PyMethodDef qmath_methods[] = {
 
    {"isclose",  (PyCFunction)qmath_isclose,  METH_KEYWORDS |
                                              METH_VARARGS,  qmath_isclose__doc__},
-   {"dot",      (PyCFunction)qmath_dot,      METH_VARARGS,  qmath_dot__doc__},
    {"polar",    (PyCFunction)qmath_polar,    METH_O,        qmath_polar__doc__},
    {"axis",     (PyCFunction)qmath_axis,     METH_O,        qmath_axis__doc__},
    {"phase",    (PyCFunction)qmath_phase,    METH_O,        qmath_phase__doc__},
    {"rect",     (PyCFunction)qmath_rect,     METH_VARARGS,  qmath_rect__doc__},
+
+   {"dot",      (PyCFunction)qmath_dot,      METH_VARARGS,  qmath_dot__doc__},
+
    {NULL, NULL, 0, NULL}  /* sentinel */
 };
 
 
-/* Allow module defn code to access the quaternion PyMethodDef.
+/* Allow module definition code to access the quaternion PyMethodDef.
  */
 PyMethodDef* _PyQmathMethods ()
 {
