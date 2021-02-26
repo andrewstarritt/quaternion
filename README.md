@@ -289,8 +289,6 @@ The functions provided are:
     phase
     axis
     rect
-    angle
-    rotation_matrix
 
 Note: there is no separate qmath module.
 
