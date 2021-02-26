@@ -28,14 +28,7 @@
 
 #include "quaternion_basic.h"
 #include <Python.h>
-#include <pymath.h>
-#include <math.h>
 #include <complex.h>
-
-#define ABS(a) ((a) >= 0  ? (a) : -(a))
-
-static const Py_quaternion q_one = { 1.0, 0.0, 0.0, 0.0 };
-static const double pi = 3.14159265358979323846;
 
 
 /* -----------------------------------------------------------------------------
@@ -284,7 +277,7 @@ Py_quaternion _Py_quat_prod (const Py_quaternion a, const Py_quaternion b)
 }
 
 /* -----------------------------------------------------------------------------
- * Returns: a / b, technically a * inverse (b)
+ * Returns: a / b, technically a * inverse (b), as opposed to inverse (b) * a
  */
 Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b)
 {
@@ -476,14 +469,14 @@ Py_quaternion _Py_quat_pow1 (const Py_quaternion a, const double b)
       za = ar + I*ai;
 
       /* Form complex equivalent of b
-    */
+       */
       zb = b + I*0.0;
 
       zr = cpow (za, zb);   /* Let cpow do all the hard work */
 
       /* form the quaternion equivalent of zr
-    * r = rr + ri*unit
-    */
+       * r = rr + ri*unit
+       */
       rr = creal (zr);
       ri = cimag (zr);
       r = compose (rr, ri, unit);
@@ -672,8 +665,38 @@ Py_quaternion _Py_quat_calc_rotation (const double angle, const Py_quat_triple a
    return r;
 }
 
+
 /* -----------------------------------------------------------------------------
  * Returns:
+ */
+void _Py_quat_rotation_matrix (const Py_quaternion a,
+                               Py_quat_matrix* matrix)
+{
+   /* Based on:
+    * https://automaticaddison.com/how-to-convert-a-quaternion-to-a-rotation-matrix/
+    */
+
+   /* First row of the rotation matrix
+    */
+   matrix->r11 = 2 * (a.w * a.w + a.x * a.x) - 1.0;
+   matrix->r12 = 2 * (a.x * a.y - a.w * a.z);
+   matrix->r13 = 2 * (a.x * a.z + a.w * a.y);
+
+   /* Second row of the rotation matrix
+    */
+   matrix->r21 = 2 * (a.x * a.y + a.w * a.z);
+   matrix->r22 = 2 * (a.w * a.w + a.y * a.y) - 1.0;
+   matrix->r23 = 2 * (a.y * a.z - a.w * a.x);
+
+   /* Third row of the rotation matrix
+    */
+   matrix->r31 = 2 * (a.x * a.z - a.w * a.y);
+   matrix->r32 = 2 * (a.y * a.z + a.w * a.x);
+   matrix->r33 = 2 * (a.w * a.w + a.z * a.z) - 1.0;
+}
+
+/* -----------------------------------------------------------------------------
+ * Returns: 3-tuple representing rotation of point about origin
  */
 Py_quat_triple _Py_quat_rotate (const Py_quaternion a,
                                 const Py_quat_triple point,
@@ -710,7 +733,7 @@ Py_quat_triple _Py_quat_rotate (const Py_quaternion a,
 void _Py_quat_into_polar (const Py_quaternion a,
                           double* m,
                           Py_quat_triple* unit,
-                          double* angle)
+                          double* phase)
 {
    Py_quat_triple v;
    double c, s;
@@ -719,7 +742,7 @@ void _Py_quat_into_polar (const Py_quaternion a,
    /* Is this essentially a null quaternion?
     */
    if (*m < 1.0e-160) {
-      *angle  = 0.0;
+      *phase  = 0.0;
       unit->x = 0.0;
       unit->y = 1.0;
       unit->z = 0.0;
@@ -737,7 +760,7 @@ void _Py_quat_into_polar (const Py_quaternion a,
     */
    s = sqrt (v.x*v.x + v.y*v.y + v.z*v.z);   /* sin (angle) */
 
-   *angle = atan2 (s, c);
+   *phase = atan2 (s, c);
    if (s < 1.0e-20) {
       /* Basically real - no imaginary parts
        */
@@ -752,18 +775,6 @@ void _Py_quat_into_polar (const Py_quaternion a,
    unit->x = v.x/s;
    unit->y = v.y/s;
    unit->z = v.z/s;
-
-  /* Cosmetic fluff: ensure that on balance, unit imaginary vector is +ve.
-   * This is mainly so that when there is one imaginary component, is is
-   * always positive, just like with complex numbers:
-   *   j is always a unit vector in +ve direction
-   */
-   if (unit->x + unit->y + unit->z < 0) {
-      *angle  = -*angle;
-      unit->x = -unit->x;
-      unit->y = -unit->y;
-      unit->z = -unit->z;
-   }
 }
 
 /* -----------------------------------------------------------------------------
@@ -778,7 +789,7 @@ void _Py_quat_into_polar (const Py_quaternion a,
  */
 Py_quaternion _Py_quat_from_polar (const double m,
                                    const Py_quat_triple unit,
-                                   const double angle)
+                                   const double phase)
 {
    Py_quaternion r;
    double u;
@@ -791,8 +802,8 @@ Py_quaternion _Py_quat_from_polar (const double m,
       r.w = r.x = r.y = r.z = 0.0;
    } else {
 
-      c = cos (angle);
-      s = sin (angle);
+      c = cos (phase);
+      s = sin (phase);
 
       r.w = m * c;
 
