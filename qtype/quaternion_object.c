@@ -56,7 +56,8 @@ void debugTrace(const char* function,
 
    char notification [240];
    snprintf (notification, sizeof (notification), "%4d (%s): %s\n", line, function, buffer);
-   printf (notification);
+   /* Avoid (gcc 8.4.1) error: format not a string literal and no format arguments */
+   printf ("%s", notification);
 }
 
 #define DEBUG_TRACE(...)  debugTrace(__FUNCTION__, __LINE__, __VA_ARGS__)
