@@ -1131,11 +1131,11 @@ quaternion_hash (PyQuaternionObject *v)
    PyObject *z1, *z2;
    Py_uhash_t hashz1, hashz2, combined;
 
-   /* z1 is the complex part of v, z2 is the other part of v as a complex number
+   /* z1 is the complex part of v, z2 is the other part of v as a complex number.
     * This ensures that numbers that compare equal return same hash value.
     */
-   z1 = (PyObject *) PyComplex_FromDoubles (v->qval.w, v->qval.y);
-   z2 = (PyObject *) PyComplex_FromDoubles (v->qval.x, v->qval.z);
+   z1 = (PyObject *) PyComplex_FromDoubles (v->qval.w, v->qval.y);  /* r, j */
+   z2 = (PyObject *) PyComplex_FromDoubles (v->qval.x, v->qval.z);  /* i, k */
 
    hashz1 = z1->ob_type->tp_hash (z1);
    hashz2 = z2->ob_type->tp_hash (z2);
@@ -1144,8 +1144,12 @@ quaternion_hash (PyQuaternionObject *v)
    z2->ob_type->tp_free (z2);
 
    combined = hashz1 + (_PyHASH_MULTIPLIER + 0x5afe) * hashz2;
-   if (combined == (Py_uhash_t)-1)
-      combined = (Py_uhash_t)-2;
+
+   /* Don't allow -1 as a hash value.
+    */
+   if (combined == (Py_uhash_t)(-1))
+      combined = (Py_uhash_t)(-2);
+
    return (Py_hash_t)combined;
 }
 
