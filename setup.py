@@ -6,7 +6,7 @@
 #
 #    python setup.py sdist upload -r aspypi
 #
-# Copyright (c) 2018-2021  Andrew C. Starritt
+# Copyright (c) 2018-2022  Andrew C. Starritt
 #
 # The quaternion module is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ setup(name="quaternion",
       author="Andrew Starritt",
       author_email="andrew.starritt@gmail.com",
       license="GPL3",
-      description=""" Provides a Quaternion type and associated math functions """,
+      description=""" Provides a Quaternion type and associated maths functions """,
       ext_modules=[m])
 
 # end

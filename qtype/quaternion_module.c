@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It privides module
  * framework.
  *
- * Copyright (c) 2018-2021  Andrew C. Starritt
+ * Copyright (c) 2018-2022  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,13 +25,12 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.1.7"
-
+#define __version__ "1.2.1"
 
 /* Development environment:
- * Python 3.6.3
- * CentOS Linux release 7.6.1810 (Core) x86_64
- * gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-36)
+ * Python 3.9.2
+ * CentOS Linux release 7.9.2009 (Core)
+ * gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-44)
  */
 
 #include <Python.h>
@@ -87,14 +86,18 @@ static PyModuleDef QuaternionModule = {
    "    (p + q) + r  =  p + (q + r)\n"
    "    (p * q) * r  =  p * (q * r)\n"
    "\n"
+   "The Quaternion type is also distributive:\n"
+   "\n"
+   "    p * (q + r)  =  p*q + p*r\n"
+   "\n"
    "The Quaternion type is non-commutative with respect to multiplication and division,\n"
    "i.e.  p * q  and  q * p in general provide different values. To divide one\n"
-   "Quaternion by another, there are two options:\n"
+   "Quaternion by another, there are two possible options:\n"
    "\n"
    "    p * q.inverse() ; or\n"
    "    q.inverse() * p.\n"
    "\n"
-   "The quotient function returns the former, therefore:\n"
+   "The quotient function uses p * q.inverse(), therefore:\n"
    "\n"
    "    (p / q) * q = p\n"
    "\n"

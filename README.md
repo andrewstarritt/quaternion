@@ -66,31 +66,28 @@ The Quaternion type is associative under both addition and multiplication, i.e.:
     (p + q) + r  =  p + (q + r)
     (p * q) * r  =  p * (q * r)
 
+The Quaternion type is also distributive:
+
+    p * (q + r)  =  p*q + p*r
+
 The Quaternion type is non-commutative with respect to multiplication and division,
 i.e.  p \* q  and  q \* p in general provide different values. To divide one
-Quaternion by another, there are two options:
+Quaternion by another, there are two possible options:
 
     p * q.inverse() ; or
     q.inverse() * p.
 
-The quotient function returns the former, therefore:
+The quotient function uses p * q.inverse(), therefore:
 
     (p / q) * q = p
 
-This non-commutative nature also explains why p ** q is undefined, as this could implemented as:
+This non-commutative nature also explains why p ** q is undefined,
+as this could implemented as:
 
     exp (q * log (p))  ; or
     exp (log (p) * q)
 
-However, mixed-mode ** is possible - see below.
-
-___Experimental/tentative___
-
-matrix mult: @
-
-p @ q is the same a dot (p, q) and returns the dot product of two Quaternians
-treated as a normal 4-tuple.
-Is this a sensible use of @ ??
+However, mixed-mode ** is possible - please see below.
 
 ## <a name = "mixedmode"/><span style='color:#00c000'>mixed mode arithmetic</span>
 
@@ -123,8 +120,8 @@ Mixed mode is also available for the ** operator.
 If a is a float or integer number, then with some restrictions the following
 are both provided:
 
-     q ** a
-     a ** q           -- a must be > 0.0
+    q ** a
+    a ** q        -- a must be > 0.0
 
 
 ## <a name = "construction"/><span style='color:#00c000'>construction</span>
@@ -204,15 +201,15 @@ q.quadrance () returns s such that s = q.w\*q.w + q.x\*q.x + q.y\*q.y + q.z\*q.z
 
 ### <span style='color:#00c000'>rotation_matrix</span>
 
-q.rotation_matrix () returns 3-tuple of 3-tuple of floats representing the 3x3
-rotation matrix equivalent of q.
+q.rotation_matrix () returns a 3-tuple of 3-tuple of floats representing
+the 3x3 rotation matrix equivalent of q.
 q should be a rotation quaternion.
 
 ### <span style='color:#00c000'>rotation_angle</span>
 
-q.rotation_angle () returns the angle (float, in radians) of quaternion.
+q.rotation_angle () returns the angle (float, in radians) of q.
 q should be a rotation quaternion.
-This method may raise a ValueError is q is not a rotation quaternion.
+This method may raise a ValueError if q is not a rotation quaternion.
 
 ### <span style='color:#00c000'>rotate</span>
 
@@ -333,5 +330,5 @@ together with cribbing many code-snippets and ideas from the complex type,
 and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: Fri Feb 26 18:25:00 AEDT 2021</font>
+<font size="-1">Last updated: Wed Apr 28 20:47:49 AEDT 2022</font>
 <br>

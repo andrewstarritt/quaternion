@@ -81,9 +81,9 @@ static double length_triple (const Py_quat_triple t)
 
 
 /* -----------------------------------------------------------------------------
- * Decomposes q to return real, imag and unit as follows:
+ * Decomposes q in to return real, imag and unit as follows:
  * Let v be the Quaternion (1, 0, 0, 0)
- * Let unit be the Quaternion (0, q.x, q.y, q.z) normalised,
+ * Let u be the Quaternion (0, q.x, q.y, q.z) normalised,
  * i.e. the imaginary part of q normalised,
  * then we can define q as:
  *     q = real*v + imag*u
@@ -667,10 +667,10 @@ Py_quaternion _Py_quat_calc_rotation (const double angle, const Py_quat_triple a
 
 
 /* -----------------------------------------------------------------------------
- * Returns:
+ * Returns: the equivilent 3D rotation matrix of a.
  */
-void _Py_quat_rotation_matrix (const Py_quaternion a,
-                               Py_quat_matrix* matrix)
+void _Py_quat_to_rotation_matrix (const Py_quaternion a,
+                                  Py_quat_matrix* matrix)
 {
    /* Based on:
     * https://automaticaddison.com/how-to-convert-a-quaternion-to-a-rotation-matrix/
@@ -694,6 +694,62 @@ void _Py_quat_rotation_matrix (const Py_quaternion a,
    matrix->r32 = 2 * (a.y * a.z + a.w * a.x);
    matrix->r33 = 2 * (a.w * a.w + a.z * a.z) - 1.0;
 }
+
+/* -----------------------------------------------------------------------------
+ * Composes a quaternion from a 3D rotation matrix
+ * Based on:
+ * https://math.stackexchange.com/questions/893984/conversion-of-rotation-matrix-to-quaternion
+ * https://d3cw3dd2w32x2b.cloudfront.net/wp-content/uploads/2015/01/matrix-to-quat.pdf
+ *
+ * with the matrix transposed.
+ *
+ */
+Py_quaternion _Py_quat_from_rotation_matrix (const Py_quat_matrix* matrix)
+{
+   Py_quaternion r;
+   double t;
+   double st;
+
+   if (matrix->r33 < 0) {
+      if (matrix->r11 > matrix->r22) {
+         t = 1.0 + matrix->r11 - matrix->r22 - matrix->r33;
+         r.w = matrix->r32 - matrix->r23;
+         r.x = t;
+         r.y = matrix->r21 + matrix->r12;
+         r.z = matrix->r13 + matrix->r31;
+      } else {
+         t = 1.0 - matrix->r11 + matrix->r22 - matrix->r33;
+         r.w = matrix->r13 - matrix->r31;
+         r.x = matrix->r21 + matrix->r12;
+         r.y = t;
+         r.z = matrix->r32 + matrix->r23;
+      }
+   } else {
+      if (matrix->r11 < -matrix->r22) {
+         t = 1.0 - matrix->r11 - matrix->r22 + matrix->r33;
+         r.w = matrix->r21 - matrix->r12;
+         r.x = matrix->r13 + matrix->r31;
+         r.y = matrix->r32 + matrix->r23;
+         r.z = t;
+      } else {
+         t = 1.0 + matrix->r11 + matrix->r22 + matrix->r33;
+         r.w = t;
+         r.x = matrix->r32 - matrix->r23;
+         r.y = matrix->r13 - matrix->r31;
+         r.z = matrix->r21 - matrix->r12;
+      }
+   }
+
+   st = sqrt(t);
+
+   r.w *= 0.5 / st;
+   r.x *= 0.5 / st;
+   r.y *= 0.5 / st;
+   r.z *= 0.5 / st;
+
+   return r;
+}
+
 
 /* -----------------------------------------------------------------------------
  * Returns: 3-tuple representing rotation of point about origin

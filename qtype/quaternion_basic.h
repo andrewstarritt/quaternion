@@ -118,8 +118,14 @@ Py_quaternion _Py_quat_calc_rotation (const double angle,
 
 /* Determine equivilent 3D rotation matrix of a rotation quaternion
  */
-void _Py_quat_rotation_matrix (const Py_quaternion a,
-                               Py_quat_matrix* matrix);
+void _Py_quat_to_rotation_matrix (const Py_quaternion a,
+                                  Py_quat_matrix* matrix);
+
+
+/* Create a quaternion from a 3D rotation matrix
+ */
+Py_quaternion _Py_quat_from_rotation_matrix (const Py_quat_matrix* matrix);
+
 
 Py_quat_triple _Py_quat_rotate (const Py_quaternion a,
                                 const Py_quat_triple point,

@@ -4,7 +4,7 @@
  * mathematic Quaternian functions. Where such functins are defined, they aim
  * to mimic the equivalent functions out of the math/cmath module.
  *
- * Copyright (c) 2018-2021  Andrew C. Starritt
+ * Copyright (c) 2018-2022  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -554,7 +554,7 @@ qmath_axis(PyObject *module, PyObject *arg)
 PyDoc_STRVAR(qmath_phase__doc__,
              "phase(q)\n"
              "\n"
-             "Return argument, also known as the phase angle, of q.\n"
+             "Return the argument, also known as the phase angle, of q.\n"
              "The polar coordinates of a Quaternion are length, axis, and phase\n"
              "such that:\n"
              "    q = length * (math.cos(phase) + axis*math.sin(phase))");

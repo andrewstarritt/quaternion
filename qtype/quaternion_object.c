@@ -26,9 +26,9 @@
  * together with cribbing many code-snippets and ideas from the complex type.
  *
  * Development environment:
- * Python 3.6.3 and since 21 Feb 2021 Python 3.9.2
- * CentOS Linux release 7.4.1708 to 7.9.2009 (Core) x86_64
- * gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-16)
+ * Python 3.9.2
+ * CentOS Linux release 7.9.2009 (Core)
+ * gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-44)
  */
 
 #include "quaternion_object.h"
@@ -428,20 +428,22 @@ quaternion_init_from_string(PyTypeObject *type, PyObject *v)
 static PyObject *
 quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-   static char *kwlist[] = {"w", "x", "y", "z", "real", "imag", "angle", "axis", 0};
+   static char *kwlist[] = {"w", "x", "y", "z", "real", "imag",
+                            "angle", "axis", "matrix", 0};
 
 //   PyQuaternionObject *self = NULL;
    PyObject *r = NULL, *i = NULL, *j = NULL, *k = NULL;
    PyObject *angle = NULL, *axis = NULL;
    PyObject *real = NULL, *imag = NULL;
+   PyObject *matrix = NULL;
    unsigned int mask = 0;
    bool status;
    PyComplexObject* z = NULL;
 
    Py_quaternion qval = { 0.0, 0.0, 0.0, 0.0 };  /* initialised working copy - when needed */
 
-   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOOOOOO:Quaternion", kwlist,
-                                    &r, &i, &j, &k, &real, &imag, &angle, &axis)) {
+   if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOOOOOOOO:Quaternion", kwlist,
+                                    &r, &i, &j, &k, &real, &imag, &angle, &axis, &matrix)) {
       return NULL;
    }
 
@@ -457,6 +459,7 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    if (axis)  mask |= 0x20;
    if (real)  mask |= 0x40;
    if (imag)  mask |= 0x80;
+   if (matrix) mask |= 0x100;
 
    /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     * o - the object
@@ -610,11 +613,48 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
       return quaternion_subtype_from_c_quaternion (type, qval);
    }
 
-   /* If we get here, it's an error
+   /* matrix specification ?
+    */
+   if (mask == (mask & 0x100)) {
+
+      /* We have been given a matrix.
+       */
+      Py_quat_matrix mat;
+
+      if (!PyTuple_Check(matrix)) {
+         PyErr_Format(PyExc_TypeError,
+                      "%.200s() argument '%.200s' must be tuple, not '%.200s'",
+                      "Quaternion", "matrix", Py_TYPE(matrix)->tp_name);
+         return false;
+      }
+
+
+      /* PyArg_ParseTuple does all the hard work, but we do lose the exact
+       * nature of the error.
+       */
+      status = PyArg_ParseTuple(matrix, "(ddd)(ddd)(ddd):Quaternion()",
+                                &mat.r11, &mat.r12, &mat.r13,
+                                &mat.r21, &mat.r22, &mat.r23,
+                                &mat.r31, &mat.r32, &mat.r33);
+
+      if (!status) {
+         /* Reset the generic error to something more appropriate.
+          */
+         PyErr_Format(PyExc_TypeError,
+                      "%.200s() argument '%.200s' requires 3x3 nested tuple of numeric values",
+                      "Quaternion", "matrix");
+         return NULL;
+      }
+
+      qval = _Py_quat_from_rotation_matrix(&mat);
+      return quaternion_subtype_from_c_quaternion(type, qval);
+   }
+
+   /* If we get here, it's an error.
     * Be more disserning re allow combinations. 
     */
    PyErr_SetString(PyExc_TypeError,
-                   "Quaternion() can't mix component arguments and/or 'angle'/'axis' arguments and/or 'real'/'imag' arguments");
+                   "Quaternion() can't mix components and/or 'angle'/'axis' and/or 'real'/'imag' and/or 'matrix' arguments");
    return NULL;
 
 #undef MMM
@@ -718,12 +758,12 @@ PyDoc_STRVAR(quaternion_normalise_doc,
 static PyObject *
 quaternion_rotation_matrix(PyObject *self)
 {
-   Py_quaternion c;
+   Py_quaternion q;
    Py_quat_matrix matrix;
-   c = ((PyQuaternionObject *)self)->qval;
+   q = ((PyQuaternionObject *)self)->qval;
    PyFPE_START_PROTECT("quaternion_rotation_matrix", return 0);
-   _Py_quat_rotation_matrix (c, &matrix);
-   PyFPE_END_PROTECT(c);
+   _Py_quat_to_rotation_matrix (q, &matrix);
+   PyFPE_END_PROTECT(q);
    return Py_BuildValue("((ddd)(ddd)(ddd))",
                         matrix.r11, matrix.r12, matrix.r13,
                         matrix.r21, matrix.r22, matrix.r23,
@@ -734,7 +774,7 @@ PyDoc_STRVAR(quaternion_rotation_matrix_doc,
              "quaternion.rotation_matrix() -> 3x3 float matrix"
              "\n"
              "Returns the equivilent 3D rotation matrix of a rotation Quaternion.\n"
-             "Returns a 3-tuple of 3-tuples.\n"
+             "Returns a 3-tuple of 3-tuples of floats.\n"
              "The returned value may then be turned into numpy array.\n"
              "Example: \n"
              "    rot_mat = np.array(q.rotation_matrix())");
@@ -1131,11 +1171,11 @@ quaternion_hash (PyQuaternionObject *v)
    PyObject *z1, *z2;
    Py_uhash_t hashz1, hashz2, combined;
 
-   /* z1 is the complex part of v, z2 is the other part of v as a complex number
+   /* z1 is the complex part of v, z2 is the other part of v as a complex number.
     * This ensures that numbers that compare equal return same hash value.
     */
-   z1 = (PyObject *) PyComplex_FromDoubles (v->qval.w, v->qval.y);
-   z2 = (PyObject *) PyComplex_FromDoubles (v->qval.x, v->qval.z);
+   z1 = (PyObject *) PyComplex_FromDoubles (v->qval.w, v->qval.y);  /* w, j */
+   z2 = (PyObject *) PyComplex_FromDoubles (v->qval.x, v->qval.z);  /* i, k */
 
    hashz1 = z1->ob_type->tp_hash (z1);
    hashz2 = z2->ob_type->tp_hash (z2);
@@ -1144,8 +1184,12 @@ quaternion_hash (PyQuaternionObject *v)
    z2->ob_type->tp_free (z2);
 
    combined = hashz1 + (_PyHASH_MULTIPLIER + 0x5afe) * hashz2;
-   if (combined == (Py_uhash_t)-1)
-      combined = (Py_uhash_t)-2;
+
+   /* Don't allow -1 as a hash value.
+    */
+   if (combined == (Py_uhash_t)(-1))
+      combined = (Py_uhash_t)(-2);
+
    return (Py_hash_t)combined;
 }
 
@@ -1618,6 +1662,7 @@ PyDoc_STRVAR(
       "Quaternion (angle=float,axis=(float,float,float)) -> quaternion rotation number\n"
       "Quaternion (number)                               -> quaternion number\n"
       "Quaternion (\"str representation\")                 -> quaternion number\n"
+      "Quaternion (matrix=3x3 nested tuple of numerics)  -> quaternion number\n"
       "\n"
       "A Quaternion number may be constructed using one of the following forms:\n"
       "\n"
@@ -1636,6 +1681,12 @@ PyDoc_STRVAR(
       "\n"
       "e) from the string representation of a quaternion (modelled on the complex type).\n"
       "\n"
+      "f) from a 3x3 matrix of floats (and/or float-able objects). The matrix must be\n"
+      "   a 3-tuple, each element itself being a 3-tuple of floats. The matrix should\n"
+      "   ideally be a rotation matrix, i.e. the determinent should be 1, however no \n"
+      "   attempt is made to check this nor is any attempt made to normalise the matrix.\n"
+      "   The resulting quaternion may be normalised or reconstructed from the rotation\n"
+      "   angle and axis.\n"
       "\n"
       "Attributes\n"
       "w       - float - real/scalar part\n"
