@@ -6,9 +6,41 @@ import quaternion as qn
 
 Qn = qn.Quaternion
 
-# Let's be < 3.6 friendly
-#
 tau = qn.tau
+
+
+def mmult(m, c):
+    """ Simple no frills and checks matrix * matrix and matrix * vector
+        multiplication function.
+    """
+    if isinstance(c[0], (tuple, list)):
+        # matrix
+        #
+        result = []
+
+        for i in range(len(m)):
+            row = []
+            # We expect the lenth of each row to be the same
+            for j in range(len(m[i])):
+                s = 0.0
+                for k in range(3):
+                    s += m[i][k]*c[k][j]
+                row.append(s)
+
+            result.append(tuple(row))
+        result = tuple(result)
+
+    else:
+        # vector
+        result = []
+        for i in range(len(m)):
+            s = 0.0
+            for j in range(len(m[i])):
+                s += m[i][j]*c[j]
+            result.append(s)
+        result = tuple(result)
+
+    return result
 
 
 def test_construct():
@@ -156,14 +188,11 @@ def test_rotation3():
 
     # Extract rotation matrix
     #
-    m = r.rotation_matrix()
+    m = r.matrix()
 
     # And perform a matrix multiply
     #
-    tx = m[0][0] * c[0] + m[0][1] * c[1] + m[0][2] * c[2]
-    ty = m[1][0] * c[0] + m[1][1] * c[1] + m[1][2] * c[2]
-    tz = m[2][0] * c[0] + m[2][1] * c[1] + m[2][2] * c[2]
-    t2 = (tx, ty, tz)
+    t2 = mmult(m, c)
 
     # ... and compare the result.
     #
@@ -183,7 +212,7 @@ def test_rotation4():
 
     r = Qn(angle=a1, axis=u1)
 
-    a2 = r.rotation_angle()
+    a2 = r.angle()
     u2 = qn.axis(r)
 
     print(u1, u1[0]**2 + u1[1]**2 + u1[2]**2)
@@ -191,10 +220,38 @@ def test_rotation4():
 
     # ... and compare the result.
     #
-    assert abs(a1    - a2)    < 1.0e-9
+    assert abs(a1 - a2) < 1.0e-9
     assert abs(u1[0] - u2[0]) < 1.0e-9
     assert abs(u1[1] - u2[1]) < 1.0e-9
     assert abs(u1[2] - u2[2]) < 1.0e-9
+
+
+def test_rotation5():
+    # Choose quazi random rotation matrix
+    #
+    m = ((-0.6644335128480408, -0.7456022251949338, +0.0510434010306547),
+         (+0.4065266142924398, -0.4178917055696902, -0.8124670050457317),
+         (+0.6271078207743372, -0.5190798052327008, +0.5807684021391342))
+
+    r = Qn(matrix=m)
+
+    # Choose quazi random point
+    #
+    c = (2.71, +6.23, -3.49)
+
+    # Rotate using:  r*c*r.conjugate()
+    #
+    t1 = r.rotate(c)
+
+    # And perform a matrix multiply
+    #
+    t2 = mmult(m, c)
+
+    # ... and compare the result.
+    #
+    assert abs(t1[0] - t2[0]) < 1.0e-9
+    assert abs(t1[1] - t2[1]) < 1.0e-9
+    assert abs(t1[2] - t2[2]) < 1.0e-9
 
 
 if __name__ == "__main__":
@@ -204,5 +261,6 @@ if __name__ == "__main__":
     test_rotation2()
     test_rotation3()
     test_rotation4()
+    test_rotation5()
 
 # end

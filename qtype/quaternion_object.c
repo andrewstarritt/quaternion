@@ -2,7 +2,7 @@
  *
  * This file is part of the Python quaternion module.
  *
- * Copyright (c) 2018-2021  Andrew C. Starritt
+ * Copyright (c) 2018-2022  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -463,7 +463,7 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
    /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     * o - the object
-    * d - the dest float(double)
+    * d - the destination float(double)
     */
 #define MMM(o,d)                                                               \
    if (o != NULL) {                                                            \
@@ -756,7 +756,7 @@ PyDoc_STRVAR(quaternion_normalise_doc,
 /* -----------------------------------------------------------------------------
  */
 static PyObject *
-quaternion_rotation_matrix(PyObject *self)
+quaternion_matrix(PyObject *self)
 {
    Py_quaternion q;
    Py_quat_matrix matrix;
@@ -770,8 +770,8 @@ quaternion_rotation_matrix(PyObject *self)
                         matrix.r31, matrix.r32, matrix.r33);
 }
 
-PyDoc_STRVAR(quaternion_rotation_matrix_doc,
-             "quaternion.rotation_matrix() -> 3x3 float matrix"
+PyDoc_STRVAR(quaternion_matrix_doc,
+             "quaternion.matrix() -> 3x3 float matrix"
              "\n"
              "Returns the equivilent 3D rotation matrix of a rotation Quaternion.\n"
              "Returns a 3-tuple of 3-tuples of floats.\n"
@@ -782,7 +782,7 @@ PyDoc_STRVAR(quaternion_rotation_matrix_doc,
 /* -----------------------------------------------------------------------------
  */
 static PyObject *
-quaternion_rotation_angle(PyObject *self)
+quaternion_angle(PyObject *self)
 {
    Py_quaternion c;
    double angle;
@@ -797,8 +797,8 @@ quaternion_rotation_angle(PyObject *self)
    return PyFloat_FromDouble (angle);
 }
 
-PyDoc_STRVAR(quaternion_rotation_angle_doc,
-             "quaternion.rotation_angle() -> float"
+PyDoc_STRVAR(quaternion_angle_doc,
+             "quaternion.angle() -> float"
              "\n"
              "Return the rotation angle of a rotation quaternion q, i.e. a\n"
              "quaternion constructed as:\n"
@@ -806,7 +806,7 @@ PyDoc_STRVAR(quaternion_rotation_angle_doc,
              "\n"
              "Note: None-rotation quaternions may lead to a maths error.\n"
              "Note: this angle should not be confused with the polor\n"
-             "co-ordinate's argument or phase angle");
+             "co-ordinate form argument or phase angle");
 
 /* -----------------------------------------------------------------------------
  */
@@ -1591,10 +1591,8 @@ static PyMethodDef QuaternionMethods [] = {
    {"inverse",        (PyCFunction)quaternion_inverse,    METH_NOARGS,   quaternion_inverse_doc},
    {"quadrance",      (PyCFunction)quaternion_quadrance,  METH_NOARGS,   quaternion_quadrance_doc},
    {"normalise",      (PyCFunction)quaternion_normalise,  METH_NOARGS,   quaternion_normalise_doc},
-   {"rotation_matrix",
-               (PyCFunction)quaternion_rotation_matrix,   METH_NOARGS,   quaternion_rotation_matrix_doc},
-   {"rotation_angle",
-               (PyCFunction)quaternion_rotation_angle,    METH_NOARGS,   quaternion_rotation_angle_doc},
+   {"matrix",         (PyCFunction)quaternion_matrix,     METH_NOARGS,   quaternion_matrix_doc},
+   {"angle",          (PyCFunction)quaternion_angle,      METH_NOARGS,   quaternion_angle_doc},
    {"rotate",         (PyCFunction)quaternion_rotate,     METH_VARARGS |
                                                           METH_KEYWORDS, quaternion_rotate_doc},
    {NULL, NULL, 0, NULL},  /* sentinel */

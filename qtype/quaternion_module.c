@@ -51,7 +51,7 @@ static PyModuleDef QuaternionModule = {
    PyModuleDef_HEAD_INIT,       /* m_base */
    "quaternion",                /* m_name */
    "\n"                         /* m_doc */
-   "The quaternion module provides the Quaternion type and associated math functions.\n"
+   "The quaternion module provides the Quaternion type and associated maths functions.\n"
    "\n"
    "Within this module, a Quaternion q is defined to be:\n"
    "\n"
@@ -125,11 +125,11 @@ static PyModuleDef QuaternionModule = {
    "\n"
    "\n"
    "Math functions\n"
-   "A number of math functions that operate on Quaternions are also provided. Where\n"
+   "A number of maths functions that operate on Quaternions are also provided. Where\n"
    "provided, these provide the equivalent quaternion function as the functions of\n"
    "the same name out of the math and/or cmath module.\n"
    "\n"
-   "Note: there is no qmath module equivalent of math and cmath, all math functions\n"
+   "Note: there is no qmath module equivalent of math and cmath, all maths functions\n"
    "are in the quaternion module.\n"
    "\n"
    "References\n"

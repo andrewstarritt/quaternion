@@ -134,6 +134,7 @@ A Quaternion number may be constructed using one of the following forms:
 * Quaternion (angle=float,axis=(float,float,float)) -> quaternion rotation number
 * Quaternion (number)                               -> quaternion number
 * Quaternion ("string representation")              -> quaternion number
+* Quaternion (matrix=3x3 nested tuple of numerics)  -> quaternion number
 
 A Quaternion number may be created from:
 
@@ -168,6 +169,13 @@ The following are invalid:
     Quaternion("1.2+3.4i+2.6k-2j")       -- out of order
     Quaternion("(1.2+3.4i+2.6j-2k")      -- unmatched parenthesis
 
+f) from a 3x3 matrix of floats (and/or float-able objects). The matrix must be
+   a 3-tuple, each element itself being a 3-tuple of floats. The matrix should
+   ideally be a rotation matrix, i.e. the determinent should be 1, however no
+   attempt is made to check this nor is any attempt made to normalise the matrix.
+   The resulting quaternion may be normalised or reconstructed from the rotation
+   angle and axis.
+
 
 ## <a name = "attributes"/><span style='color:#00c000'>attributes</span>
 
@@ -199,15 +207,15 @@ q.normalise () returns s such that: s = q / abs (q)
 
 q.quadrance () returns s such that s = q.w\*q.w + q.x\*q.x + q.y\*q.y + q.z\*q.z
 
-### <span style='color:#00c000'>rotation_matrix</span>
+### <span style='color:#00c000'>matrix</span>
 
-q.rotation_matrix () returns a 3-tuple of 3-tuple of floats representing
+q.matrix () returns a 3-tuple of 3-tuple of floats representing
 the 3x3 rotation matrix equivalent of q.
 q should be a rotation quaternion.
 
-### <span style='color:#00c000'>rotation_angle</span>
+### <span style='color:#00c000'>angle</span>
 
-q.rotation_angle () returns the angle (float, in radians) of q.
+q.angle () returns the angle (float, in radians) of q.
 q should be a rotation quaternion.
 This method may raise a ValueError if q is not a rotation quaternion.
 
@@ -253,9 +261,9 @@ using format when printing Quaternion, e.g.
     print("result : %s" % round(q,2))
 
 
-## <a name = "mathfuncs"/><span style='color:#00c000'>math functions</span>
+## <a name = "mathfuncs"/><span style='color:#00c000'>maths functions</span>
 
-A number of math functions that operate on Quaternions are also provided.
+A number of maths functions that operate on Quaternions are also provided.
 Most of these functions provide the equivalent quaternion function as the
 functions of the same name out of the math and/or cmath module.
 
@@ -309,8 +317,8 @@ if q = Quaternion (q.real) then hash(q) = hash (q.real)
 
 ## <a name = "background"/><span style='color:#00c000'>background</span>
 
-This was initially developed more of an experiment to create a Python
-extension written in C that was a bit more challenging than just a
+This was initially developed more or less as an experiment to create a Python
+extension written in C that was a bit more challenging than just a simple
 "hello world" extension.
 
 Although there are already a number of Quaternion Python implementations out
@@ -330,5 +338,5 @@ together with cribbing many code-snippets and ideas from the complex type,
 and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: Wed Apr 28 20:47:49 AEDT 2022</font>
+<font size="-1">Last updated: May  1 15:37:12 AEST 2022</font>
 <br>
