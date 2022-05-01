@@ -122,6 +122,8 @@ def test_expected_errors():
     except:
         raise
 
+    print()
+
 
 def test_rotation1():
     a = tau / 8.0         # 45 deg
@@ -199,6 +201,7 @@ def test_rotation3():
     assert abs(t1[0] - t2[0]) < 1.0e-9
     assert abs(t1[1] - t2[1]) < 1.0e-9
     assert abs(t1[2] - t2[2]) < 1.0e-9
+    print()
 
 
 def test_rotation4():
@@ -224,6 +227,7 @@ def test_rotation4():
     assert abs(u1[0] - u2[0]) < 1.0e-9
     assert abs(u1[1] - u2[1]) < 1.0e-9
     assert abs(u1[2] - u2[2]) < 1.0e-9
+    print()
 
 
 def test_rotation5():
@@ -254,6 +258,39 @@ def test_rotation5():
     assert abs(t1[2] - t2[2]) < 1.0e-9
 
 
+def test_rotation6():
+    p = Qn(angle=3.0,axis=(1,-1,2))
+    q = Qn(angle=1.5,axis=(-2,3,-3))
+    print (f"{p:.6f}")
+    print (f"{q:.6f}")
+    print()
+    
+    pm = p.matrix()
+    qm = q.matrix()
+    
+    rm = mmult(pm, qm)
+    r = Qn(matrix=rm)
+    s = p * q
+    print (f"{r:.6f}")
+    print (f"{s:.6f}")
+    t = abs(r - s)
+    print (f"{t:.2e}")
+    print()
+    assert t <= 1.0e-15, "Quaternion/matrix multiplication comparison failure (1)"
+    
+    # And reverse order of multiplication
+    #
+    rm = mmult(qm, pm)
+    r = Qn(matrix=rm)
+    s = q * p
+    print (f"{r:.6f}")
+    print (f"{s:.6f}")
+    t = abs(r - s)
+    print (f"{t:.2e}")
+    print()
+    assert t <= 1.0e-15, "Quaternion/matrix multiplication comparison failure (2)"
+
+
 if __name__ == "__main__":
     test_construct()
     test_expected_errors()
@@ -262,5 +299,6 @@ if __name__ == "__main__":
     test_rotation3()
     test_rotation4()
     test_rotation5()
+    test_rotation6()
 
 # end
