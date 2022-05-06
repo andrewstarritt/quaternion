@@ -484,10 +484,12 @@ PyDoc_STRVAR(qmath_polar__doc__,
              "\n"
              "Convert a Quaternion from rectangular coordinates to polar coordinates.\n"
              "The polar coordinates of Quaternion are a tuple (length, phase, axis)\n"
-             "such that:\n"
-             "    q = length * (math.cos(phase) + axis*math.sin(phase))\n"
+             "and axis is itself a unit 3-tuple of floats (x, y, z), such that:\n"
+             "    q = length * (math.cos(phase) + unit*math.sin(phase))\n"
+             "where:\n"
+             "    unit = (x*i + y*j + z*k)\n"
              "\n"
-             "Note: axis is itself tuple = (x, y, z) and |axis| is 1\n"
+             "Note: the axis is of unit length, i.e. |axis| is 1\n"
              "      polar(q) is equivalent to (abs(q), phase(q), axis(q)).");
 
 static PyObject *
@@ -520,10 +522,13 @@ PyDoc_STRVAR(qmath_axis__doc__,
              "axis(q)\n"
              "\n"
              "Returns the axis part of the polar coordinates.\n"
-             "The polar coordinates of a Quaternion are length, axis, and phase\n"
-             "such that:\n"
-             "    q = length * (math.cos(phase) + axis*math.sin(phase))\n"
-             "Note: |axis| is 1");
+             "The polar coordinates of Quaternion are a tuple (length, phase, axis)\n"
+             "and axis is itself a unit 3-tuple of floats (x, y, z), such that:\n"
+             "    q = length * (math.cos(phase) + unit*math.sin(phase))\n"
+             "where:\n"
+             "    unit = (x*i + y*j + z*k)\n"
+             "\n"
+             "Note: the axis is of unit length, i.e. |axis| is 1\n");
 
 static PyObject *
 qmath_axis(PyObject *module, PyObject *arg)
@@ -554,10 +559,14 @@ qmath_axis(PyObject *module, PyObject *arg)
 PyDoc_STRVAR(qmath_phase__doc__,
              "phase(q)\n"
              "\n"
-             "Return the argument, also known as the phase angle, of q.\n"
-             "The polar coordinates of a Quaternion are length, axis, and phase\n"
-             "such that:\n"
-             "    q = length * (math.cos(phase) + axis*math.sin(phase))");
+             "Return the argument, also known as the phase angle, of quaternion.\n"
+             "The polar coordinates of Quaternion are a tuple (length, phase, axis)\n"
+             "and axis is itself a unit 3-tuple of floats (x, y, z), such that:\n"
+             "    q = length * (math.cos(phase) + unit*math.sin(phase))\n"
+             "where:\n"
+             "    unit = (x*i + y*j + z*k)\n"
+             "\n"
+             "Note: the axis is of unit length, i.e. |axis| is 1\n");
 
 static PyObject *
 qmath_phase(PyObject *module, PyObject *arg)
@@ -591,7 +600,9 @@ PyDoc_STRVAR(qmath_rect__doc__,
              "\n"
              "Convert from polar coordinates to rectangular coordinates.\n"
              "This is equivalent to:\n"
-             "   length * (math.cos(phase) + axis*sin(math.phase))\n"
+             "    length * (math.cos(phase) + unit*math.sin(phase))\n"
+             "where:\n"
+             "    unit = (x*i + y*j + z*k)\n"
              "Note: axis is normalised such that |axis| = 1 if required.");
 
 static PyObject *
@@ -713,6 +724,7 @@ static PyMethodDef qmath_methods[] = {
 
    {"isclose",  (PyCFunction)qmath_isclose,  METH_KEYWORDS |
                                              METH_VARARGS,  qmath_isclose__doc__},
+
    {"polar",    (PyCFunction)qmath_polar,    METH_O,        qmath_polar__doc__},
    {"axis",     (PyCFunction)qmath_axis,     METH_O,        qmath_axis__doc__},
    {"phase",    (PyCFunction)qmath_phase,    METH_O,        qmath_phase__doc__},
