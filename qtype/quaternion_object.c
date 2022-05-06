@@ -35,6 +35,11 @@
 #include <structmember.h>
 #include <string.h>
 
+/* Controls the behaviour of __repr__
+ * See brief and reset static methods
+ */
+static bool do_brief_repr = false;
+
 /* Forward declarations
  */
 static PyObject *
@@ -1059,7 +1064,47 @@ quaternion_rotate(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 /* -----------------------------------------------------------------------------
+ * static methods
  */
+PyDoc_STRVAR(quaternion_brief_doc,
+             "brief()\n"
+             "\n"
+             "Modifies the repr function behaviour to be brief by effectively replacing\n"
+             "the standard __repr__ functionality with the __str__ functionality.\n"
+             "Example before:\n"
+             "   quaternion.Quaternion(0.170871, +0.341743, +0.512614, +0.768921)\n"
+             "\n"
+             "and after:\n"
+             "   (0.170871+0.341743i+0.512614j+0.768921k)\n"
+             "\n"
+             "Intended for use when using interactive python/ipython.\n"
+             "\n");
+static PyObject *quaternion_brief()
+{
+   do_brief_repr = true;
+   return Py_None;
+}
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(quaternion_reset_doc,
+             "reset()\n"
+             "\n"
+             "Resets the repr function behaviour modified by brief().\n"
+             "\n");
+static PyObject *quaternion_reset()
+{
+   do_brief_repr = false;
+   return Py_None;
+}
+
+
+/* -----------------------------------------------------------------------------
+ * Dunder and other object methods
+ */
+static PyObject *
+quaternion_str (PyQuaternionObject *v);
+
 static PyObject *
 quaternion_repr (PyQuaternionObject *v)
 {
@@ -1099,7 +1144,11 @@ quaternion_repr (PyQuaternionObject *v)
       goto done;
    }
 
-   result = PyUnicode_FromFormat("quaternion.Quaternion(%s, %s, %s, %s)", ps, px, py, pz);
+   if (do_brief_repr) {
+      result = quaternion_str (v);
+   } else {
+      result = PyUnicode_FromFormat("quaternion.Quaternion(%s, %s, %s, %s)", ps, px, py, pz);
+   }
 
 done:
    PyMem_Free(ps);
@@ -1109,6 +1158,7 @@ done:
 
    return result;
 }
+
 
 /* -----------------------------------------------------------------------------
  */
@@ -1595,6 +1645,10 @@ static PyMethodDef QuaternionMethods [] = {
    {"angle",          (PyCFunction)quaternion_angle,      METH_NOARGS,   quaternion_angle_doc},
    {"rotate",         (PyCFunction)quaternion_rotate,     METH_VARARGS |
                                                           METH_KEYWORDS, quaternion_rotate_doc},
+   {"brief",          (PyCFunction)quaternion_brief,      METH_STATIC |
+                                                          METH_NOARGS,   quaternion_brief_doc},
+   {"reset",          (PyCFunction)quaternion_reset,      METH_STATIC |
+                                                          METH_NOARGS,   quaternion_reset_doc},
    {NULL, NULL, 0, NULL},  /* sentinel */
 };
 
