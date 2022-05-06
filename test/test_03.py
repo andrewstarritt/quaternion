@@ -9,22 +9,68 @@ Qn = qn.Quaternion
 tau = qn.tau
 
 
-def mmult(m, c):
-    """ Simple no frills and checks matrix * matrix and matrix * vector
-        multiplication function.
+# -----------------------------------------------------------------------------
+#
+def det(m):
+    """ Returns the determinent of a 3x3 matrix m.
+        m is expected to be a tuple/list of tuples and/or lists.
     """
-    if isinstance(c[0], (tuple, list)):
+    t1 = m[0][0] * (m[1][1]*m[2][2] - m[1][2]*m[2][1])
+    t2 = m[0][1] * (m[1][2]*m[2][0] - m[1][0]*m[2][2])
+    t3 = m[0][2] * (m[1][0]*m[2][1] - m[1][1]*m[2][0])
+
+    return t1 + t2 + t3
+
+
+# -----------------------------------------------------------------------------
+#
+def transpose(m):
+    """ Returns the transpose the matrix m.
+        m is expected to be a tuple/list of tuples and/or lists.
+        Returns a tuple of tuples.
+    """
+    result = []
+
+    # Find number of rows and coles of the transpose.
+    #
+    nr = len(m[0])
+    nc = len(m)
+
+    for i in range(nr):
+        row = []
+        for j in range(nc):
+            row.append(m[j][i])
+        result.append(tuple(row))
+
+    result = tuple(result)
+    return result
+
+
+# -----------------------------------------------------------------------------
+#
+def mmult(left, right):
+    """ Simple no frills and no checks matrix * matrix and matrix * vector
+        multiplication function.
+        left and right are are expected to be tuples/lists (of tuples/lists).
+        Returns a tuple or a tuple of tuples.
+    """
+    if isinstance(right[0], (tuple, list)):
         # matrix
         #
-        result = []
+        nr = len(left)
+        nk1 = len(left[0])
+        nk2 = len(right)
+        nc = len(right[0])
+        if nk1 != nk2:
+            raise ValueError(f"Matrix size mis-match mmult (left={nr}x{nk1}, right={nk2}x{nc})")
 
-        for i in range(len(m)):
+        result = []
+        for i in range(nr):
             row = []
-            # We expect the lenth of each row to be the same
-            for j in range(len(m[i])):
+            for j in range(nc):
                 s = 0.0
-                for k in range(3):
-                    s += m[i][k]*c[k][j]
+                for k in range(nk1):
+                    s += left[i][k]*right[k][j]
                 row.append(s)
 
             result.append(tuple(row))
@@ -32,17 +78,26 @@ def mmult(m, c):
 
     else:
         # vector
+        #
+        nr = len(left)
+        nk1 = len(left[0])
+        nk2 = len(right)
+        if nk1 != nk2:
+            raise ValueError(f"Matrix/vector size mis-match mmult (left={nr}x{nk1}, right=[{nk2}])")
+
         result = []
-        for i in range(len(m)):
+        for i in range(nr):
             s = 0.0
-            for j in range(len(m[i])):
-                s += m[i][j]*c[j]
+            for j in range(nk1):
+                s += left[i][j]*right[j]
             result.append(s)
         result = tuple(result)
 
     return result
 
 
+# -----------------------------------------------------------------------------
+#
 def test_construct():
     a = 1.0
     b = (2.0, 3.0, 4.0)
@@ -259,34 +314,34 @@ def test_rotation5():
 
 
 def test_rotation6():
-    p = Qn(angle=3.0,axis=(1,-1,2))
-    q = Qn(angle=1.5,axis=(-2,3,-3))
-    print (f"{p:.6f}")
-    print (f"{q:.6f}")
+    p = Qn(angle=3.0, axis=(1, -1, 2))
+    q = Qn(angle=1.5, axis=(-2, 3, -3))
+    print(f"{p:.6f}")
+    print(f"{q:.6f}")
     print()
-    
+
     pm = p.matrix()
     qm = q.matrix()
-    
+
     rm = mmult(pm, qm)
     r = Qn(matrix=rm)
     s = p * q
-    print (f"{r:.6f}")
-    print (f"{s:.6f}")
+    print(f"{r:.6f}")
+    print(f"{s:.6f}")
     t = abs(r - s)
-    print (f"{t:.2e}")
+    print(f"{t:.2e}")
     print()
     assert t <= 1.0e-15, "Quaternion/matrix multiplication comparison failure (1)"
-    
+
     # And reverse order of multiplication
     #
     rm = mmult(qm, pm)
     r = Qn(matrix=rm)
     s = q * p
-    print (f"{r:.6f}")
-    print (f"{s:.6f}")
+    print(f"{r:.6f}")
+    print(f"{s:.6f}")
     t = abs(r - s)
-    print (f"{t:.2e}")
+    print(f"{t:.2e}")
     print()
     assert t <= 1.0e-15, "Quaternion/matrix multiplication comparison failure (2)"
 

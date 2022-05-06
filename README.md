@@ -8,10 +8,12 @@ A Python extension to provide a Quaternion type and some associated math functio
 [construction](#construction)<br>
 [attributes](#attributes)<br>
 [instance functions](#instfuncs)<br>
+[static functions](#static_funcs)<br>
 [magic functions](#magicfuncs)<br>
 [math functions](#mathfuncs)<br>
 [module variables](#variables)<br>
 [hash function](#hash)<br>
+[rotation matrices](#rot_mat)<br>
 [background](#background)<br>
 [references](#references)<br>
 [credits](#credits)<br>
@@ -225,6 +227,18 @@ q.rotate (point, origin=None) -> point, where q is a rotation number,
 i.e. q = Quaternion (angle=a,axis=(x,y,z)).
 The returned value is rotated by an angle a radians about the axis (x,y,z).
 
+## <a name = "static_funcs"/><span style='color:#00c000'>static functions</span>
+
+These are "@staticmethod" functions
+
+### <span style='color:#00c000'>brief</span>
+
+Quaternion.brief() modifies the behaviour of the \_\_repr\_\_ function
+
+### <span style='color:#00c000'>reset</span>
+
+Quaternion.reset() un-does the  \_\_repr\_\_ function behaviour modification
+instigated by the call to brief()
 
 ## <a name = "magicfuncs"/><span style='color:#00c000'>magic functions</span>
 
@@ -315,6 +329,33 @@ The hash of a quaternion follows the ideas used in the complex hash function suc
 that if q = Quaternion (q.complex) then hash(q) = hash (q.complex), and
 if q = Quaternion (q.real) then hash(q) = hash (q.real)
 
+## <a name = "rot_mat"/><span style='color:#00c000'>rotation matrices</span>
+
+If quaternion number, q,  is a rotation quaternion, then q.matrix() function
+can be used to obtain the equivilent 3x3 rotation matrix.
+A rotation quaternion is one who's length is 1, and is typically created
+using:
+
+    q = Quaternion(angle=..., axis=(..., ..., ...))
+
+If abs(q) is not 1, there is no obvious interpretation of the generated
+matrix.
+Likewise a 3x3 rotation matrix, A, may be used to create the equivilent quaternion:
+
+    q = Quaternion(matix=((A11,A12,A13), (A21,A22,A23), (A31,A32,A33)))
+
+However, if A is not a rotation matrix, i.e. det(A) != 1, then the
+quaternion will have no obvious interpretation  with respect to the
+matrix.
+
+Matrices have 9 degrees of freedom while quaternions have only 4.
+This is why only rotation matrices can be sensibly converted to a
+meaningfull quaternion number.
+
+__Note:__ neither the Quaternion(matrix=...) constructor nor matrix()
+method attempt to valid or normalise the input values.
+They just run the algorithm "AS IS".
+
 ## <a name = "background"/><span style='color:#00c000'>background</span>
 
 This was initially developed more or less as an experiment to create a Python
@@ -338,5 +379,5 @@ together with cribbing many code-snippets and ideas from the complex type,
 and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: May  1 15:37:12 AEST 2022</font>
+<font size="-1">Last updated: May  6 21:50:42 AEST 2022</font>
 <br>
