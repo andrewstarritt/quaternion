@@ -229,11 +229,22 @@ The returned value is rotated by an angle a radians about the axis (x,y,z).
 
 ## <a name = "static_funcs"/><span style='color:#00c000'>static functions</span>
 
-These are "@staticmethod" functions
+These are the equivilent of "@staticmethod" functions
 
 ### <span style='color:#00c000'>brief</span>
 
-Quaternion.brief() modifies the behaviour of the \_\_repr\_\_ function
+Quaternion.brief() modifies the behaviour of the \_\_repr\_\_ function.
+Within interactive python/ipython we have:
+
+    In [2]: q = quaternion.Quaternion (1,0,1,0)
+    In [3]: q
+    Out[3]: quaternion.Quaternion(1, +0, +1, +0)
+
+and after invoking brief we have:
+
+    In [4]: quaternion.Quaternion.brief()
+    In [5]: q
+    Out[5]: (1+0i+1j+0k)
 
 ### <span style='color:#00c000'>reset</span>
 
@@ -379,5 +390,5 @@ together with cribbing many code-snippets and ideas from the complex type,
 and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: May  6 21:50:42 AEST 2022</font>
+<font size="-1">Last updated: June  4 19:37:21 AEST 2022</font>
 <br>
