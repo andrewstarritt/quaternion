@@ -10,7 +10,7 @@ A Python extension to provide a Quaternion type and some associated math functio
 [instance functions](#instfuncs)<br>
 [static functions](#static_funcs)<br>
 [magic functions](#magicfuncs)<br>
-[math functions](#mathfuncs)<br>
+[maths functions](#mathsfuncs)<br>
 [module variables](#variables)<br>
 [hash function](#hash)<br>
 [rotation matrices](#rot_mat)<br>
@@ -286,10 +286,10 @@ using format when printing Quaternion, e.g.
     print("result : %s" % round(q,2))
 
 
-## <a name = "mathfuncs"/><span style='color:#00c000'>maths functions</span>
+## <a name = "mathsfuncs"/><span style='color:#00c000'>maths functions</span>
 
 A number of maths functions that operate on Quaternions are also provided.
-Most of these functions provide the equivalent quaternion function as the
+Most of these functions perform the equivalent quaternion function as the
 functions of the same name out of the math and/or cmath module.
 
 The functions provided are:
@@ -390,5 +390,5 @@ together with cribbing many code-snippets and ideas from the complex type,
 and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: June  4 19:37:21 AEST 2022</font>
+<font size="-1">Last updated: June 10 22:19:32 AEST 2022</font>
 <br>

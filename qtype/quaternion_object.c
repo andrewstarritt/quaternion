@@ -811,7 +811,7 @@ PyDoc_STRVAR(quaternion_angle_doc,
              "\n"
              "Note: None-rotation quaternions may lead to a maths error.\n"
              "Note: this angle should not be confused with the polor\n"
-             "co-ordinate form argument or phase angle");
+             "co-ordinate form argument or phase angle.");
 
 /* -----------------------------------------------------------------------------
  */
@@ -1008,7 +1008,7 @@ PyDoc_STRVAR(quaternion_round_doc,
              "when printing.\n"
              "\n"
              "ndigits - number of digits to round by, may be positive or negative.\n"
-             "round(q,n) == Quaterion(round(q.w,n), round(q.x,n), round(q.y,n), round(q.z.n))");
+             "round(q,n) == Quaterion(round(q.w,n), round(q.x,n), round(q.y,n), round(q.z,n))");
 
 
 /* -----------------------------------------------------------------------------
@@ -1655,7 +1655,7 @@ static PyMethodDef QuaternionMethods [] = {
 /* -----------------------------------------------------------------------------
  */
 static PyMemberDef QuaternionMembers[] = {
-   {"w",  T_DOUBLE, offsetof(PyQuaternionObject, qval.w), READONLY, "the scalar part of a Quaternion number"},
+   {"w",  T_DOUBLE, offsetof(PyQuaternionObject, qval.w), READONLY, "the real part of a Quaternion number"},
    {"x",  T_DOUBLE, offsetof(PyQuaternionObject, qval.x), READONLY, "the i imaginary part of a Quaternion number"},
    {"y",  T_DOUBLE, offsetof(PyQuaternionObject, qval.y), READONLY, "the j imaginary part of a Quaternion number"},
    {"z",  T_DOUBLE, offsetof(PyQuaternionObject, qval.z), READONLY, "the k imaginary part of a Quaternion number"},
