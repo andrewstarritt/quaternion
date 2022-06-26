@@ -31,8 +31,6 @@
 #include <stdbool.h>
 #include <math.h>
 
-#define DEBUG_TRACE  printf ("%s:%d\n", __FUNCTION__, __LINE__)
-
 
 /* -----------------------------------------------------------------------------
  */

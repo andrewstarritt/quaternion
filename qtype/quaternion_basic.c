@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It provides basic
  * quaternion maths operation with minimalist reference to Python.
  *
- * Copyright (c) 2018-2021  Andrew C. Starritt
+ * Copyright (c) 2018-2022  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@
  */
 
 #include "quaternion_basic.h"
+#include <stdio.h>
+#include <stdarg.h>
 #include <Python.h>
 #include <complex.h>
 
@@ -193,6 +195,57 @@ static Py_quaternion use_complex_func (const Py_quaternion q, const cfunc f)
 /* -----------------------------------------------------------------------------
  * PUBLIC FUNCTIONS
  * -----------------------------------------------------------------------------
+ *
+ */
+char * _Py_quat_to_string (const Py_quaternion a,
+                           char format_code,
+                           int precision)
+{
+   char *result = NULL;
+
+   /* If these are non-NULL, they'll need to be freed.
+    */
+   char *ps = NULL;
+   char *px = NULL;
+   char *py = NULL;
+   char *pz = NULL;
+   size_t total;
+
+   ps = PyOS_double_to_string(a.w, format_code, precision, 0, NULL);
+   if (!ps) {
+      goto done;
+   }
+
+   px = PyOS_double_to_string(a.x, format_code, precision, Py_DTSF_SIGN, NULL);
+   if (!px) {
+      goto done;
+   }
+
+   py = PyOS_double_to_string(a.y, format_code, precision, Py_DTSF_SIGN, NULL);
+   if (!px) {
+      goto done;
+   }
+
+   pz = PyOS_double_to_string(a.z, format_code, precision, Py_DTSF_SIGN, NULL);
+   if (!px) {
+      goto done;
+   }
+
+   total = strlen(ps) + strlen(px) + strlen(py) + strlen(pz) + 8;  /* 2 spare */
+   result = PyMem_Malloc (total);
+   snprintf(result, total, "(%s%si%sj%sk)", ps, px, py, pz);
+
+done:
+   if (ps) PyMem_Free(ps);
+   if (px) PyMem_Free(px);
+   if (py) PyMem_Free(py);
+   if (pz) PyMem_Free(pz);
+
+   return result;
+}
+
+
+/* -----------------------------------------------------------------------------
  *  true if all parts finite
  */
 bool _Py_quat_isfinite (const Py_quaternion a)
@@ -995,6 +1048,26 @@ Py_quaternion _Py_quat_acosh (const Py_quaternion a)
 Py_quaternion _Py_quat_atanh (const Py_quaternion a)
 {
    return use_complex_func (a, catanh);
+}
+
+/* -----------------------------------------------------------------------------
+ * Debugging helper
+ */
+void _Py_quat_debug_trace(const char* function,
+                          const int line,
+                          const char* format, ...)
+{
+   va_list args;
+   char buffer [200];
+
+   va_start (args, format);
+   vsnprintf (buffer, sizeof (buffer), format, args);
+   va_end (args);
+
+   char notification [240];
+   snprintf (notification, sizeof (notification), "%4d (%s): %s\n", line, function, buffer);
+   /* Avoid (gcc 8.4.1) error: format not a string literal and no format arguments */
+   printf ("%s", notification);
 }
 
 /* end */

@@ -25,7 +25,7 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.2.2"
+#define __version__ "1.3.1"
 
 /* Development environment:
  * Python 3.9.2
@@ -38,6 +38,7 @@
 
 #include "quaternion_basic.h"
 #include "quaternion_object.h"
+#include "quaternion_array.h"
 #include "quaternion_math.h"
 
 static Py_quaternion q0 = {0.0, 0.0, 0.0, 0.0};
@@ -51,7 +52,8 @@ static PyModuleDef QuaternionModule = {
    PyModuleDef_HEAD_INIT,       /* m_base */
    "quaternion",                /* m_name */
    "\n"                         /* m_doc */
-   "The quaternion module provides the Quaternion type and associated maths functions.\n"
+   "The quaternion module provides the Quaternion type and associated maths functions\n"
+   "together with a QuaternionArray type.\n"
    "\n"
    "Within this module, a Quaternion q is defined to be:\n"
    "\n"
@@ -152,8 +154,11 @@ PyInit_quaternion(void)
    PyObject* module;
 
    PyTypeObject* quaternionType = PyQuaternionType();
-
    if (PyType_Ready(quaternionType) < 0)
+      return NULL;
+
+   PyTypeObject* quaternionArrayType = PyQuaternionArrayType();
+   if (PyType_Ready(quaternionArrayType) < 0)
       return NULL;
 
    QuaternionModule.m_methods = _PyQmathMethods ();
@@ -164,6 +169,7 @@ PyInit_quaternion(void)
 
    Py_INCREF(quaternionType);
    PyModule_AddObject(module, "Quaternion", (PyObject *)quaternionType);
+   PyModule_AddObject(module, "QuaternionArray", (PyObject *)quaternionArrayType);
    PyModule_AddObject(module, "zero", PyQuaternion_FromCQuaternion(q0));
    PyModule_AddObject(module, "one", PyQuaternion_FromCQuaternion(q1));
    PyModule_AddObject(module, "i", PyQuaternion_FromCQuaternion(qi));

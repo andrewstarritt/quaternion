@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It privides basic
  * quaternion maths operation with minimalist reference to Python.
  *
- * Copyright (c) 2018-2021  Andrew C. Starritt
+ * Copyright (c) 2018-2022  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,6 +67,15 @@ typedef struct {
    double r31, r32, r33;
 } Py_quat_matrix;
 
+
+
+
+/* The caller is responsible for calling PyMem_Free to free the buffer
+   that's is returned.
+*/
+char * _Py_quat_to_string (const Py_quaternion a,
+                           char format_code,
+                           int precision);
 
 /* Infinities and NaNs
  */
@@ -164,6 +173,14 @@ Py_quaternion _Py_quat_tanh (const Py_quaternion a);
 Py_quaternion _Py_quat_asinh (const Py_quaternion a);
 Py_quaternion _Py_quat_acosh (const Py_quaternion a);
 Py_quaternion _Py_quat_atanh (const Py_quaternion a);
+
+/* Some debuging helper functionality
+ */
+void _Py_quat_debug_trace(const char* function,
+                          const int line,
+                          const char* format, ...);
+
+#define DEBUG_TRACE(...) _Py_quat_debug_trace (__FUNCTION__, __LINE__, __VA_ARGS__)
 
 #ifdef __cplusplus
 }

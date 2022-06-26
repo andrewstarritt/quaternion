@@ -45,29 +45,6 @@ static bool do_brief_repr = false;
 static PyObject *
 quaternion_subtype_from_c_quaternion(PyTypeObject *type, Py_quaternion qval);
 
-/* ----------------------------------------------------------------------------
- */
-static
-void debugTrace(const char* function,
-                const int line,
-                const char* format, ...)
-{
-   va_list args;
-   char buffer [200];
-
-   va_start (args, format);
-   vsnprintf (buffer, sizeof (buffer), format, args);
-   va_end (args);
-
-   char notification [240];
-   snprintf (notification, sizeof (notification), "%4d (%s): %s\n", line, function, buffer);
-   /* Avoid (gcc 8.4.1) error: format not a string literal and no format arguments */
-   printf ("%s", notification);
-}
-
-#define DEBUG_TRACE(...)  debugTrace(__FUNCTION__, __LINE__, __VA_ARGS__)
-
-
 
 /* ----------------------------------------------------------------------------
  * Sort of equivalent to PyFloat_AsDouble(PyNumber_Float))
@@ -673,6 +650,22 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
  * Attribute support function
  */
 static PyObject *
+quaternion_get_raw_data(PyObject *self)
+{
+   Py_quaternion q;
+   PyObject *r = NULL;
+
+   q = ((PyQuaternionObject *)self)->qval;
+   r = Py_BuildValue("(dddd)", q.w, q.x, q.y, q.z);
+
+   return r;
+}
+
+
+/* -----------------------------------------------------------------------------
+ * Attribute support function
+ */
+static PyObject *
 quaternion_get_vector(PyObject *self)
 {
    Py_quaternion q;
@@ -813,10 +806,11 @@ PyDoc_STRVAR(quaternion_angle_doc,
              "Note: this angle should not be confused with the polor\n"
              "co-ordinate form argument or phase angle.");
 
+
 /* -----------------------------------------------------------------------------
  */
 static PyObject *
-quaternion_getnewargs(PyComplexObject* self)
+quaternion_getnewargs(PyObject* self)
 {
     Py_quaternion q;
     q = ((PyQuaternionObject *)self)->qval;
@@ -824,12 +818,13 @@ quaternion_getnewargs(PyComplexObject* self)
     return Py_BuildValue("(dddd)", q.w, q.x, q.y, q.z);
 }
 
-/* no doc string */
+PyDoc_STRVAR(quaternion_getnewargs_doc,
+             "Return state information for pickling.");
 
 /* -----------------------------------------------------------------------------
  */
 static PyObject *
-quaternion__format__(PyObject *self, PyObject *args)
+quaternion_format(PyObject *self, PyObject *args)
 {
    /* Wrapper around Py_DECREF that checks the ref exists.
     * And clears the ref pointer if needs be
@@ -850,7 +845,7 @@ quaternion__format__(PyObject *self, PyObject *args)
       /* Belts amd braces
        */
       PyErr_SetString(PyExc_ValueError,
-                      "Quaternion.__format__() null format spec");                                         \
+                      "Quaternion.__format__() null format spec");
       return NULL;
    }
 
@@ -960,7 +955,7 @@ PyDoc_STRVAR(quaternion_format_doc,
 /* -----------------------------------------------------------------------------
  */
 static PyObject *
-quaternion__round__(PyObject *self, PyObject *args, PyObject *kwds)
+quaternion_round(PyObject *self, PyObject *args, PyObject *kwds)
 {
    static char* kwlist[] = {"ndigits", NULL};
 
@@ -1082,7 +1077,10 @@ PyDoc_STRVAR(quaternion_brief_doc,
 static PyObject *quaternion_brief()
 {
    do_brief_repr = true;
-   return Py_None;
+
+   PyObject *result = Py_None;
+   Py_INCREF(result);
+   return result;
 }
 
 /* -----------------------------------------------------------------------------
@@ -1095,9 +1093,11 @@ PyDoc_STRVAR(quaternion_reset_doc,
 static PyObject *quaternion_reset()
 {
    do_brief_repr = false;
-   return Py_None;
-}
 
+   PyObject *result = Py_None;
+   Py_INCREF(result);
+   return result;
+}
 
 /* -----------------------------------------------------------------------------
  * Dunder and other object methods
@@ -1165,49 +1165,16 @@ done:
 static PyObject *
 quaternion_str (PyQuaternionObject *v)
 {
-   int prec = 0;
-   char format = 'r';
-
    PyObject *result = NULL;
 
-   /* If these are non-NULL, they'll need to be freed.
-    */
-   char *ps = NULL;
-   char *px = NULL;
-   char *py = NULL;
-   char *pz = NULL;
-
-   ps = PyOS_double_to_string(v->qval.w, format, prec, 0, NULL);
-   if (!ps) {
-      PyErr_NoMemory();
-      goto done;
+   char *qstr = NULL;
+   qstr = _Py_quat_to_string(v->qval, 'r', 0);
+   if (!qstr) {
+      result = PyErr_NoMemory();
+   } else {
+      result = PyUnicode_FromString(qstr);
+      PyMem_Free(qstr); /* Must free this */
    }
-
-   px = PyOS_double_to_string(v->qval.x, format, prec, Py_DTSF_SIGN, NULL);
-   if (!px) {
-      PyErr_NoMemory();
-      goto done;
-   }
-
-   py = PyOS_double_to_string(v->qval.y, format, prec, Py_DTSF_SIGN, NULL);
-   if (!px) {
-      PyErr_NoMemory();
-      goto done;
-   }
-
-   pz = PyOS_double_to_string(v->qval.z, format, prec, Py_DTSF_SIGN, NULL);
-   if (!px) {
-      PyErr_NoMemory();
-      goto done;
-   }
-
-   result = PyUnicode_FromFormat("(%s%si%sj%sk)", ps, px, py, pz);
-
-done:
-   PyMem_Free(ps);
-   PyMem_Free(px);
-   PyMem_Free(py);
-   PyMem_Free(pz);
 
    return result;
 }
@@ -1608,6 +1575,9 @@ quaternion_getattro(PyObject *self, PyObject *attr)
 
          } else if (strcmp(name, "complex") == 0) {
             result = quaternion_get_complex (self);
+
+         } else if (strcmp(name, "data") == 0) {
+            result = quaternion_get_raw_data (self);
          }
       }
    }
@@ -1633,9 +1603,9 @@ quaternion_getattro(PyObject *self, PyObject *attr)
  * =============================================================================
  */
 static PyMethodDef QuaternionMethods [] = {
-   {"__getnewargs__", (PyCFunction)quaternion_getnewargs, METH_NOARGS,   NULL},
-   {"__format__",     (PyCFunction)quaternion__format__,  METH_VARARGS,  quaternion_format_doc},
-   {"__round__",      (PyCFunction)quaternion__round__,   METH_VARARGS |
+   {"__getnewargs__", (PyCFunction)quaternion_getnewargs, METH_NOARGS,   quaternion_getnewargs_doc},
+   {"__format__",     (PyCFunction)quaternion_format,     METH_VARARGS,  quaternion_format_doc},
+   {"__round__",      (PyCFunction)quaternion_round,      METH_VARARGS |
                                                           METH_KEYWORDS, quaternion_round_doc},
    {"conjugate",      (PyCFunction)quaternion_conjugate,  METH_NOARGS,   quaternion_conjugate_doc},
    {"inverse",        (PyCFunction)quaternion_inverse,    METH_NOARGS,   quaternion_inverse_doc},
@@ -1649,7 +1619,7 @@ static PyMethodDef QuaternionMethods [] = {
                                                           METH_NOARGS,   quaternion_brief_doc},
    {"reset",          (PyCFunction)quaternion_reset,      METH_STATIC |
                                                           METH_NOARGS,   quaternion_reset_doc},
-   {NULL, NULL, 0, NULL},  /* sentinel */
+   {NULL, NULL, 0, NULL}   /* sentinel */
 };
 
 /* -----------------------------------------------------------------------------
@@ -1745,10 +1715,11 @@ PyDoc_STRVAR(
       "x       - float - i imaginary part\n"
       "y       - float - j imaginary part\n"
       "z       - float - k imaginary part\n"
-      "vector  - tuple - the tuple (x, y, z) \n"
+      "vector  - tuple - the tuple (x, y, z)\n"
       "complex - complex - the complex number (w + y.j)\n"
       "real    - float - real/scalar part\n"
       "imag    - tuple - the imaginary part, the same as vector.\n"
+      "data    - tuple - the raw data as the tuple (w, x, y, z) \n"
       "\n"
       );
 

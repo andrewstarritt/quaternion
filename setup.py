@@ -36,6 +36,7 @@ with open("qtype/quaternion_module.c", 'r') as f:
 m = Extension("quaternion",
               sources = ["qtype/quaternion_basic.c",
                          "qtype/quaternion_object.c",
+                         "qtype/quaternion_array.c",
                          "qtype/quaternion_math.c",
                          "qtype/quaternion_module.c"])
 
@@ -44,7 +45,9 @@ setup(name="quaternion",
       author="Andrew Starritt",
       author_email="andrew.starritt@gmail.com",
       license="GPL3",
-      description=""" Provides a Quaternion type and associated maths functions """,
+      description="""Provides a Quaternion type and associated maths functions together
+                     with a QuaternionArray type.
+                  """,
       ext_modules=[m])
 
 # end
