@@ -28,6 +28,7 @@
 
 #include "quaternion_array.h"
 #include "quaternion_basic.h"
+#include "quaternion_array_iter.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -36,13 +37,14 @@
 
 /* -----------------------------------------------------------------------------
  * Macro to check that the allocated memory is sensible.
- * Mote: we always allocate some memory.
+ * Note: we always have some memory allocated.
  */
 #define SANITY_CHECK(pObj, errReturn) {                                       \
    if (!pObj->aval.qvalArray ||                                               \
-       (pObj->aval.count > pObj->aval.allocated)) {                           \
-       PyErr_SetString(PyExc_MemoryError,                                     \
-                       "quaternion array corrupted");                         \
+       (pObj->aval.count > pObj->aval.allocated) ||                           \
+       (pObj->aval.allocated < pObj->aval.reserved)) {                        \
+       PyErr_Format(PyExc_MemoryError,                                        \
+                    "quaternion array corrupted (%d)", __LINE__);             \
        return errReturn;                                                      \
    }                                                                          \
 }
@@ -108,19 +110,35 @@ qa_next_allocated_size(const Py_ssize_t minimum_size)
 static void
 qa_reallocate (Py_quaternion_array *aval, const Py_ssize_t new_size, const bool exact)
 {
+   Py_ssize_t new_allocation;
+
    /* Re allocate data
     */
    if (exact) {
-      aval->allocated = new_size;
+      new_allocation = new_size;
    } else {
-      aval->allocated = qa_next_allocated_size(new_size);
+      new_allocation = qa_next_allocated_size(new_size);
    }
 
-   if (!aval->qvalArray) {
-      aval->qvalArray = PyMem_Realloc(aval->qvalArray,
-                                      aval->allocated * sizeof(Py_quaternion));
+   /* Must always have at least reserved number of items.
+    */
+   if (new_allocation < aval->reserved) {
+       new_allocation = aval->reserved;
+   }
+
+   if (aval->qvalArray) {
+      /* Re allocation- but only if really needed.
+       */
+      if (aval->allocated != new_allocation) {
+         aval->allocated = new_allocation;
+         aval->qvalArray = PyMem_REALLOC(aval->qvalArray,
+                                         aval->allocated * sizeof(Py_quaternion));
+      }
    } else {
-      aval->qvalArray = PyMem_Malloc(aval->allocated * sizeof(Py_quaternion));
+      /* Initial allocation
+       */
+      aval->allocated = new_allocation;
+      aval->qvalArray = PyMem_MALLOC(aval->allocated * sizeof(Py_quaternion));
    }
 }
 
@@ -278,7 +296,7 @@ quaternion_array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
       return NULL;
    }
 
-   aval.iter_index = -1;   /* not iterating */
+   aval.reserved = 0;      /* none unless we told otherwise */
    aval.count = 0;         /* empty for now */
 
    if (initializer) {
@@ -295,7 +313,7 @@ quaternion_array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    } else {
       /* No initializer
        */
-      initialNumber = qa_next_allocated_size (0);
+      initialNumber = qa_next_allocated_size (0);  /* about 10 */
    }
 
    if (reserve) {
@@ -306,17 +324,19 @@ quaternion_array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
          return NULL;
       }
 
-      Py_ssize_t minimumSize = PyLong_AsSsize_t(reserve);
-
-      if (initialNumber < minimumSize) {
-          initialNumber = minimumSize;
+      aval.reserved = PyLong_AsSsize_t(reserve);
+      if (aval.reserved < 0) {
+         PyErr_Format(PyExc_ValueError,
+                      "array reserved sizes can't be negative (got %ld)",
+                      aval.reserved);
+         return NULL;
       }
    }
 
    /* Allocate the storage
     */
    aval.qvalArray = NULL;
-   qa_reallocate (&aval, initialNumber, true);
+   qa_reallocate(&aval, initialNumber, true);
 
    /* Now re-iterate to extact the required values.
     */
@@ -337,7 +357,7 @@ quaternion_array_decalloc(PyObject* self)
    pObj = (PyQuaternionArrayObject *)self;
 
    if (pObj->aval.qvalArray) {
-      PyMem_Free(pObj->aval.qvalArray);
+      PyMem_FREE(pObj->aval.qvalArray);
       pObj->aval.qvalArray = NULL;
    }
 }
@@ -498,7 +518,7 @@ quaternion_array_concat(PyObject *self, PyObject *arg)
    pArg = (PyQuaternionArrayObject *)arg;
    SANITY_CHECK(pArg, NULL);
 
-   aval.iter_index = -1;   /* not iterating */
+   aval.reserved = 0;
    aval.count = pObj->aval.count + pArg->aval.count;
    aval.qvalArray = NULL;
    qa_reallocate(&aval, aval.count, false);
@@ -518,6 +538,56 @@ quaternion_array_concat(PyObject *self, PyObject *arg)
    return result;
 }
 
+
+/* -----------------------------------------------------------------------------
+ * sq_inplace_concat
+ */
+static PyObject *
+quaternion_array_inplace_concat(PyObject *self, PyObject *arg)
+{
+   PyQuaternionArrayObject* pObj;
+   PyQuaternionArrayObject* pArg;
+   Py_ssize_t objCount;
+   Py_ssize_t argCount;
+
+   pObj = (PyQuaternionArrayObject *)self;
+   SANITY_CHECK(pObj, NULL);
+
+   if (!PyQuaternionArray_Check(arg)) {
+      PyErr_Format(PyExc_TypeError,
+                   "a QuaternionArray argument is required (got type %s)",
+                   Py_TYPE(arg)->tp_name);
+      return NULL;
+   }
+
+   pArg = (PyQuaternionArrayObject *)arg;
+   SANITY_CHECK(pArg, NULL);
+
+   /* Save these, esp if doing a += a
+    */
+   objCount = pObj->aval.count;
+   argCount = pArg->aval.count;
+   pObj->aval.count = objCount + argCount;
+
+   /* Do we have enough room?
+    */
+   if (pObj->aval.count > pObj->aval.allocated) {
+      qa_reallocate(&pObj->aval, pObj->aval.count, false);
+   }
+
+   if (argCount > 0) {
+      /* Now copy data and append
+       * void *memcpy(void *dest, const void *src, size_t n);
+       */
+      memcpy(&pObj->aval.qvalArray[objCount],
+             &pArg->aval.qvalArray[0],
+             argCount*sizeof(Py_quaternion));
+   }
+
+   Py_INCREF(self);   /** most important **/
+   return self;
+}
+
 /* -----------------------------------------------------------------------------
  * sq_repeat
  */
@@ -532,7 +602,8 @@ quaternion_array_repeat(PyObject *self, Py_ssize_t repeat)
    pObj = (PyQuaternionArrayObject *)self;
    SANITY_CHECK(pObj, NULL);
 
-   aval.iter_index = -1;   /* not iterating */
+   if (repeat < 0) repeat = 0;
+   aval.reserved = 0;
    aval.count = pObj->aval.count * repeat;
    aval.qvalArray = NULL;
    qa_reallocate(&aval, aval.count, false);
@@ -551,14 +622,60 @@ quaternion_array_repeat(PyObject *self, Py_ssize_t repeat)
 }
 
 /* -----------------------------------------------------------------------------
- * sq_item
+ * sq_inplace_repeat
  */
 static PyObject *
-quaternion_array_item(PyObject *self, Py_ssize_t index)
+quaternion_array_inplace_repeat (PyObject *self, Py_ssize_t repeat)
+{
+   PyQuaternionArrayObject* pObj;
+   Py_ssize_t objCount;
+   Py_ssize_t k;
+
+   pObj = (PyQuaternionArrayObject *)self;
+   SANITY_CHECK(pObj, NULL);
+
+   objCount = pObj->aval.count;  /* save for later */
+
+   if (repeat < 0) repeat = 0;
+   pObj->aval.count = objCount * repeat;
+
+   /* Do we have enough room?
+    */
+   if (pObj->aval.count > pObj->aval.allocated) {
+      qa_reallocate(&pObj->aval, pObj->aval.count, false);
+   }
+
+   /* Now copy data repeat times
+    * void *memcpy(void *dest, const void *src, size_t n);
+    */
+   for (k = 1; k < repeat; k++) {
+      memcpy(&pObj->aval.qvalArray[k*pObj->aval.count],
+             &pObj->aval.qvalArray[0],
+             objCount*sizeof(Py_quaternion));
+   }
+
+   Py_INCREF(self);   /** most important **/
+   return self;
+}
+
+/* -----------------------------------------------------------------------------
+ * sq_item
+ */
+PyObject *
+PyQuaternionArrayGetItem(PyObject *self, Py_ssize_t index)
 {
    PyObject *result = NULL;
    PyQuaternionArrayObject* pObj;
    Py_quaternion qval;
+
+   /* This is callable externally - hence the extra check.
+    */
+   if (!PyQuaternionArray_Check(self)) {
+      PyErr_Format(PyExc_TypeError,
+                   "a Quaternion argument is required (got type %s)",
+                   Py_TYPE(self)->tp_name);
+      return NULL;
+   }
 
    pObj = (PyQuaternionArrayObject *)self;
    SANITY_CHECK(pObj, NULL);
@@ -844,27 +961,143 @@ quaternion_array_frombytes(PyObject* self, PyObject *args)
    return result;
 }
 
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(quaternion_array_fromfile_doc,
+             "fromfile(self, f, n, /)\n"
+             "Read n quaternion objects from the file object f and append them to the end of the array.");
+
+static PyObject *
+quaternion_array_fromfile(PyObject* self, PyObject *args)
+{
+   _Py_IDENTIFIER(read);
+
+   PyQuaternionArrayObject* pObj;
+   PyObject *fileObj = NULL;
+   PyObject *numberObj = NULL;
+   PyObject *bytesObj = NULL;
+   Py_ssize_t number;
+   Py_ssize_t nbytes;
+   Py_ssize_t data_size;
+   Py_ssize_t additional;
+   char* data = NULL;
+   int notEnoughBytes;
+
+   pObj = (PyQuaternionArrayObject *)self;
+   SANITY_CHECK(pObj, NULL);
+
+   /* Extract the file data object number items from the tuple.
+    */
+   if (!PyArg_ParseTuple(args, "OO:fromfile", &fileObj, &numberObj))
+      return NULL;
+
+   // Py_io.BufferedReader_Check function??
+   // _PyObject_CallMethodId handles the error reporting
+
+   if (!PyLong_Check(numberObj)) {
+      PyErr_Format(PyExc_TypeError,
+                   "number of quaternions to read must be integer (got type %s)",
+                   Py_TYPE(numberObj)->tp_name);
+      return NULL;
+   }
+
+   number = PyLong_AsSsize_t (numberObj);
+   if (number < 0) {
+       PyErr_SetString(PyExc_ValueError, "number of quaternions is negative");
+       return NULL;
+   }
+
+   if (number > (PY_SSIZE_T_MAX / sizeof (Py_quaternion))) {
+       PyErr_NoMemory();
+       return NULL;
+   }
+
+   /* Calc number of bytes to read from the file and attempt to read.
+    */
+   nbytes = number * sizeof (Py_quaternion);
+   bytesObj = _PyObject_CallMethodId(fileObj, &PyId_read, "n", nbytes);
+   if (!bytesObj) {
+      return NULL;
+   }
+
+   if (!PyBytes_Check(bytesObj)) {
+       PyErr_SetString(PyExc_TypeError,
+                       "read() didn't return bytes");
+       Py_DECREF(bytesObj);
+       return NULL;
+   }
+
+   /* Extract info re what we read.
+    */
+   data_size = PyBytes_GET_SIZE(bytesObj);
+   data = PyBytes_AsString (bytesObj);
+
+   notEnoughBytes = (data_size != nbytes);
+
+   /* We can read less that what we want, if that is all that is available,
+    * but what is availablemust still be a whole number of quaternions.
+    * We do not round down and just go with that.
+    */
+   if ((data_size < 0) || ((data_size % sizeof(Py_quaternion)) != 0) ) {
+      Py_DECREF(bytesObj);
+      PyErr_Format(PyExc_ValueError,
+                   "bytes length %d not a multiple of quaternion size %d",
+                   data_size, sizeof(Py_quaternion));
+      return NULL;
+   }
+
+   /* How many quaternions are being read?
+    */
+   additional = data_size / sizeof(Py_quaternion);
+
+   /* Do we have enough room in the array?
+    */
+   if (pObj->aval.count + additional > pObj->aval.allocated) {
+      /* Re allocate data
+       */
+      qa_reallocate(&pObj->aval, pObj->aval.count + additional, false);
+   }
+
+   /* Move the data
+    */
+   memcpy(&pObj->aval.qvalArray[pObj->aval.count], data, data_size);
+   pObj->aval.count += additional;
+   Py_DECREF(bytesObj);
+
+   if (notEnoughBytes) {
+       PyErr_Format(PyExc_EOFError,
+                    "read() didn't return enough bytes (read %ld, wanted %ld)",
+                    data_size, nbytes);
+       return NULL;
+   }
+
+   Py_RETURN_NONE;
+}
+
+
 /* -----------------------------------------------------------------------------
  */
 PyDoc_STRVAR(quaternion_array_info_doc,
              "buffer_info(self, /)\n"
-             "Return a tuple (address, length) giving the current memory address and the length\n"
-             "in quaternions of the buffer used to hold array's contents.\n"
+             "Return a tuple (address, length) giving the current memory address and\n"
+             "the length in quaternions of the buffer used to hold array's contents.\n"
              "\n"
-             "The length should be multiplied by the itemsize attribute to calculate the\n"
-             "buffer length in bytes.");
+             "The length should be multiplied by the itemsize attribute to calculate\n"
+             "the buffer length in bytes.");
 
 static PyObject *
 quaternion_array_info(PyObject* self)
 {
    PyObject *result = NULL;
    PyQuaternionArrayObject* pObj;
+   Py_ssize_t address;
 
    pObj = (PyQuaternionArrayObject *)self;
-   SANITY_CHECK(pObj, NULL);
+   // No SANITY_CHECK here
 
-   result = Py_BuildValue("(ll)", (Py_ssize_t) pObj->aval.qvalArray,
-                          pObj->aval.count);
+   address = pObj->aval.count > 0 ? (Py_ssize_t) pObj->aval.qvalArray : 0;
+   result = Py_BuildValue("(ll)", address, pObj->aval.count);
 
    return result;
 }
@@ -885,9 +1118,7 @@ quaternion_array_clear(PyObject* self)
    SANITY_CHECK(pObj, NULL);
 
    pObj->aval.count = 0;
-   if (pObj->aval.allocated > 10) {
-      qa_reallocate(&pObj->aval, 10, true);
-   }
+   qa_reallocate(&pObj->aval, 0, false);
 
    result = Py_None;
    Py_INCREF(result);
@@ -1133,7 +1364,7 @@ quaternion_array_reserve(PyObject *self, PyObject *args)
    PyObject *result = NULL;
    PyQuaternionArrayObject* pObj;
    PyObject* sizeObj;
-   Py_ssize_t bufferSize;
+   Py_ssize_t new_reserve;
 
    pObj = (PyQuaternionArrayObject *)self;
    SANITY_CHECK(pObj, NULL);
@@ -1150,14 +1381,22 @@ quaternion_array_reserve(PyObject *self, PyObject *args)
       return NULL;
    }
 
-   bufferSize = PyLong_AsSsize_t(sizeObj);
+   new_reserve = PyLong_AsSsize_t(sizeObj);
+   if (new_reserve < 0) {
+      PyErr_Format(PyExc_ValueError,
+                   "array reserved sizes can't be negative (got %ld)", new_reserve);
+      return NULL;
+   }
 
-   /* Do we have enough room?
+   pObj->aval.reserved = new_reserve;
+
+   /* Do we have enough room? Recall allocated >= count.
+    *** What about deallocation if/when reserve is smaller?
     */
-   if (pObj->aval.allocated < bufferSize) {
+   if (pObj->aval.allocated < pObj->aval.reserved) {
       /* Re allocate data
        */
-      qa_reallocate(&pObj->aval, bufferSize, true);
+      qa_reallocate(&pObj->aval, pObj->aval.reserved, true);
    }
 
    result = Py_None;
@@ -1198,6 +1437,44 @@ quaternion_array_reverse(PyObject* self)
 
 /* -----------------------------------------------------------------------------
  */
+PyDoc_STRVAR(quaternion_array_byteswap_doc,
+             "Byteswap all items of the array.");
+static PyObject *
+quaternion_array_byteswap(PyObject* self)
+{
+   /* We "know" each quaternion has 4 doubles.
+    * And each double has 8 bytes.
+    */
+   typedef char bytequad [4][8];
+
+   PyObject *result = NULL;
+   PyQuaternionArrayObject* pObj;
+   bytequad *byteData;
+   Py_ssize_t i;
+   int j;
+
+   pObj = (PyQuaternionArrayObject *)self;
+   SANITY_CHECK(pObj, NULL);
+
+   byteData = (bytequad *)pObj->aval.qvalArray;
+   for (i = 0; i < pObj->aval.count; i++) {
+      for (j = 0; j < 4; j++) {
+         char *d = byteData[i][j];
+         char t;
+         t = d[0]; d[0] = d[7]; d[7] = t;
+         t = d[1]; d[1] = d[6]; d[6] = t;
+         t = d[2]; d[2] = d[5]; d[5] = t;
+         t = d[3]; d[3] = d[4]; d[4] = t;
+      }
+   }
+
+   result = Py_None;
+   Py_INCREF(result);
+   return result;
+}
+
+/* -----------------------------------------------------------------------------
+ */
 PyDoc_STRVAR(quaternion_array_tobytes_doc,
              "Convert the array to an array of machine values "
              "and return the bytes representation.");
@@ -1218,58 +1495,118 @@ quaternion_array_tobytes(PyObject* self)
 
 
 /* -----------------------------------------------------------------------------
- * tp_iter
  */
+PyDoc_STRVAR(quaternion_array_tofile_doc,
+             "tofile(self, f /)\n"
+             "Write all quaternions (as machine values) to the file object f.\n");
+
+/** Totally cribbed from array_array_tofile **/
 static PyObject *
-quaternion_array_iter(PyObject* self)
+quaternion_array_tofile(PyObject* self, PyObject *args)
 {
-   PyObject *result = NULL;
+   _Py_IDENTIFIER(write);
+
    PyQuaternionArrayObject* pObj;
+   PyObject *fileObj = NULL;
+   Py_ssize_t nbytes;
+   int blockSize;
+   Py_ssize_t nblocks;
+   Py_ssize_t i;
 
    pObj = (PyQuaternionArrayObject *)self;
    SANITY_CHECK(pObj, NULL);
 
-   pObj->aval.iter_index = 0;
-
-   /* We use self at the iterator object rather than creating a new one.
-    * That may change in future.
+   /* Extract the file object from the one element tuple.
     */
-   result = self;
-   Py_INCREF(self);
+   if (!PyArg_ParseTuple(args, "O:tofile", &fileObj))
+      return NULL;
 
-   return result;
-}
+   nbytes = pObj->aval.count * sizeof (Py_quaternion);
 
-/* -----------------------------------------------------------------------------
- * tp_iternext
- */
-static PyObject *
-quaternion_array_next(PyObject* self)
-{
-   PyObject *result = NULL;
-   PyQuaternionArrayObject* pObj;
-   Py_quaternion qval;
+   /* Write 64K blocks at a time.
+    */
+   blockSize = 64*1024;
 
-   pObj = (PyQuaternionArrayObject *)self;
-   SANITY_CHECK(pObj, NULL);
+   nblocks = (nbytes + blockSize - 1) / blockSize;  /* round up */
+   for (i = 0; i < nblocks; i++) {
+       char* ptr = (char *)pObj->aval.qvalArray + i*blockSize;
+       Py_ssize_t size = blockSize;
+       PyObject *bytes;
+       PyObject *res;
 
-   if (pObj->aval.iter_index < 0) {
-      PyErr_SetString(PyExc_AssertionError, "iteration not initialised.");
-      result = NULL;
+       /* Truncate last block it needs be.
+        */
+       if (i*blockSize + size > nbytes)
+           size = nbytes - i*blockSize;
 
-   } else if (pObj->aval.iter_index < pObj->aval.count) {
-      qval  = pObj->aval.qvalArray [pObj->aval.iter_index];
-      result = PyQuaternion_FromCQuaternion(qval);
-      pObj->aval.iter_index++;
+       bytes = PyBytes_FromStringAndSize(ptr, size);
+       if (bytes == NULL)
+           return NULL;
+       res = _PyObject_CallMethodIdOneArg(fileObj, &PyId_write, bytes);
+       Py_DECREF(bytes);
 
-   } else {
-      PyErr_SetString(PyExc_StopIteration, "No more items");
-      pObj->aval.iter_index = -1;  /* clear the iteration */
-      result = NULL;
+       if (res == NULL)
+           return NULL;
+       Py_DECREF(res);  /* drop write result */
    }
 
-   return result;
+   Py_RETURN_NONE;
 }
+
+
+///* -----------------------------------------------------------------------------
+// * tp_iter
+// */
+//static PyObject *
+//quaternion_array_iter(PyObject* self)
+//{
+//   PyObject *result = NULL;
+//   PyQuaternionArrayObject* pObj;
+
+//   pObj = (PyQuaternionArrayObject *)self;
+//   SANITY_CHECK(pObj, NULL);
+
+//   pObj->aval.iter_index = 0;
+
+//   /* We use self at the iterator object rather than creating a new one.
+//    * That may change in future.
+//    */
+//   result = self;
+//   Py_INCREF(self);
+
+//   return result;
+//}
+
+///* -----------------------------------------------------------------------------
+// * tp_iternext
+// */
+//static PyObject *
+//quaternion_array_next(PyObject* self)
+//{
+//   PyObject *result = NULL;
+//   PyQuaternionArrayObject* pObj;
+//   Py_quaternion qval;
+
+//   pObj = (PyQuaternionArrayObject *)self;
+//   SANITY_CHECK(pObj, NULL);
+
+//   if (pObj->aval.iter_index < 0) {
+//      PyErr_SetString(PyExc_AssertionError, "iteration not initialised.");
+//      result = NULL;
+
+//   } else if (pObj->aval.iter_index < pObj->aval.count) {
+//      qval  = pObj->aval.qvalArray [pObj->aval.iter_index];
+//      result = PyQuaternion_FromCQuaternion(qval);
+//      pObj->aval.iter_index++;
+
+//   } else {
+//      PyErr_SetString(PyExc_StopIteration, "No more items");
+//      pObj->aval.iter_index = -1;  /* clear the iteration */
+//      result = NULL;
+//   }
+
+//   return result;
+//}
 
 /* -----------------------------------------------------------------------------
  * sq_length and mp_length
@@ -1299,7 +1636,7 @@ quaternion_array_get_subscript(PyObject* self, PyObject* key)
       /* Caller has supplied a integer
        */
       Py_ssize_t index = PyLong_AsSsize_t(key);
-      result = quaternion_array_item(self, index);
+      result = PyQuaternionArrayGetItem(self, index);
 
    } else if (PySlice_Check(key)) {
       /* Caller has supplied a slice
@@ -1321,7 +1658,7 @@ quaternion_array_get_subscript(PyObject* self, PyObject* key)
          return NULL;
       }
 
-      aval.iter_index = -1;
+      aval.reserved = 0;
       aval.count = 0;
       aval.qvalArray = NULL;
       qa_reallocate(&aval, count, false);
@@ -1414,9 +1751,11 @@ qa_assign_slice(Py_quaternion_array *aval, PyObject* slice, PyObject* value)
 
       } /* else  exact fit */
 
-      /* Create a C quaternion_array from the value.
+      /* Create a C quaternion_array from the value so that we can use
+       * the qa_extract_and_add function.
        */
       Py_quaternion_array assigned;
+      assigned.reserved = 0;
       assigned.count = 0;
       assigned.allocated = 0;
       assigned.qvalArray = NULL;
@@ -1654,7 +1993,7 @@ quaternion_array_getattro(PyObject *self, PyObject *attr)
    const char* name = NULL;
 
    pObj = (PyQuaternionArrayObject *)self;
-   SANITY_CHECK(pObj, NULL);
+   // No SANITY_CHECK here
 
    if (PyUnicode_Check(attr)) {
       /* The returned buffer always has an extra null byte appended
@@ -1670,6 +2009,9 @@ quaternion_array_getattro(PyObject *self, PyObject *attr)
          }
          else if (strcmp(name, "allocated") == 0) {
             result = PyLong_FromLong(pObj->aval.allocated);
+         }
+         else if (strcmp(name, "reserved") == 0) {
+            result = PyLong_FromLong(pObj->aval.reserved);
          }
       }
    }
@@ -1697,19 +2039,22 @@ quaternion_array_getattro(PyObject *self, PyObject *attr)
  *  prune ()
  */
 static PyMethodDef quaternion_array_methods [] = {
-   {"append",     (PyCFunction)quaternion_array_append,    METH_VARARGS, quaternion_array_append_doc},
-   {"buffer_info",(PyCFunction)quaternion_array_info,      METH_NOARGS,  quaternion_array_info_doc},
-   {"clear",      (PyCFunction)quaternion_array_clear,     METH_NOARGS,  quaternion_array_clear_doc},
-   {"count",      (PyCFunction)quaternion_array_count,     METH_VARARGS, quaternion_array_count_doc},
-   {"extend",     (PyCFunction)quaternion_array_extend,    METH_VARARGS, quaternion_array_extend_doc},
-   {"frombytes",  (PyCFunction)quaternion_array_frombytes, METH_VARARGS, quaternion_array_frombytes_doc},
-   {"index",      (PyCFunction)quaternion_array_index,     METH_VARARGS, quaternion_array_index_doc},
-   {"insert",     (PyCFunction)quaternion_array_insert,    METH_VARARGS, quaternion_array_insert_doc},
-   {"pop",        (PyCFunction)quaternion_array_pop,       METH_VARARGS, quaternion_array_pop_doc},
-   {"remove",     (PyCFunction)quaternion_array_remove,    METH_VARARGS, quaternion_array_remove_doc},
-   {"reserve",    (PyCFunction)quaternion_array_reserve,   METH_VARARGS, quaternion_array_reserve_doc},
-   {"reverse",    (PyCFunction)quaternion_array_reverse,   METH_NOARGS,  quaternion_array_reverse_doc},
-   {"tobytes",    (PyCFunction)quaternion_array_tobytes,   METH_NOARGS,  quaternion_array_tobytes_doc},
+   {"append",     (PyCFunction)quaternion_array_append,    METH_VARARGS, quaternion_array_append_doc    },
+   {"buffer_info",(PyCFunction)quaternion_array_info,      METH_NOARGS,  quaternion_array_info_doc      },
+   {"byteswap",   (PyCFunction)quaternion_array_byteswap,  METH_NOARGS,  quaternion_array_byteswap_doc  },
+   {"clear",      (PyCFunction)quaternion_array_clear,     METH_NOARGS,  quaternion_array_clear_doc     },
+   {"count",      (PyCFunction)quaternion_array_count,     METH_VARARGS, quaternion_array_count_doc     },
+   {"extend",     (PyCFunction)quaternion_array_extend,    METH_VARARGS, quaternion_array_extend_doc    },
+   {"frombytes",  (PyCFunction)quaternion_array_frombytes, METH_VARARGS, quaternion_array_frombytes_doc },
+   {"fromfile",   (PyCFunction)quaternion_array_fromfile,  METH_VARARGS, quaternion_array_fromfile_doc  },
+   {"index",      (PyCFunction)quaternion_array_index,     METH_VARARGS, quaternion_array_index_doc     },
+   {"insert",     (PyCFunction)quaternion_array_insert,    METH_VARARGS, quaternion_array_insert_doc    },
+   {"pop",        (PyCFunction)quaternion_array_pop,       METH_VARARGS, quaternion_array_pop_doc       },
+   {"remove",     (PyCFunction)quaternion_array_remove,    METH_VARARGS, quaternion_array_remove_doc    },
+   {"reserve",    (PyCFunction)quaternion_array_reserve,   METH_VARARGS, quaternion_array_reserve_doc   },
+   {"reverse",    (PyCFunction)quaternion_array_reverse,   METH_NOARGS,  quaternion_array_reverse_doc   },
+   {"tobytes",    (PyCFunction)quaternion_array_tobytes,   METH_NOARGS,  quaternion_array_tobytes_doc   },
+   {"tofile",     (PyCFunction)quaternion_array_tofile,    METH_VARARGS, quaternion_array_tofile_doc    },
    { NULL, NULL, 0, NULL}  /* sentinel */
 };
 
@@ -1717,16 +2062,16 @@ static PyMethodDef quaternion_array_methods [] = {
  * Sequence methods
  */
 static PySequenceMethods quaternion_array_sequence = {
-   (lenfunc)quaternion_array_length,           /* sq_length */
-   (binaryfunc)quaternion_array_concat,        /* sq_concat */
-   (ssizeargfunc)quaternion_array_repeat,      /* sq_repeat */
-   (ssizeargfunc)quaternion_array_item,        /* sq_item */
-   0,                                          /* was sq_slice */
-   (ssizeobjargproc)0,                         /* sq_ass_item */
-   0,                                          /* was sq_ass_slice */
-   (objobjproc)0,                              /* sq_contains */
-   (binaryfunc)0,                              /* sq_inplace_concat*/
-   (ssizeargfunc)0                             /* sq_inplace_repeat*/
+   (lenfunc)quaternion_array_length,                /* sq_length */
+   (binaryfunc)quaternion_array_concat,             /* sq_concat */
+   (ssizeargfunc)quaternion_array_repeat,           /* sq_repeat */
+   (ssizeargfunc)PyQuaternionArrayGetItem,          /* sq_item */
+   0,                                               /* was sq_slice */
+   (ssizeobjargproc)0,                              /* sq_ass_item */
+   0,                                               /* was sq_ass_slice */
+   (objobjproc)0,                                   /* sq_contains */
+   (binaryfunc)quaternion_array_inplace_concat,     /* sq_inplace_concat*/
+   (ssizeargfunc)quaternion_array_inplace_repeat    /* sq_inplace_repeat*/
 };
 
 /* -----------------------------------------------------------------------------
@@ -1749,22 +2094,20 @@ PyDoc_STRVAR(quaternion_array_doc,
              "\n"
              "API\n"
              "The API has been choosen to mimic the array.array API as far as resonably possible.\n"
-             "In additon to the array.array API, the QuaternionArray API provides:\n"
-             "   QuaternionArray() - no type code, however it does allow the initial size \n"
+             "In addition to the array.array API, the QuaternionArray API provides:\n"
+             "   QuaternionArray() - no type code, however it does allow the reserve size \n"
              "                       (number of items) of the internal buffer to be specified.\n"
              "   clear()   - removes all items from the array.\n"
-             "   reserve() - extends the internal buffer to accomodate the number specified.\n"
+             "   reserve() - (re)specifies (and re-extends if necessary) the internal buffer.\n"
+             "\n"
+             "and two additional attributes: allocated and reserved - see below.\n"
              "\n"
              "Still to be implemented:\n"
-             "   byteswap()\n"
-             "   fromfile()\n"
              "   fromlist()\n"
-             "   tofile()\n"
              "   tolist()\n"
              "\n"
              "Iteration\n"
-             "When iterating, the QuaternionArray object itself is currently returned as the\n"
-             "interator object, as such multiple and/or nested iterations of not allowed.\n"
+             "The QuaternionArray object fully supports iteraltion.\n"
              "\n"
              "Pickling\n"
              "While Quaternion objects may be pickled, this functionionality is still\n"
@@ -1775,6 +2118,7 @@ PyDoc_STRVAR(quaternion_array_doc,
              "            always greater than or equal to the actual number of quaternions\n"
              "            values held in the array.\n"
              "itemsize  - the length in bytes of one quaternion array element.\n"
+             "reserved  - the minimum buffer size allocation."
              );
 
 
@@ -1804,8 +2148,8 @@ static PyTypeObject QuaternionArrayType = {
    0,                                         /* tp_clear */
    quaternion_array_richcompare,              /* tp_richcompare */
    0,                                         /* tp_weaklistoffset */
-   quaternion_array_iter,                     /* tp_iter */
-   quaternion_array_next,                     /* tp_iternext */
+   (getiterfunc)PyQuaternionArrayIter,        /* tp_iter */
+   0,                                         /* tp_iternext */
    quaternion_array_methods,                  /* tp_methods */
    0,                                         /* tp_members */
    0,                                         /* tp_getset */
@@ -1819,7 +2163,6 @@ static PyTypeObject QuaternionArrayType = {
    (newfunc)quaternion_array_new,             /* tp_new */
    PyObject_Del                               /* tp_free */
 };
-
 
 /* -----------------------------------------------------------------------------
  * Allow module definiton code to access the Quaternion Array PyTypeObject.

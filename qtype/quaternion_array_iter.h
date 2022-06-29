@@ -1,4 +1,4 @@
-/* quaternion_array.h
+/* quaternion_array_iter.h
  *
  * This file is part of the Python quaternion module. It provides the
  * Quaternion Array type.
@@ -26,46 +26,30 @@
  *    indent -kr -pcs -i3 -cli3 -nbbo -nut -l96
  */
 
-#ifndef QUATERNION_ARRAY_H
-#define QUATERNION_ARRAY_H 1
+#ifndef QUATERNION_ARRAY_ITER_H
+#define QUATERNION_ARRAY_ITER_H 1
 
 #include <Python.h>
-#include <stdbool.h>
-#include "quaternion_object.h"
-
-/* basic c type
- */
-typedef struct {
-   Py_ssize_t reserved;        /* minimum number of buffer entries to be allocated */
-   Py_ssize_t allocated;       /* number of buffer entries/space available/allocated */
-   Py_ssize_t count;           /* count of number actually in use <= number allocated */
-   Py_quaternion* qvalArray;   /* pointer to a dynamically allocated array of c quaternions */
-} Py_quaternion_array;
-
+#include "quaternion_array.h"
 
 /* -----------------------------------------------------------------------------
- * PyQuaternionArrayObject : the Quaternion Array PyObject definition
- * PyQuaternionArrayObject represents an array of quaternion numbers.
  */
 typedef struct {
    PyObject_HEAD
    /* Type-specific fields go here. */
-   Py_quaternion_array aval;
-} PyQuaternionArrayObject;
+   Py_ssize_t index;                  /* used by __iter__ and __next__ */
+   PyQuaternionArrayObject* qaobj;    /* the associated QuaternionArray object */
+} PyQuaternionArrayIterObject;
 
 
 PyAPI_FUNC (PyObject *)
-PyQuaternionArrayGetItem(PyObject *self, Py_ssize_t index);
+PyQuaternionArrayIter(PyObject *qaobj);
 
 /* Used by module setup
  */
-PyAPI_FUNC (PyTypeObject*) PyQuaternionArrayType ();
+PyAPI_FUNC (PyTypeObject*) PyQuaternionArrayIterType ();
 
-/* QuaternionArray type check functions
- * We use functions as opposed to macros like the complex type
- * as we need to access to the PyQuaternionType anyway.
- */
-PyAPI_FUNC (bool) PyQuaternionArray_Check (PyObject *op);
-PyAPI_FUNC (bool) PyQuaternionArray_CheckExact (PyObject *op);
+PyAPI_FUNC (bool) PyQuaternionArrayIter_Check (PyObject *op);
+PyAPI_FUNC (bool) PyQuaternionArrayIter_CheckExact (PyObject *op);
 
-#endif  /* QUATERNION_ARRAY_H */
+#endif  /* QUATERNION_ARRAY_ITER_H */

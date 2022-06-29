@@ -25,7 +25,7 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.3.1"
+#define __version__ "1.3.2"
 
 /* Development environment:
  * Python 3.9.2
@@ -39,6 +39,7 @@
 #include "quaternion_basic.h"
 #include "quaternion_object.h"
 #include "quaternion_array.h"
+#include "quaternion_array_iter.h"
 #include "quaternion_math.h"
 
 static Py_quaternion q0 = {0.0, 0.0, 0.0, 0.0};
@@ -161,6 +162,10 @@ PyInit_quaternion(void)
    if (PyType_Ready(quaternionArrayType) < 0)
       return NULL;
 
+   PyTypeObject* quaternionArrayIterType = PyQuaternionArrayIterType();
+   if (PyType_Ready(quaternionArrayIterType) < 0)
+      return NULL;
+
    QuaternionModule.m_methods = _PyQmathMethods ();
 
    module = PyModule_Create(&QuaternionModule);
@@ -170,6 +175,7 @@ PyInit_quaternion(void)
    Py_INCREF(quaternionType);
    PyModule_AddObject(module, "Quaternion", (PyObject *)quaternionType);
    PyModule_AddObject(module, "QuaternionArray", (PyObject *)quaternionArrayType);
+   PyModule_AddObject(module, "__ArrayIter", (PyObject *)quaternionArrayIterType);
    PyModule_AddObject(module, "zero", PyQuaternion_FromCQuaternion(q0));
    PyModule_AddObject(module, "one", PyQuaternion_FromCQuaternion(q1));
    PyModule_AddObject(module, "i", PyQuaternion_FromCQuaternion(qi));

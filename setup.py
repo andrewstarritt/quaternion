@@ -37,6 +37,7 @@ m = Extension("quaternion",
               sources = ["qtype/quaternion_basic.c",
                          "qtype/quaternion_object.c",
                          "qtype/quaternion_array.c",
+                         "qtype/quaternion_array_iter.c",
                          "qtype/quaternion_math.c",
                          "qtype/quaternion_module.c"])
 

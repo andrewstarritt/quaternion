@@ -43,7 +43,7 @@
 typedef struct {
    PyObject_HEAD
    /* Type-specific fields go here. */
-   Py_quaternion qval;
+   Py_quaternion qval;   /* defined in quaternion_basic.h */
 } PyQuaternionObject;
 
 
