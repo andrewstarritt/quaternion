@@ -1542,7 +1542,7 @@ quaternion_array_tofile(PyObject* self, PyObject *args)
        bytes = PyBytes_FromStringAndSize(ptr, size);
        if (bytes == NULL)
            return NULL;
-       res = _PyObject_CallMethodIdOneArg(fileObj, &PyId_write, bytes);
+       res = _PyObject_CallMethodId(fileObj, &PyId_write, "O", bytes);
        Py_DECREF(bytes);
 
        if (res == NULL)
