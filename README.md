@@ -1,6 +1,7 @@
 # <span style='color:#00c000'>quaternion</span>
 
-A Python extension to provide a Quaternion type and some associated math functions.
+A Python extension to provide a Quaternion type and some associated math functions
+together with a QuaternionArray object.
 
 [general](#general)<br>
 [mathematical operations](#mathops)<br>
@@ -14,6 +15,7 @@ A Python extension to provide a Quaternion type and some associated math functio
 [module variables](#variables)<br>
 [hash function](#hash)<br>
 [rotation matrices](#rot_mat)<br>
+[quarternion arrays](#qnarray)<br>
 [background](#background)<br>
 [references](#references)<br>
 [credits](#credits)<br>
@@ -363,9 +365,39 @@ Matrices have 9 degrees of freedom while quaternions have only 4.
 This is why only rotation matrices can be sensibly converted to a
 meaningfull quaternion number.
 
-__Note:__ neither the Quaternion(matrix=...) constructor nor matrix()
+__Note:__ neither the Quaternion(matrix=...) constructor nor the matrix()
 method attempt to valid or normalise the input values.
 They just run the algorithm "AS IS".
+
+
+## <a name = "qnarray"/><span style='color:#00c000'>quaternon array</span>
+
+Release 1.3 and later sees the introduction of a QuaternionArray type.
+The API and behaviour of this class has been implemented to mimic as
+far as resonabley possbile the API and behaviour of the inbuilt
+ __array.array__ type, save that it only holds quaternions.
+
+### <span style='color:#00c000'>additional methods/attributes</span>
+
+The QuaternionArray class provides a number of additonal methods:
+- clear() - this is equivilent to the list class clear() method;
+- reserve(int) - this method allows the minimum space allocated
+  for the array to be specified (expressed in number of quaterions,
+  __not__ number of bytes).
+
+The QuaternionArray class also provides two additional attributes:
+- allocated - provides the allocated memory size
+  (expressed in quaterions);
+- reserved - provides the minimum allocated memory size
+  (expressed in quaterions)
+
+### <span style='color:#00c000'>missing methods/attributes</span>
+
+There is (currently) no equivilent of the fromlist and tolist methods.
+The extend method provides essentially the same functionality as the
+fromlist method (with no argument restriction).
+The fuctionality of &nbsp; _array.tolist()_ &nbsp; can be acheived by 
+calling &nbsp; _list(array)_.
 
 ## <a name = "background"/><span style='color:#00c000'>background</span>
 
@@ -386,9 +418,9 @@ and the advantage of no dependencies on any other modules such as numpy.
 ## <a name = "credits"/><span style='color:#00c000'>credits</span>
 
 Guidance from https://docs.python.org/3.5/extending/newtypes.html
-together with cribbing many code-snippets and ideas from the complex type,
-and last _but not least_ Sir William R. Hamilton.
+together with cribbing many code-snippets and ideas from the complex type
+and the array.array type; and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: June 10 22:19:32 AEST 2022</font>
+<font size="-1">Last updated: July 03 17:55:16 AEST 2022</font>
 <br>
