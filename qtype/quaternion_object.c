@@ -899,8 +899,8 @@ quaternion_format(PyObject *self, PyObject *args)
 
          /* If no sign add a '+', if component -ve format will always add a sign.
           */
-         char image [240];
-         snprintf (image, sizeof(image), "%s%s%si%s%sj%s%sk", utf8_r,
+         char image [244];
+         snprintf (image, sizeof(image), "(%s%s%si%s%sj%s%sk)", utf8_r,
                    si ? "" : "+", utf8_i,
                    sj ? "" : "+", utf8_j,
                    sk ? "" : "+", utf8_k);
