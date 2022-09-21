@@ -1104,6 +1104,8 @@ quaternion_array_fromfile(PyObject* self, PyObject *args)
 {
    _Py_IDENTIFIER(read);
 
+   static const Py_ssize_t maxNumber = PY_SSIZE_T_MAX / sizeof (Py_quaternion);
+
    PyQuaternionArrayObject* pObj;
    PyObject *fileObj = NULL;
    PyObject *numberObj = NULL;
@@ -1140,7 +1142,7 @@ quaternion_array_fromfile(PyObject* self, PyObject *args)
        return NULL;
    }
 
-   if (number > (PY_SSIZE_T_MAX / sizeof (Py_quaternion))) {
+   if (number > maxNumber) {
        PyErr_NoMemory();
        return NULL;
    }
