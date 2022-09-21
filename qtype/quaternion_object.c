@@ -413,7 +413,6 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    static char *kwlist[] = {"w", "x", "y", "z", "real", "imag",
                             "angle", "axis", "matrix", 0};
 
-//   PyQuaternionObject *self = NULL;
    PyObject *r = NULL, *i = NULL, *j = NULL, *k = NULL;
    PyObject *angle = NULL, *axis = NULL;
    PyObject *real = NULL, *imag = NULL;
@@ -447,20 +446,20 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     * o - the object
     * d - the destination float(double)
     */
-#define MMM(o,d)                                                               \
-   if (o != NULL) {                                                            \
-      if (PyNumber_Check(o)) {                                                 \
-         d = _PyNumber_AsDouble (o, &status);                                  \
-         if (!status) {                                                        \
+#define MMM(o,d)                                                                      \
+   if (o != NULL) {                                                                   \
+      if (PyNumber_Check(o)) {                                                        \
+         d = _PyNumber_AsDouble (o, &status);                                         \
+         if (!status) {                                                               \
             PyErr_SetString(PyExc_TypeError, "float(" #o ") didn't return a float");  \
-            return NULL;                                                       \
-         }                                                                     \
-      } else {                                                                 \
-         PyErr_Format(PyExc_TypeError,                                         \
-                      "Quaternion() argument '"#o"' must be float, not '%.200s'", \
-                      Py_TYPE(o)->tp_name);                                    \
-         return NULL;                                                          \
-      }                                                                        \
+            return NULL;                                                              \
+         }                                                                            \
+      } else {                                                                        \
+         PyErr_Format(PyExc_TypeError,                                                \
+                      "Quaternion() argument '"#o"' must be float, not '%.200s'",     \
+                      Py_TYPE(o)->tp_name);                                           \
+         return NULL;                                                                 \
+      }                                                                               \
    }
 
 
@@ -603,27 +602,77 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
        */
       Py_quat_matrix mat;
 
-      if (!PyTuple_Check(matrix)) {
+      PyObject *rowIter = NULL;
+      PyObject *rowItem = NULL;
+      int rowCount = 0;
+
+      PyObject *colIter = NULL;
+      PyObject *colItem = NULL;
+      int colCount = 0;
+
+      status = true;  /* Hypothesize all okay */
+
+      rowIter = PyObject_GetIter(matrix);
+      if (!rowIter) {
          PyErr_Format(PyExc_TypeError,
-                      "%.200s() argument '%.200s' must be tuple, not '%.200s'",
+                      "%.200s() argument '%.200s' must be list or tuple, not '%.200s'",
                       "Quaternion", "matrix", Py_TYPE(matrix)->tp_name);
-         return false;
+         return NULL;
       }
 
 
-      /* PyArg_ParseTuple does all the hard work, but we do lose the exact
-       * nature of the error.
-       */
-      status = PyArg_ParseTuple(matrix, "(ddd)(ddd)(ddd):Quaternion()",
-                                &mat.r11, &mat.r12, &mat.r13,
-                                &mat.r21, &mat.r22, &mat.r23,
-                                &mat.r31, &mat.r32, &mat.r33);
+      rowCount = 0;
+      for (rowItem = PyIter_Next(rowIter); rowItem != NULL; rowItem = PyIter_Next(rowIter)) {
+         rowCount++;
+         if (rowCount >= 4) {
+            status = false;
+            break;
+         }
+
+         colIter = PyObject_GetIter(rowItem);
+         if (!colIter) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s() argument '%.200s' row must be list or tuple, not '%.200s'",
+                         "Quaternion", "matrix", Py_TYPE(rowItem)->tp_name);
+            return NULL;
+         }
+
+         colCount = 0;
+         for (colItem = PyIter_Next(colIter); colItem != NULL; colItem = PyIter_Next(colIter)) {
+            colCount++;
+            if (colCount >= 4) {
+               status = false;
+               break;
+            }
+
+            double d = _PyNumber_AsDouble (colItem, &status);
+            if (!status) {
+               PyErr_Format(PyExc_TypeError,
+                            "%.200s() argument '%.200s' row/col must be float, not '%.200s'",
+                            "Quaternion", "matrix", Py_TYPE(rowItem)->tp_name);
+               return NULL;
+            }
+
+            int index = (rowCount - 1)* 3 + colCount - 1;
+            (&mat.r11)[index] = d;
+         }
+
+         if (!status || (colCount != 3)) {
+            status = false;
+            break;
+         }
+
+      }
+
+      if (rowCount != 3) {
+         status = false;
+      }
 
       if (!status) {
          /* Reset the generic error to something more appropriate.
           */
          PyErr_Format(PyExc_TypeError,
-                      "%.200s() argument '%.200s' requires 3x3 nested tuple of numeric values",
+                      "%.200s() argument '%.200s' requires nested 3x3 of numeric values",
                       "Quaternion", "matrix");
          return NULL;
       }
@@ -771,22 +820,30 @@ quaternion_matrix(PyObject *self)
 PyDoc_STRVAR(quaternion_matrix_doc,
              "quaternion.matrix() -> 3x3 float matrix"
              "\n"
-             "Returns the equivilent 3D rotation matrix of a rotation Quaternion.\n"
-             "Returns a 3-tuple of 3-tuples of floats.\n"
+             "Returns the equivilent 3D rotation matrix of a rotation quaternion,\n"
+             "which is returned as a 3-tuple of 3-tuples of floats.\n"
+             "Note: no check is performed to test if the quaternion is actually a\n"
+             "rotation quaternion nor is the quaternion first normalised.\n"
              "The returned value may then be turned into numpy array.\n"
              "Example: \n"
-             "    rot_mat = np.array(q.rotation_matrix())");
+             "    rot_mat = np.array(q.matrix())");
 
 /* -----------------------------------------------------------------------------
  */
 static PyObject *
 quaternion_angle(PyObject *self)
 {
-   Py_quaternion c;
+   Py_quaternion q;
    double angle;
-   c = ((PyQuaternionObject *)self)->qval;
-   if (c.w >= -1 && c.w <= +1) {
-      angle = acos (c.w) * 2.0;
+
+   q = ((PyQuaternionObject *)self)->qval;
+
+   /* We allow a little wiggle room to cater for floating point rounding errors.
+    */
+   static const double wiggle = 1.000000001;
+   if (q.w >= -wiggle && q.w <= +wiggle) {
+      double w = q.w < -1.0 ? -1.0 : (q.w > +1.0 ? +1.0 : q.w);
+      angle = acos (w) * 2.0;
    } else {
       PyErr_Format(PyExc_ValueError,
                    "rotation_angle() math domain error");
@@ -804,7 +861,32 @@ PyDoc_STRVAR(quaternion_angle_doc,
              "\n"
              "Note: None-rotation quaternions may lead to a maths error.\n"
              "Note: this angle should not be confused with the polor\n"
-             "co-ordinate form argument or phase angle.");
+             "co-ordinate form phase (aka argument) angle.");
+
+
+/* -----------------------------------------------------------------------------
+ */
+static PyObject *
+quaternion_axis(PyObject *self)
+{
+   PyObject* result;
+   Py_quaternion q;
+   double radius;
+   Py_quat_triple axis;
+   double phase;
+
+   q = ((PyQuaternionObject *)self)->qval;
+   _Py_quat_into_polar (q, &radius, &axis, &phase);
+
+   result = Py_BuildValue("(ddd)", axis.x, axis.y, axis.z);
+
+   return result;
+}
+
+PyDoc_STRVAR(quaternion_axis_doc,
+             "quaternion.axis() -> (float, float, float)"
+             "\n"
+             "Essentially identical to the maths function Quaternion.axis (q)\n");
 
 
 /* -----------------------------------------------------------------------------
@@ -1613,6 +1695,7 @@ static PyMethodDef QuaternionMethods [] = {
    {"normalise",      (PyCFunction)quaternion_normalise,  METH_NOARGS,   quaternion_normalise_doc},
    {"matrix",         (PyCFunction)quaternion_matrix,     METH_NOARGS,   quaternion_matrix_doc},
    {"angle",          (PyCFunction)quaternion_angle,      METH_NOARGS,   quaternion_angle_doc},
+   {"axis",           (PyCFunction)quaternion_axis,       METH_NOARGS,   quaternion_axis_doc},
    {"rotate",         (PyCFunction)quaternion_rotate,     METH_VARARGS |
                                                           METH_KEYWORDS, quaternion_rotate_doc},
    {"brief",          (PyCFunction)quaternion_brief,      METH_STATIC |
@@ -1678,13 +1761,13 @@ static PyNumberMethods QuaternionAsNumber = {
 //
 PyDoc_STRVAR(
       quaternion_doc,
-      "Quaternion ()                                     -> quaternion zero\n"
-      "Quaternion (w[, x[, y[, z]]])                     -> quaternion number\n"
-      "Quaternion (real=float[,imag=(float,float,float)])-> quaternion number\n"
-      "Quaternion (angle=float,axis=(float,float,float)) -> quaternion rotation number\n"
-      "Quaternion (number)                               -> quaternion number\n"
+      "Quaternion ()                                       -> quaternion zero\n"
+      "Quaternion (w[, x[, y[, z]]])                       -> quaternion number\n"
+      "Quaternion (real=float[,imag=(float,float,float)])  -> quaternion number\n"
+      "Quaternion (angle=float,axis=(float,float,float))   -> quaternion rotation number\n"
+      "Quaternion (number)                                 -> quaternion number\n"
       "Quaternion (\"str representation\")                 -> quaternion number\n"
-      "Quaternion (matrix=3x3 nested tuple of numerics)  -> quaternion number\n"
+      "Quaternion (matrix=3x3 nested iterator of numerics) -> quaternion number\n"
       "\n"
       "A Quaternion number may be constructed using one of the following forms:\n"
       "\n"
@@ -1703,12 +1786,14 @@ PyDoc_STRVAR(
       "\n"
       "e) from the string representation of a quaternion (modelled on the complex type).\n"
       "\n"
-      "f) from a 3x3 matrix of floats (and/or float-able objects). The matrix must be\n"
-      "   a 3-tuple, each element itself being a 3-tuple of floats. The matrix should\n"
-      "   ideally be a rotation matrix, i.e. the determinent should be 1, however no \n"
-      "   attempt is made to check this nor is any attempt made to normalise the matrix.\n"
-      "   The resulting quaternion may be normalised or reconstructed from the rotation\n"
-      "   angle and axis.\n"
+      "f) from a 3x3 matrix of floats (or float-able objects). The matrix must be an\n"
+      "   iterator with 3 elements, each of which must also be an iterator with three\n"
+      "   elements, which in turn must be a float or casteable to a float, such as an int.\n"
+      "   The matrix may a list of tuples or a tuple of list etc., or even a numpy array.\n"
+      "   The matrix should ideally be a rotation matrix, i.e. the determinent should\n"
+      "   be 1, however no attempt is made to check this nor is any attempt made to normalise\n"
+      "   the matrix. The resulting quaternion may be normalised or reconstructed from\n"
+      "   the rotation angle and axis.\n"
       "\n"
       "Attributes\n"
       "w       - float - real/scalar part\n"
