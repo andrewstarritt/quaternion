@@ -654,14 +654,14 @@ qmath_dot(PyObject *module, PyObject *args)
    }
 
    /* Belts 'n' braces
-   */
+    */
    if (a == NULL || b == NULL) {
       PyErr_Format(PyExc_TypeError,
                    "quaternion.dot() expects two arguments");
       return NULL;
    }
 
-   /* extarct the input value if we can
+   /* Extract the input values if we can.
     */
    sa = PyObject_AsCQuaternion (a, &qa);
    sb = PyObject_AsCQuaternion (b, &qb);
@@ -674,6 +674,7 @@ qmath_dot(PyObject *module, PyObject *args)
 
    } else {
       if (sa) {
+         /* 1st okay, 2nd must be bad */
          PyErr_Format(PyExc_TypeError,
                       "quaternion.dot() args must be Quaternion, got a '%.200s' for second argument",
                       Py_TYPE(b)->tp_name);
@@ -691,6 +692,81 @@ qmath_dot(PyObject *module, PyObject *args)
    return result;
 }
 
+
+/* -----------------------------------------------------------------------------
+ * https://en.wikipedia.org/wiki/Slerp
+ */
+PyDoc_STRVAR(qmath_slerp__doc__,
+             "slerp(q1,q2,t)\n"
+             "\n"
+             "Returns the spherical interpolation q1 and q2, by the amount specified\n"
+             "by t such that: slerp(q1, q2, 0) == q1 and slerp(q1, q2, 1) == q2\n"
+             "\n"
+             "While t is notionally in the range 0 to 1, this function does not clamp\n"
+             "the t value, so that some level of extrapolation is possible.\n"
+             "q1 and q2 are nominally rotation quaternions, however the slerp function\n"
+             "does not enforce this.");
+
+static PyObject *
+qmath_slerp(PyObject *module, PyObject *args)
+{
+   PyObject *result = NULL;
+
+   PyObject *a1 = NULL;
+   PyObject *a2 = NULL;
+   double t;
+   int status;
+   bool sa;
+   bool sb;
+   Py_quaternion q1;
+   Py_quaternion q2;
+
+   status = PyArg_ParseTuple (args, "OOd:quaternion.slerp", &a1, &a2, &t);
+   if (!status) {
+      return NULL;
+   }
+
+   /* Belts 'n' braces
+    */
+   if (a1 == NULL || a2 == NULL) {
+      PyErr_Format(PyExc_TypeError,
+                   "quaternion.slerp() expects three arguments");
+      return NULL;
+   }
+
+
+   /* Extract the input values if we can.
+    */
+   sa = PyObject_AsCQuaternion (a1, &q1);
+   sb = PyObject_AsCQuaternion (a2, &q2);
+   if (sa && sb) {
+
+      /* Both q1 and q2 are quaternion, do the basic slerp function.
+       */
+      Py_quaternion r = _Py_quat_slerp(q1, q2, t);
+
+      result = PyQuaternion_FromCQuaternion (r);
+
+   } else {
+      if (sa) {
+         /* 1st okay, 2nd must be bad */
+         PyErr_Format(PyExc_TypeError,
+                      "quaternion.slerp() args must be Quaternion, got a '%.200s' for second argument",
+                      Py_TYPE(a2)->tp_name);
+      } else if (sb) {
+         PyErr_Format(PyExc_TypeError,
+                      "quaternion.slerp() args must be Quaternion, got a '%.200s' for first argument",
+                      Py_TYPE(a1)->tp_name);
+      } else {
+         PyErr_Format(PyExc_TypeError,
+                      "quaternion.slerp() args 1 and 2 must be Quaternion, got a '%.200s' and a '%.200s'",
+                      Py_TYPE(a1)->tp_name, Py_TYPE(a2)->tp_name);
+      }
+   }
+
+
+   return result;
+}
 
 /* -----------------------------------------------------------------------------
  * METH_O - one argument,  (in addition to the module argument)
@@ -729,6 +805,7 @@ static PyMethodDef qmath_methods[] = {
    {"rect",     (PyCFunction)qmath_rect,     METH_VARARGS,  qmath_rect__doc__},
 
    {"dot",      (PyCFunction)qmath_dot,      METH_VARARGS,  qmath_dot__doc__},
+   {"slerp",    (PyCFunction)qmath_slerp,    METH_VARARGS,  qmath_slerp__doc__},
 
    {NULL, NULL, 0, NULL}  /* sentinel */
 };

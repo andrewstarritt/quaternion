@@ -675,11 +675,90 @@ double _Py_quat_dot_prod (const Py_quaternion a, const Py_quaternion b)
 {
    double result;
    errno = 0;
+
    /* Needs checking as per abs
     */
    result = (a.w*b.w) + (a.x*b.x) + (a.y*b.y) + (a.z*b.z);
    return result;
 }
+
+
+/* -----------------------------------------------------------------------------
+ * Returns: spherical linear interpolation between two quaternions
+ * https://en.wikipedia.org/wiki/Slerp
+ *
+ * We tried   a * (a.inverse() * b)**t
+ * This seems better when a and or b are not rotation quaternions.
+ */
+Py_quaternion _Py_quat_slerp (const Py_quaternion a_in, const Py_quaternion b, const double t)
+{
+   Py_quaternion r;   // the result
+   Py_quaternion a = a_in;
+
+   /* Go with liniar interpolation, unless we satisfy criteria
+    */
+   double sa = 1.0 - t;   /* scale factor for a */
+   double sb = t;         /* scale factor for b */
+
+   /* Calculate the angle, theta, between two quaternions using dot product, dp,
+    * and the asbsolue values of each quaternion.
+    *
+    * recall:
+    *     dp = |a|.|b|.cos(theta)
+    * and:
+    *     dp = a.w*b.w + a.x*b.x + a.y*b.y + a.z*b.z
+    *
+    * and therefore:
+    *     cos(theta) = dp / (|a|.|b|)
+    */
+   double k = _Py_quat_abs (a_in) * _Py_quat_abs (b);
+
+   /* We need to avoid the divide by zero.
+    * Test against 1.0e-nn as opposed to zero ??
+    */
+   if (k > 0.0) {
+
+      double dp = _Py_quat_dot_prod (a, b);
+
+      /* If pointing in opposite directins , i.e. |theta| > 90deg
+       * then negate one input, a, and the dot product.
+       * We can do this as a and -a effectively represent the same rotation.
+       * This avoids going the long-way-around.
+       */
+      if (dp < 0.0) {
+         dp = -dp;
+         a = _Py_quat_neg(a);
+      }
+
+      const double cos_theta = dp / k;
+
+      /* Check if cos theta nearly one, implies theta nearly 0,
+       * i.e. a and b are going in nearly same direction - approx within 0.5 degrees.
+       * This check also avoid floating errors yielding a value just a squillionth
+       * greater than 1.0
+       */
+    if (cos_theta < 0.99996) {
+         double theta = acos (cos_theta);
+         double sin_theta = sin (theta);
+
+         sa = sin(sa * theta) / sin_theta;
+         sb = sin(sb * theta) / sin_theta;
+      }
+      /* else theta approching zero, just  go with liniar.
+       * In the limit x ---> 0,  sin (t * x) / x  ---> t
+       */
+
+   }
+   /* else either or both a and b are zero - go with liniar. */
+
+   r.w = sa*a.w + sb*b.w;
+   r.x = sa*a.x + sb*b.x;
+   r.y = sa*a.y + sb*b.y;
+   r.z = sa*a.z + sb*b.z;
+
+   return r;
+}
+
 
 /* -----------------------------------------------------------------------------
  * Returns: rotation quaternion value

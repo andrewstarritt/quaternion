@@ -60,14 +60,13 @@ typedef struct {
 
 
 /* Used for 3x3 matricies
+ * Note: the order of declaration IS important.
  */
 typedef struct {
    double r11, r12, r13;
    double r21, r22, r23;
    double r31, r32, r33;
 } Py_quat_matrix;
-
-
 
 
 /* The caller is responsible for calling PyMem_Free to free the buffer
@@ -95,8 +94,8 @@ bool _Py_quat_isnan    (const Py_quaternion a);
 int _Py_quat_eq (const Py_quaternion a, const Py_quaternion b);
 int _Py_quat_ne (const Py_quaternion a, const Py_quaternion b);
 
-double _Py_quat_abs (const Py_quaternion a);
-Py_quaternion _Py_quat_neg (const Py_quaternion a);
+double        _Py_quat_abs       (const Py_quaternion a);
+Py_quaternion _Py_quat_neg       (const Py_quaternion a);
 Py_quaternion _Py_quat_conjugate (const Py_quaternion a);
 Py_quaternion _Py_quat_inverse   (const Py_quaternion a);
 Py_quaternion _Py_quat_normalise (const Py_quaternion a);
@@ -119,6 +118,7 @@ Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b);
  */
 double _Py_quat_quadrance (const Py_quaternion a);
 double _Py_quat_dot_prod (const Py_quaternion a, const Py_quaternion b);
+Py_quaternion _Py_quat_slerp (const Py_quaternion a, const Py_quaternion b, const double t);
 
 /* Rotation related functions
  */
