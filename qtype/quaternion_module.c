@@ -25,7 +25,7 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.3.3"
+#define __version__ "1.3.4"
 
 /* Development environment:
  * Python 3.9.2

@@ -54,7 +54,7 @@ of providing an un-Pythonic duplication of q.w and q.vector respectively.
 
 ## <a name = "mathops"/><span style='color:#00c000'>mathematical operations</span>
 
-The expected mathematical operations are provided.
+The following mathematical operations are provided.
 
 unary: +, -, abs
 
@@ -63,7 +63,8 @@ binary: +, -, \*, /
 power: \*\*
 
 There is no mod (%) or integer division (//) operation available.
-Therefore the pow() function can only take two arguments - see below.
+Therefore only the two argument version of the pow() function is available -
+ see below.
 
 The Quaternion type is associative under both addition and multiplication, i.e.:
 
@@ -75,8 +76,8 @@ The Quaternion type is also distributive:
     p * (q + r)  =  p*q + p*r
 
 The Quaternion type is non-commutative with respect to multiplication and division,
-i.e.  p \* q  and  q \* p in general provide different values. To divide one
-Quaternion by another, there are two possible options:
+i.e. in general p \* q  and q \* p result in different values.
+To divide one Quaternion by another, there are two possible options:
 
     p * q.inverse() ; or
     q.inverse() * p.
@@ -98,16 +99,18 @@ However, mixed-mode ** is possible - please see below.
 Quaternions numbers and scalar numbers, i.e. int or float, are inter-operable.
 int and float numbers are treated as Quaternions with zero imaginary components.
 Note: float numbers (a) and Quaternion numbers (q) do commute under
-multiplication:
+multiplication and division:
 
     q * a = a * q
+    q / a = (1/a) * q
+    a / q  = q.inverse() * a
 
 Mixed mode with complex numbers is also allowed. A complex number, z, is treated
 as a Quaternions, q, such that q.w = z.real, q.y = z.imag, and q.x and q.z are
 zero.
 
 The choice of aligning the imaginary part of a complex number to the j imaginary
-component as opposed to i or k is mathematically arbitrary.
+part as opposed to i or k imaginary parts is mathematically arbitrary.
 However for Python, j is the natural choice and then the following, bar any
 rounding errors, will hold true for any complex value z:
 
@@ -132,13 +135,13 @@ are both provided:
 
 A Quaternion number may be constructed using one of the following forms:
 
-* Quaternion ()                                     -> quaternion zero
-* Quaternion (w[, x[, y[, z]]])                     -> quaternion number
-* Quaternion (real=float,imag=(float,float,float))  -> quaternion number
-* Quaternion (angle=float,axis=(float,float,float)) -> quaternion rotation number
-* Quaternion (number)                               -> quaternion number
-* Quaternion ("string representation")              -> quaternion number
-* Quaternion (matrix=3x3 nested tuple of numerics)  -> quaternion number
+* Quaternion ()                                      -> quaternion zero
+* Quaternion (w[, x[, y[, z]]])                      -> quaternion number
+* Quaternion (real=float,imag=(float,float,float))   -> quaternion number
+* Quaternion (angle=float,axis=(float,float,float))  -> quaternion rotation number
+* Quaternion (number)                                -> quaternion number
+* Quaternion ("string representation")               -> quaternion number
+* Quaternion (matrix=3x3 nested iterator of numerics) -> quaternion number
 
 A Quaternion number may be created from:
 
@@ -153,7 +156,7 @@ c) from an angle (radians) and a 3-tuple axis of rotation (which is automaticall
 
 d) from a single number parameter: int, float, complex or another Quaternion.
    When the number is complex, the imaginary part of the complex number is
-   assigned to the j imaginary part; or
+   assigned to the j imaginary part;
 
 e) from the string representation of a Quaternion (modeled on the complex type).
    The following are valid:
@@ -174,11 +177,12 @@ The following are invalid:
     Quaternion("(1.2+3.4i+2.6j-2k")      -- unmatched parenthesis
 
 f) from a 3x3 matrix of floats (and/or float-able objects). The matrix must be
-   a 3-tuple, each element itself being a 3-tuple of floats. The matrix should
-   ideally be a rotation matrix, i.e. the determinent should be 1, however no
-   attempt is made to check this nor is any attempt made to normalise the matrix.
-   The resulting quaternion may be normalised or reconstructed from the rotation
-   angle and axis.
+   a triplet iterator with each item itself being a triplet iterator of float
+   or floatable objects.
+   The matrix should ideally be a rotation matrix, i.e. the determinent should
+   be 1, however no attempt is made to check this nor is any attempt made to
+   normalise the matrix.
+   The resulting quaternion may be subsequently normalised or reconstructed from the rotation angle and axis.
 
 
 ## <a name = "attributes"/><span style='color:#00c000'>attributes</span>
@@ -191,6 +195,7 @@ f) from a 3x3 matrix of floats (and/or float-able objects). The matrix must be
 * complex - complex - the complex number w + y.j
 * real    - float - real/scalar part
 * imag    - tuple - the imaginary part, the same as vector.
+* data    - tuple - the raw data as a tuple (w, x, y, z).
 
 
 ## <a name = "instfuncs"/><span style='color:#00c000'>instance functions</span>
@@ -223,6 +228,15 @@ q.angle () returns the angle (float, in radians) of q.
 q should be a rotation quaternion.
 This method may raise a ValueError if q is not a rotation quaternion.
 
+This should not be confused with the polor co-ordinate form phase
+(aka argument) angle.
+
+### <span style='color:#00c000'>angle</span>
+
+q.axis () returns the normalised axis of q, where q should be a rotation
+quaternion.
+This is essentially identical to the maths function Quaternion.axis (q)
+
 ### <span style='color:#00c000'>rotate</span>
 
 q.rotate (point, origin=None) -> point, where q is a rotation number,
@@ -248,10 +262,14 @@ and after invoking brief we have:
     In [5]: q
     Out[5]: (1+0i+1j+0k)
 
+This also impacts how lists ,tuples, dictionarys etc. that contain quaternions
+are converted to str and printed.
+
 ### <span style='color:#00c000'>reset</span>
 
 Quaternion.reset() un-does the  \_\_repr\_\_ function behaviour modification
-instigated by the call to brief()
+instigated by the call to brief().
+I might change this name.
 
 ## <a name = "magicfuncs"/><span style='color:#00c000'>magic functions</span>
 
@@ -291,36 +309,38 @@ using format when printing Quaternion, e.g.
 ## <a name = "mathsfuncs"/><span style='color:#00c000'>maths functions</span>
 
 A number of maths functions that operate on Quaternions are also provided.
-Most of these functions perform the equivalent quaternion function as the
-functions of the same name out of the math and/or cmath module.
+Where these function have the same name as a function out of the math and/or
+cmath modules, the function provides the equivalent operation on a quaternion
+or pair of quaternions.
 
 The functions provided are:
 
+    acos
+    acosh
+    asin
+    asinh
+    atan
+    atanh
+    axis
+    cos
+    cosh
+    dot
+    exp
+    isclose
     isfinite
     isinf
     isnan
-    isclose
-    dot
-    sqrt
-    exp
     log
     log10
-    cos
-    sin
-    tan
-    acos
-    asin
-    atan
-    cosh
-    sinh
-    tanh
-    acosh
-    asinh
-    atanh
-    polar
     phase
-    axis
+    polar
     rect
+    sin
+    sinh
+    slerp   - since 1.3.4
+    sqrt
+    tan
+    tanh
 
 Note: there is no separate qmath module.
 
@@ -361,13 +381,14 @@ However, if A is not a rotation matrix, i.e. det(A) != 1, then the
 quaternion will have no obvious interpretation  with respect to the
 matrix.
 
-Matrices have 9 degrees of freedom while quaternions have only 4.
+Matrices have 9 degrees of freedom while quaternions have only 4, and rotation
+quaternions have effectivly only 3.
 This is why only rotation matrices can be sensibly converted to a
 meaningfull quaternion number.
 
 __Note:__ neither the Quaternion(matrix=...) constructor nor the matrix()
-method attempt to valid or normalise the input values.
-They just run the algorithm "AS IS".
+method attempt to validate or normalise the input values.
+They just run the algorithms <span style='color:#4060A0'>__"AS IS"__</span>.
 
 
 ## <a name = "qnarray"/><span style='color:#00c000'>quaternon array</span>
@@ -396,7 +417,7 @@ The QuaternionArray class also provides two additional attributes:
 There is (currently) no equivilent of the fromlist and tolist methods.
 The extend method provides essentially the same functionality as the
 fromlist method (with no argument restriction).
-The fuctionality of &nbsp; _array.tolist()_ &nbsp; can be acheived by 
+The fuctionality of &nbsp; _array.tolist()_ &nbsp; can be acheived by
 calling &nbsp; _list(array)_.
 
 ## <a name = "background"/><span style='color:#00c000'>background</span>
@@ -422,5 +443,5 @@ together with cribbing many code-snippets and ideas from the complex type
 and the array.array type; and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: July 03 17:55:16 AEST 2022</font>
+<font size="-1">Last updated: Thu Sep 22 14:58:35 2022</font>
 <br>
