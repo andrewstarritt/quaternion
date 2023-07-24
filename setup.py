@@ -39,6 +39,7 @@ m = Extension("quaternion",
                          "qtype/quaternion_array.c",
                          "qtype/quaternion_array_iter.c",
                          "qtype/quaternion_math.c",
+                         "qtype/quaternion_utilities.c",
                          "qtype/quaternion_module.c"])
 
 setup(name="quaternion",
