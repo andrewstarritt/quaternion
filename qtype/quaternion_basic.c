@@ -893,7 +893,7 @@ Py_quat_triple _Py_quat_rotate (const Py_quaternion a,
    Py_quat_triple r;
 
    Py_quaternion p;
-   Py_quaternion b;
+   Py_quaternion ac;
    Py_quaternion ap;
    Py_quaternion t;
 
@@ -902,10 +902,12 @@ Py_quat_triple _Py_quat_rotate (const Py_quaternion a,
    p.y = point.y - origin.y;
    p.z = point.z - origin.z;
 
-   b = _Py_quat_conjugate (a);
+   /* Calc: a * p * a^ 
+    */
+   ac = _Py_quat_conjugate (a);
 
    ap = _Py_quat_prod (a, p);
-   t = _Py_quat_prod (ap, b);
+   t = _Py_quat_prod (ap, ac);
 
    r.x = t.x + origin.x;
    r.y = t.y + origin.y;

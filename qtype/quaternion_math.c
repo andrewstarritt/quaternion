@@ -27,9 +27,19 @@
 #include <Python.h>
 #include "quaternion_basic.h"
 #include "quaternion_object.h"
+#include "quaternion_utilities.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
+
+
+
+/* Forward declaration
+ */
+static bool two_qarg_validation (PyObject *a, PyObject *b,
+                                 Py_quaternion *qa,
+                                 Py_quaternion *qb,
+                                 const char *name);
 
 
 /* -----------------------------------------------------------------------------
@@ -391,39 +401,19 @@ qmath_isclose(PyObject *module, PyObject *args, PyObject *kwds)
    double rel_tol = 1.0e-09;
    double abs_tol = 0.0;
    int status;
-
-   bool s;
+   bool vstat;
    Py_quaternion ca;
    Py_quaternion cb;
 
    status = PyArg_ParseTupleAndKeywords
          (args, kwds, "OO|dd:quaternion.isclose", kwlist,
           &a, &b, &rel_tol, &abs_tol);
-   if(!status) {
+   if (!status) {
       return NULL;
    }
 
-   /* Belts 'n' braces
-    */
-   if (a == NULL || b == NULL) {
-      PyErr_Format(PyExc_TypeError,
-                   "quaternion.isclose() expected at least 2 arguments, got 0 or 1");
-      return NULL;
-   }
-
-   s = PyObject_AsCQuaternion (a, &ca);
-   if (!s) {
-      PyErr_Format(PyExc_TypeError,
-                   "quaternion.isclose() 'a' must be a number, not '%.200s'",
-                   Py_TYPE(a)->tp_name);
-      return NULL;
-   }
-
-   s = PyObject_AsCQuaternion (b, &cb);
-   if (!s) {
-      PyErr_Format(PyExc_TypeError,
-                   "quaternion.isclose() 'b' must be a number, not '%.200s'",
-                   Py_TYPE(b)->tp_name);
+   vstat = two_qarg_validation(a, b, &ca, &cb, "isclose");
+   if (!vstat) {
       return NULL;
    }
 
@@ -609,19 +599,21 @@ qmath_rect(PyObject *module, PyObject *args)
    PyObject * result = NULL;
 
    double radius;
-   Py_quat_triple axis;
    double phase;
+   PyObject *unit = NULL;
+   Py_quat_triple axis;
    int status;
    Py_quaternion r;
 
-   status = PyArg_ParseTuple (args, "dd(ddd):quaternion.rect",
-                              &radius, &phase, &axis.x, &axis.y, &axis.z);
+   status = PyArg_ParseTuple (args, "ddO:quaternion.rect",
+                              &radius, &phase, &unit);
    if (status) {
-      /* Note: _Py_quat_from_polar normalised axis if need be */
-      r = _Py_quat_from_polar(radius, axis, phase);
-      result = PyQuaternion_FromCQuaternion (r);
-   } else {
-      result = NULL;
+      status = PyQuaternionUtil_ParseTriple (unit, &axis, "quaternion.rect", "axis");
+      if (status) {
+         /* Note: _Py_quat_from_polar normalised axis if need be */
+         r = _Py_quat_from_polar(radius, axis, phase);
+         result = PyQuaternion_FromCQuaternion (r);
+      }
    }
 
    return result;
@@ -630,7 +622,7 @@ qmath_rect(PyObject *module, PyObject *args)
 /* -----------------------------------------------------------------------------
  */
 PyDoc_STRVAR(qmath_dot__doc__,
-             "dot(q,r)\n"
+             "dot(q, r)\n"
              "\n"
              "Returns the dot or inner product of q and r, i.e.:\n"
              "   q.w*r.w + q.x*r.x + q.y*r.y + q.z*r.z");
@@ -642,8 +634,7 @@ qmath_dot(PyObject *module, PyObject *args)
    PyObject *a = NULL;
    PyObject *b = NULL;
    int status;
-   bool sa;
-   bool sb;
+   bool vstat;
    Py_quaternion qa;
    Py_quaternion qb;
    double r;
@@ -653,41 +644,15 @@ qmath_dot(PyObject *module, PyObject *args)
       return NULL;
    }
 
-   /* Belts 'n' braces
-    */
-   if (a == NULL || b == NULL) {
-      PyErr_Format(PyExc_TypeError,
-                   "quaternion.dot() expects two arguments");
+   vstat = two_qarg_validation(a, b, &qa, &qb, "dot");
+   if (!vstat) {
       return NULL;
    }
 
-   /* Extract the input values if we can.
+   /* Do the basic dot product function.
     */
-   sa = PyObject_AsCQuaternion (a, &qa);
-   sb = PyObject_AsCQuaternion (b, &qb);
-   if (sa && sb) {
-      /* Do the basic dot product function.
-       */
-      r = _Py_quat_dot_prod (qa, qb);
-
-      result = PyFloat_FromDouble (r);
-
-   } else {
-      if (sa) {
-         /* 1st okay, 2nd must be bad */
-         PyErr_Format(PyExc_TypeError,
-                      "quaternion.dot() args must be Quaternion, got a '%.200s' for second argument",
-                      Py_TYPE(b)->tp_name);
-      } else if (sb) {
-         PyErr_Format(PyExc_TypeError,
-                      "quaternion.dot() args must be Quaternion, got a '%.200s' for first argument",
-                      Py_TYPE(a)->tp_name);
-      } else {
-         PyErr_Format(PyExc_TypeError,
-                      "quaternion.dot() args must be Quaternion, got a '%.200s' and a '%.200s'",
-                      Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
-      }
-   }
+   r = _Py_quat_dot_prod (qa, qb);
+   result = PyFloat_FromDouble (r);
 
    return result;
 }
@@ -697,7 +662,7 @@ qmath_dot(PyObject *module, PyObject *args)
  * https://en.wikipedia.org/wiki/Slerp
  */
 PyDoc_STRVAR(qmath_slerp__doc__,
-             "slerp(q1,q2,t)\n"
+             "slerp(q1, q2, t)\n"
              "\n"
              "Returns the spherical interpolation q1 and q2, by the amount specified\n"
              "by t such that: slerp(q1, q2, 0) == q1 (or -q1*) and slerp(q1, q2, 1) == q2\n"
@@ -718,8 +683,7 @@ qmath_slerp(PyObject *module, PyObject *args)
    PyObject *a2 = NULL;
    double t;
    int status;
-   bool sa;
-   bool sb;
+   bool vstat;
    Py_quaternion q1;
    Py_quaternion q2;
 
@@ -728,46 +692,61 @@ qmath_slerp(PyObject *module, PyObject *args)
       return NULL;
    }
 
-   /* Belts 'n' braces
-    */
-   if (a1 == NULL || a2 == NULL) {
-      PyErr_Format(PyExc_TypeError,
-                   "quaternion.slerp() expects three arguments");
+   vstat = two_qarg_validation(a1, a2, &q1, &q2, "slerp");
+   if (!vstat) {
       return NULL;
    }
 
 
+   /* Both q1 and q2 are quaternion, do the basic slerp function.
+    */
+   Py_quaternion r = _Py_quat_slerp(q1, q2, t);
+   result = PyQuaternion_FromCQuaternion (r);
+
+   return result;
+}
+
+
+/* -----------------------------------------------------------------------------
+ */
+static bool two_qarg_validation (PyObject *a, PyObject *b,
+                                 Py_quaternion *qa,
+                                 Py_quaternion *qb,
+                                 const char *fname)
+{
+   if (a == NULL || b == NULL) {
+      PyErr_Format(PyExc_TypeError,
+                   "quaternion.%s() expects at least  arguments", fname);
+      return false;
+   }
+
+   bool sa;
+   bool sb;
+
    /* Extract the input values if we can.
     */
-   sa = PyObject_AsCQuaternion (a1, &q1);
-   sb = PyObject_AsCQuaternion (a2, &q2);
-   if (sa && sb) {
+   sa = PyObject_AsCQuaternion (a, qa);
+   sb = PyObject_AsCQuaternion (b, qb);
 
-      /* Both q1 and q2 are quaternion, do the basic slerp function.
-       */
-      Py_quaternion r = _Py_quat_slerp(q1, q2, t);
-
-      result = PyQuaternion_FromCQuaternion (r);
-
-   } else {
+   if (!sa || !sb) {
       if (sa) {
          /* 1st okay, 2nd must be bad */
          PyErr_Format(PyExc_TypeError,
-                      "quaternion.slerp() args must be Quaternion, got a '%.200s' for second argument",
-                      Py_TYPE(a2)->tp_name);
+                      "quaternion.%s() args must be Quaternion, got a '%.200s' for second argument",
+                      fname, Py_TYPE(b)->tp_name);
       } else if (sb) {
+         /* 2nd okay, 1st must be bad */
          PyErr_Format(PyExc_TypeError,
-                      "quaternion.slerp() args must be Quaternion, got a '%.200s' for first argument",
-                      Py_TYPE(a1)->tp_name);
+                      "quaternion.%s() args must be Quaternion, got a '%.200s' for first argument",
+                      fname, Py_TYPE(a)->tp_name);
       } else {
          PyErr_Format(PyExc_TypeError,
-                      "quaternion.slerp() args 1 and 2 must be Quaternion, got a '%.200s' and a '%.200s'",
-                      Py_TYPE(a1)->tp_name, Py_TYPE(a2)->tp_name);
+                      "quaternion.%s() args must be Quaternion, got a '%.200s' and a '%.200s'",
+                      fname, Py_TYPE(a)->tp_name, Py_TYPE(b)->tp_name);
       }
    }
 
-
-   return result;
+   return sa && sb;
 }
 
 /* -----------------------------------------------------------------------------

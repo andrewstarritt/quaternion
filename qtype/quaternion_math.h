@@ -35,4 +35,4 @@
  */
 PyAPI_FUNC (PyMethodDef*) _PyQmathMethods ();
 
-#endif    /* */
+#endif    /* QUATERNION_MATH_H */

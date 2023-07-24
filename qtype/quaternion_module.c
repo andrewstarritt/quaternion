@@ -5,6 +5,8 @@
  *
  * Copyright (c) 2018-2023  Andrew C. Starritt
  *
+ * All rights reserved.
+ *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -25,7 +27,7 @@
 
 /* The version definition is read by setup.py
  */
-#define __version__ "1.3.4"
+#define __version__ "1.3.6"
 
 /* Development environment:
  * Python 3.9.2

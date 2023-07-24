@@ -427,8 +427,8 @@ extension written in C that was a bit more challenging than just a simple
 "hello world" extension.
 
 Although there are already a number of Quaternion Python implementations out
-there, this has the advantage of speed over the pure Python implementations
-and the advantage of no dependencies on any other modules such as numpy.
+there, this has the advantages of speed over the pure Python implementations
+together with no dependencies on any other modules such as numpy.
 
 ## <a name = "references"/><span style='color:#00c000'>references</span>
 
@@ -443,5 +443,5 @@ together with cribbing many code-snippets and ideas from the complex type
 and the array.array type; and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: Thu Sep 22 14:58:35 2022</font>
+<font size="-1">Last updated: Sun Jul 23 22:28:19 2023</font>
 <br>

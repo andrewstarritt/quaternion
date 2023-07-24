@@ -4,6 +4,8 @@
  *
  * Copyright (c) 2018-2023  Andrew C. Starritt
  *
+ * All rights reserved.
+ *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -25,13 +27,18 @@
 /* From https://docs.python.org/3.5/extending/newtypes.html,
  * together with cribbing many code-snippets and ideas from the complex type.
  *
- * Development environment:
+ * Development environments:
  * Python 3.9.2
  * CentOS Linux release 7.9.2009 (Core)
  * gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-44)
+ *
+ * Python 3.11.2
+ * Debian GNU/Linux release 12
+ * gcc (Debian 12.2.0-14) 12.2.0
  */
 
 #include "quaternion_object.h"
+#include "quaternion_utilities.h"
 #include <structmember.h>
 #include <string.h>
 
@@ -45,35 +52,25 @@ static bool do_brief_repr = false;
 static PyObject *
 quaternion_subtype_from_c_quaternion(PyTypeObject *type, Py_quaternion qval);
 
-
-/* ----------------------------------------------------------------------------
- * Sort of equivalent to PyFloat_AsDouble(PyNumber_Float))
- * Pre-requisite - verify obj with PyNumber_Check ... but this includes complex.
+/* We roll our own macro here because:
+ * a) Py_ADJUST_ERANGE2 disappears in 3.11 and we have to be Py_BUILD_CORE to
+ *    access the new internal/pycore_pymath.h; and
+ * b) we a quaternion, not two complex numbers.
  */
-static double
-_PyNumber_AsDouble(PyObject *obj, bool* is_okay)
-{
-   double result = 0.0;
-   PyObject *float_obj = NULL;
+#define QN_ADJUST_ERANGE4(W, X, Y, Z)                                   \
+    do {                                                                \
+        if ((W) == Py_HUGE_VAL || (W) == -Py_HUGE_VAL ||                \
+            (X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL ||                \
+            (Y) == Py_HUGE_VAL || (Y) == -Py_HUGE_VAL ||                \
+            (Z) == Py_HUGE_VAL || (Z) == -Py_HUGE_VAL) {                \
+                        if (errno == 0)                                 \
+                                errno = ERANGE;                         \
+        }                                                               \
+        else if (errno == ERANGE)                                       \
+            errno = 0;                                                  \
+    } while(0)
 
-   /* Return as a PyFloatObject or NULL
-    */
-   float_obj = PyNumber_Float (obj);
 
-   if (float_obj != NULL) {
-      /* Extract C double from Python float.
-      */
-      result = PyFloat_AsDouble (float_obj);
-      if (is_okay) *is_okay = true;
-   } else {
-      if (is_okay) *is_okay = false;
-   }
-   return result;
-
-   // qtype/quaternion_object.c:46:13: warning: 'debugTrace' defined but not used [-Wunused-function]
-   //
-   DEBUG_TRACE ("make compiler warning go away");
-}
 
 /// ----------------------------------------------------------------------------
 // Optimizations ...
@@ -165,48 +162,6 @@ to_c_quaternion(PyObject **pobj, Py_quaternion *pc)
    else if (!to_c_quaternion(&(obj), &(c)))                                    \
       return (obj);                                                            \
 }
-
-
-/* -----------------------------------------------------------------------------
- * Decode a tuple argument (of floats and/or longs) into a triple of doubles
- * and returns false on failure, true on success.
- * The 'function' and 'arg_name' arguments are for PyErr_Format.
- */
-static bool
-quaternion_parse_triple(PyObject *arg, Py_quat_triple* triple,
-                        char* function, char* arg_name)
-{
-   bool result;
-
-   if (arg == NULL) {
-      PyErr_Format(PyExc_TypeError, "%.200s() missing 1 required positional argument: '%.200s'",
-                   function, arg_name);
-      return false;
-   }
-
-   if (!PyTuple_Check(arg)) {
-      PyErr_Format(PyExc_TypeError,
-                   "%.200s() argument '%.200s' must be tuple, not '%.200s'",
-                   function, arg_name,Py_TYPE(arg)->tp_name);
-      return false;
-   }
-
-   /* PyArg_ParseTuple does all the hard work, but we do lose the exact
-    * nature of the error.
-    */
-   result = PyArg_ParseTuple (arg, "ddd", &triple->x, &triple->y, &triple->z);
-
-   if (!result) {
-      /* Reset the generic error to something more appropiate.
-       */
-      PyErr_Format(PyExc_TypeError,
-                   "%.200s() argument '%.200s' requires exactly 3 numeric values",
-                   function, arg_name);
-   }
-
-   return result;
-}
-
 
 /* =============================================================================
  * init support functions.
@@ -449,7 +404,7 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #define MMM(o,d)                                                                      \
    if (o != NULL) {                                                                   \
       if (PyNumber_Check(o)) {                                                        \
-         d = _PyNumber_AsDouble (o, &status);                                         \
+         status = PyQuaternionUtil_NumberAsDouble (o, &d);                            \
          if (!status) {                                                               \
             PyErr_SetString(PyExc_TypeError, "float(" #o ") didn't return a float");  \
             return NULL;                                                              \
@@ -548,7 +503,7 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
       MMM(angle, a);
 
-      status = quaternion_parse_triple (axis, &b, "Quaternion", "axis");
+      status = PyQuaternionUtil_ParseTriple (axis, &b, "Quaternion", "axis");
       if (!status) {
          return NULL;
       }
@@ -578,7 +533,7 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
       MMM(real, a);
 
       if (imag) {
-         status = quaternion_parse_triple (imag, &b, "Quaternion", "imag");
+         status = PyQuaternionUtil_ParseTriple (imag, &b, "Quaternion", "imag");
          if (!status) {
             return NULL;
          }
@@ -602,78 +557,10 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
        */
       Py_quat_matrix mat;
 
-      PyObject *rowIter = NULL;
-      PyObject *rowItem = NULL;
-      int rowCount = 0;
-
-      PyObject *colIter = NULL;
-      PyObject *colItem = NULL;
-      int colCount = 0;
-
-      status = true;  /* Hypothesize all okay */
-
-      rowIter = PyObject_GetIter(matrix);
-      if (!rowIter) {
-         PyErr_Format(PyExc_TypeError,
-                      "%.200s() argument '%.200s' must be list or tuple, not '%.200s'",
-                      "Quaternion", "matrix", Py_TYPE(matrix)->tp_name);
-         return NULL;
-      }
-
-
-      rowCount = 0;
-      for (rowItem = PyIter_Next(rowIter); rowItem != NULL; rowItem = PyIter_Next(rowIter)) {
-         rowCount++;
-         if (rowCount >= 4) {
-            status = false;
-            break;
-         }
-
-         colIter = PyObject_GetIter(rowItem);
-         if (!colIter) {
-            PyErr_Format(PyExc_TypeError,
-                         "%.200s() argument '%.200s' row must be list or tuple, not '%.200s'",
-                         "Quaternion", "matrix", Py_TYPE(rowItem)->tp_name);
-            return NULL;
-         }
-
-         colCount = 0;
-         for (colItem = PyIter_Next(colIter); colItem != NULL; colItem = PyIter_Next(colIter)) {
-            colCount++;
-            if (colCount >= 4) {
-               status = false;
-               break;
-            }
-
-            double d = _PyNumber_AsDouble (colItem, &status);
-            if (!status) {
-               PyErr_Format(PyExc_TypeError,
-                            "%.200s() argument '%.200s' row/col must be float, not '%.200s'",
-                            "Quaternion", "matrix", Py_TYPE(rowItem)->tp_name);
-               return NULL;
-            }
-
-            int index = (rowCount - 1)* 3 + colCount - 1;
-            (&mat.r11)[index] = d;
-         }
-
-         if (!status || (colCount != 3)) {
-            status = false;
-            break;
-         }
-
-      }
-
-      if (rowCount != 3) {
-         status = false;
-      }
-
+      int dimSizes [2] = { 3, 3 };
+      bool status;
+      status = PyQuaternionUtil_ParseIter (matrix, &mat.r11, 2, dimSizes, "Quaternion", "matrix");
       if (!status) {
-         /* Reset the generic error to something more appropriate.
-          */
-         PyErr_Format(PyExc_TypeError,
-                      "%.200s() argument '%.200s' requires nested 3x3 of numeric values",
-                      "Quaternion", "matrix");
          return NULL;
       }
 
@@ -682,7 +569,7 @@ quaternion_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
    }
 
    /* If we get here, it's an error.
-    * Be more disserning re allow combinations. 
+    * Be more disserning re allowed combinations.
     */
    PyErr_SetString(PyExc_TypeError,
                    "Quaternion() can't mix components and/or 'angle'/'axis' and/or 'real'/'imag' and/or 'matrix' arguments");
@@ -1121,14 +1008,14 @@ quaternion_rotate(PyObject *self, PyObject *args, PyObject *kwds)
       return NULL;
    }
 
-   s = quaternion_parse_triple (point, &c_point, "rotate", "point");
+   s = PyQuaternionUtil_ParseTriple (point, &c_point, "rotate", "point");
    if (!s) {
       return NULL;
    }
 
    /* origin can be null or None */
    if ((origin != NULL) && (origin != Py_None)) {
-      s = quaternion_parse_triple (origin, &c_origin, "rotate", "origin");
+      s = PyQuaternionUtil_ParseTriple (origin, &c_origin, "rotate", "origin");
       if (!s) {
          return NULL;
       }
@@ -1449,7 +1336,7 @@ quaternion_pow(PyObject *v, PyObject *w, PyObject *z)
       }
 
       TO_C_QUATERNION(v, a);
-      real = _PyNumber_AsDouble (w, &real_is_okay);
+      real_is_okay = PyQuaternionUtil_NumberAsDouble (w, &real);
       if (!real_is_okay) {
          PyErr_SetString(PyExc_TypeError, "Quaternion pow() argument 2 didn't return a float");
          return NULL;
@@ -1476,7 +1363,7 @@ quaternion_pow(PyObject *v, PyObject *w, PyObject *z)
       }
 
       TO_C_QUATERNION(w, a);
-      real = _PyNumber_AsDouble (v, &real_is_okay);
+      real_is_okay = PyQuaternionUtil_NumberAsDouble (v, &real);
       if (!real_is_okay) {
          PyErr_SetString(PyExc_TypeError, "Quaternion pow() argument 1 didn't return a float");
          return NULL;
@@ -1503,12 +1390,7 @@ quaternion_pow(PyObject *v, PyObject *w, PyObject *z)
 
    real_is_okay = true;
 
-   Py_ADJUST_ERANGE2(result.w, result.x);
-   if (errno == ERANGE) {
-      real_is_okay = false;
-   }
-
-   Py_ADJUST_ERANGE2(result.y, result.z);
+   QN_ADJUST_ERANGE4(result.w, result.x, result.y, result.z);
    if (errno == ERANGE) {
       real_is_okay = false;
    }
