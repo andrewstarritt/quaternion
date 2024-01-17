@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It provides the
  * Quaternion Array type.
  *
- * Copyright (c) 2022-2023  Andrew C. Starritt
+ * Copyright (c) 2022-2024  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -2115,6 +2115,61 @@ quaternion_array_getattro(PyObject *self, PyObject *attr)
 }
 
 
+
+/* -----------------------------------------------------------------------------
+ * Cribbed from array.array - it seems to work even if the doco for each
+ * view field is a bit vague.
+ */
+static int quaternion_array_buffer_getbuf (PyQuaternionArrayObject *self,
+                                           Py_buffer *view, int flags)
+{
+   static Py_quaternion emptybuf = { 0, 0, 0, 0 };
+
+// printf ("%s:%d %d\n", __FUNCTION__, __LINE__, flags);
+
+   if (view == NULL) {
+      PyErr_SetString(PyExc_BufferError,
+                      "quaternion_buffer_getbuf: view==NULL argument is obsolete");
+      return -1;
+   }
+
+   view->buf = (void *)(self->aval.qvalArray);
+   view->obj = (PyObject*)self;
+   Py_INCREF(self);
+   if (view->buf == NULL) {
+      view->buf = (void *)(&emptybuf);
+   }
+
+   view->len = self->aval.count * sizeof (Py_quaternion);
+   view->readonly = 0;
+   view->ndim = 1;
+   view->itemsize = 1;
+   view->suboffsets = NULL;
+   view->shape = NULL;
+   if ((flags & PyBUF_ND) == PyBUF_ND) {
+      view->shape = &((Py_SIZE(self)));
+   }
+   view->strides = NULL;
+   if ((flags & PyBUF_STRIDES) == PyBUF_STRIDES) {
+      view->strides = &(view->itemsize);
+   }
+   view->format = NULL;
+   view->internal = NULL;
+   if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
+      view->format = "B";
+   }
+
+   return 0;
+}
+
+/* -----------------------------------------------------------------------------
+ */
+static void quaternion_array_buffer_relbuf (PyQuaternionObject *self, Py_buffer *view)
+{
+// printf ("%s:%d\n", __FUNCTION__, __LINE__);
+}
+
+
 /* =============================================================================
  * Tables
  * =============================================================================
@@ -2170,6 +2225,15 @@ static PyMappingMethods quaternion_array_mapping = {
    (objobjargproc) quaternion_array_set_subscript   /* mp_ass_subscript */
 };
 
+
+/* -----------------------------------------------------------------------------
+ */
+static PyBufferProcs QuaternionArrayAsBuffer = {
+    (getbufferproc)quaternion_array_buffer_getbuf,
+    (releasebufferproc)quaternion_array_buffer_relbuf
+};
+
+
 /* -----------------------------------------------------------------------------
  */
 PyDoc_STRVAR(quaternion_array_doc,
@@ -2222,7 +2286,7 @@ static PyTypeObject QuaternionArrayType = {
    (reprfunc)quaternion_array_str,            /* tp_str */
    (getattrofunc)quaternion_array_getattro,   /* tp_getattro */
    0,                                         /* tp_setattro */
-   0,                                         /* tp_as_buffer */
+   &QuaternionArrayAsBuffer,                  /* tp_as_buffer */
    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /* tp_flags */
    quaternion_array_doc,                      /* tp_doc */
    0,                                         /* tp_traverse */

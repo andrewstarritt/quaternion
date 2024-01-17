@@ -8,7 +8,7 @@ import quaternion as qn
 Qn = qn.Quaternion
 Qa = qn.QuaternionArray
 
-Qn.brief()
+Qn.for_repr_use_str()
 
 q0 = Qn(0, 1, 2, 3)
 q1 = Qn(4, 5, 6, 7)
@@ -250,6 +250,14 @@ def test_array_to_from_bytes():
         assert False, "Expecting a ValueError"
 
 
+def test_array_buffer_api():
+    a = Qa(          [Qn (1.1e2, 2.3, 3.2 , 4), Qn (55, 666, -7.7, 1e-8) ] )
+    b = array.array('d', [1.1e2, 2.3, 3.2 , 4,      55, 666, -7.7, 1e-8] )
+    
+    assert bytes(a) == bytes(b),     "bytes(a) failed"
+    assert bytes(a) == a.tobytes(),  "bytes(a) != a.tobytes()"
+    
+
 def test_array_to_from_file():
     fname = '/tmp/test_array_to_from_file.dat'
     a = Qa(ql)
@@ -475,6 +483,7 @@ if __name__ == "__main__":
     test_array_reverse()
     test_array_reserve()
     test_array_to_from_bytes()
+    test_array_buffer_api()
     test_array_to_from_file()
     test_array_pickle()
     test_array_concat()

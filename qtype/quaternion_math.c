@@ -625,7 +625,9 @@ PyDoc_STRVAR(qmath_dot__doc__,
              "dot(q, r)\n"
              "\n"
              "Returns the dot or inner product of q and r, i.e.:\n"
-             "   q.w*r.w + q.x*r.x + q.y*r.y + q.z*r.z");
+             "   q.w*r.w + q.x*r.x + q.y*r.y + q.z*r.z\n"
+             "\n"
+             "This is equivilent to q@r\n");
 static PyObject *
 qmath_dot(PyObject *module, PyObject *args)
 {
@@ -653,6 +655,49 @@ qmath_dot(PyObject *module, PyObject *args)
     */
    r = _Py_quat_dot_prod (qa, qb);
    result = PyFloat_FromDouble (r);
+
+   return result;
+}
+
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(qmath_lerp__doc__, "lerp(q1, q2, t)\n"
+             "\n"
+             "Returns the linear interpolation q1 and q2, by the amount specified\n"
+             "by t such that: lerp(q1, q2, 0) == q1 and lerp(q1, q2, 1) == q2\n"
+             "\n"
+             "While t is notionally in the range 0 to 1, this function does not clamp\n"
+             "the t value, so that some level of extrapolation is possible.\n");
+
+static PyObject *
+qmath_lerp(PyObject *module, PyObject *args)
+{
+   PyObject *result = NULL;
+
+   PyObject *a1 = NULL;
+   PyObject *a2 = NULL;
+   double t;
+   int status;
+   bool vstat;
+   Py_quaternion q1;
+   Py_quaternion q2;
+
+   status = PyArg_ParseTuple (args, "OOd:quaternion.slerp", &a1, &a2, &t);
+   if (!status) {
+      return NULL;
+   }
+
+   vstat = two_qarg_validation(a1, a2, &q1, &q2, "slerp");
+   if (!vstat) {
+      return NULL;
+   }
+
+
+   /* Both q1 and q2 are quaternion, do the basic lerp function.
+    */
+   Py_quaternion r = _Py_quat_lerp(q1, q2, t);
+   result = PyQuaternion_FromCQuaternion (r);
 
    return result;
 }
@@ -786,6 +831,7 @@ static PyMethodDef qmath_methods[] = {
    {"rect",     (PyCFunction)qmath_rect,     METH_VARARGS,  qmath_rect__doc__},
 
    {"dot",      (PyCFunction)qmath_dot,      METH_VARARGS,  qmath_dot__doc__},
+   {"lerp",     (PyCFunction)qmath_lerp,     METH_VARARGS,  qmath_lerp__doc__},
    {"slerp",    (PyCFunction)qmath_slerp,    METH_VARARGS,  qmath_slerp__doc__},
 
    {NULL, NULL, 0, NULL}  /* sentinel */

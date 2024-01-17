@@ -118,6 +118,7 @@ Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b);
  */
 double _Py_quat_quadrance (const Py_quaternion a);
 double _Py_quat_dot_prod (const Py_quaternion a, const Py_quaternion b);
+Py_quaternion _Py_quat_lerp (const Py_quaternion a, const Py_quaternion b, const double t);
 Py_quaternion _Py_quat_slerp (const Py_quaternion a, const Py_quaternion b, const double t);
 
 /* Rotation related functions

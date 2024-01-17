@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 #
 
+import array
 import math
 import quaternion
 from quaternion import Quaternion, zero, one, i, j, k
 
+Qn = quaternion.Quaternion
 
 zero = Quaternion(0)
 
@@ -392,6 +394,12 @@ def test_hash():
     assert hash(k) != hash(i)
 
 
+def test_buffer_api():
+    a = Qn               (1.1e2, 2.3, 3.2 , 4)
+    b = array.array('d', [1.1e2, 2.3, 3.2 , 4] )
+    assert bytes(a) == bytes(b),     "bytes(a) failed"
+
+
 def run_stuff():
     n = Quaternion()
     print("n", n)
@@ -509,6 +517,7 @@ if __name__ == "__main__":
     test_pow1()
     test_pow2()
     test_hash()
+    test_buffer_api()
 #   run_stuff()
 
 # end

@@ -684,6 +684,24 @@ double _Py_quat_dot_prod (const Py_quaternion a, const Py_quaternion b)
 
 
 /* -----------------------------------------------------------------------------
+ * Returns: linear interpolation between two quaternions - simple
+ */
+Py_quaternion _Py_quat_lerp (const Py_quaternion a, const Py_quaternion b, const double t)
+{
+   Py_quaternion r;   // the result
+
+   double sa = 1.0 - t;   /* scale factor for a */
+   double sb = t;         /* scale factor for b */
+
+   r.w = sa*a.w + sb*b.w;
+   r.x = sa*a.x + sb*b.x;
+   r.y = sa*a.y + sb*b.y;
+   r.z = sa*a.z + sb*b.z;
+
+   return r;
+}
+
+/* -----------------------------------------------------------------------------
  * Returns: spherical linear interpolation between two quaternions
  * https://en.wikipedia.org/wiki/Slerp
  *
@@ -695,7 +713,7 @@ Py_quaternion _Py_quat_slerp (const Py_quaternion a_in, const Py_quaternion b, c
    Py_quaternion r;   // the result
    Py_quaternion a = a_in;
 
-   /* Go with liniar interpolation, unless we satisfy criteria
+   /* Go with linear interpolation, unless we satisfy criteria
     */
    double sa = 1.0 - t;   /* scale factor for a */
    double sb = t;         /* scale factor for b */

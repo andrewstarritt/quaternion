@@ -2,7 +2,7 @@
  *
  * This file is part of the Python quaternion module.
  *
- * Copyright (c) 2018-2023  Andrew C. Starritt
+ * Copyright (c) 2018-2024  Andrew C. Starritt
  *
  * All rights reserved.
  *
@@ -1030,20 +1030,20 @@ quaternion_rotate(PyObject *self, PyObject *args, PyObject *kwds)
 /* -----------------------------------------------------------------------------
  * static methods
  */
-PyDoc_STRVAR(quaternion_brief_doc,
-             "brief()\n"
+PyDoc_STRVAR(quaternion_for_repr_use_str_doc,
+             "for_repr_use_str() [static]\n"
              "\n"
              "Modifies the repr function behaviour to be brief by effectively replacing\n"
              "the standard __repr__ functionality with the __str__ functionality.\n"
-             "Example before:\n"
+             "Example before calling for_repr_use_str():\n"
              "   quaternion.Quaternion(0.170871, +0.341743, +0.512614, +0.768921)\n"
              "\n"
-             "and after:\n"
+             "and after calling for_repr_use_str():\n"
              "   (0.170871+0.341743i+0.512614j+0.768921k)\n"
              "\n"
              "Intended for use when using interactive python/ipython.\n"
              "\n");
-static PyObject *quaternion_brief()
+static PyObject *quaternion_for_repr_use_str()
 {
    do_brief_repr = true;
 
@@ -1054,12 +1054,12 @@ static PyObject *quaternion_brief()
 
 /* -----------------------------------------------------------------------------
  */
-PyDoc_STRVAR(quaternion_reset_doc,
-             "reset()\n"
+PyDoc_STRVAR(quaternion_repr_reset_doc,
+             "repr_reset() [static]\n"
              "\n"
-             "Resets the repr function behaviour modified by brief().\n"
+             "Resets the repr function behaviour modified by for_repr_use_str().\n"
              "\n");
-static PyObject *quaternion_reset()
+static PyObject *quaternion_repr_reset()
 {
    do_brief_repr = false;
 
@@ -1257,6 +1257,21 @@ quaternion_mul(PyObject *v, PyObject *w)
    result = _Py_quat_prod(a, b);
    PyFPE_END_PROTECT(result)
    return PyQuaternion_FromCQuaternion(result);
+}
+
+/* -----------------------------------------------------------------------------
+ */
+static PyObject *
+quaternion_dot(PyObject *v, PyObject *w)
+{
+   double result;
+   Py_quaternion a, b;
+   TO_C_QUATERNION(v, a);
+   TO_C_QUATERNION(w, b);
+   PyFPE_START_PROTECT("quaternion_dot", return 0)
+   result = _Py_quat_dot_prod(a, b);
+   PyFPE_END_PROTECT(result)
+   return PyFloat_FromDouble (result);
 }
 
 /* -----------------------------------------------------------------------------
@@ -1562,6 +1577,58 @@ quaternion_getattro(PyObject *self, PyObject *attr)
 }
 
 
+/* -----------------------------------------------------------------------------
+ * Cribbed from array.array - it seems to work even if the doco for each
+ * view field is a bit vague.
+ */
+static int quaternion_buffer_getbuf (PyQuaternionObject *self,
+                                     Py_buffer *view, int flags)
+{
+   static Py_quaternion emptybuf = { 0, 0, 0, 0 };
+
+// printf ("%s:%d %d \n", __FUNCTION__, __LINE__, flags);
+
+   if (view == NULL) {
+      PyErr_SetString(PyExc_BufferError,
+                      "quaternion_buffer_getbuf: view==NULL argument is obsolete");
+      return -1;
+   }
+
+   view->buf = (void *)(&self->qval);
+   view->obj = (PyObject*)self;
+   Py_INCREF(self);
+   if (view->buf == NULL)
+      view->buf = (void *)(&emptybuf);
+   view->len = sizeof (self->qval); //  (Py_SIZE(self)) * self->ob_descr->itemsize;
+   view->readonly = 0;
+   view->ndim = 0;
+   view->itemsize = sizeof (self->qval); // self->ob_descr->itemsize;
+   view->suboffsets = NULL;
+   view->shape = NULL;
+   if ((flags & PyBUF_ND) == PyBUF_ND) {
+      view->shape = &((Py_SIZE(self)));
+   }
+   view->strides = NULL;
+   if ((flags & PyBUF_STRIDES) == PyBUF_STRIDES) {
+      view->strides = &(view->itemsize);
+   }
+   view->format = NULL;
+   view->internal = NULL;
+   if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
+      view->format = "B";
+   }
+
+   return 0;
+}
+
+/* -----------------------------------------------------------------------------
+ */
+static void quaternion_buffer_relbuf (PyQuaternionObject *self, Py_buffer *view)
+{
+// printf ("%s:%d\n", __FUNCTION__, __LINE__);
+}
+
+
 /* =============================================================================
  * Tables
  * =============================================================================
@@ -1580,10 +1647,10 @@ static PyMethodDef QuaternionMethods [] = {
    {"axis",           (PyCFunction)quaternion_axis,       METH_NOARGS,   quaternion_axis_doc},
    {"rotate",         (PyCFunction)quaternion_rotate,     METH_VARARGS |
                                                           METH_KEYWORDS, quaternion_rotate_doc},
-   {"brief",          (PyCFunction)quaternion_brief,      METH_STATIC |
-                                                          METH_NOARGS,   quaternion_brief_doc},
-   {"reset",          (PyCFunction)quaternion_reset,      METH_STATIC |
-                                                          METH_NOARGS,   quaternion_reset_doc},
+   {"for_repr_use_str",(PyCFunction)quaternion_for_repr_use_str, METH_STATIC |
+                                                          METH_NOARGS,   quaternion_for_repr_use_str_doc},
+   {"repr_reset",     (PyCFunction)quaternion_repr_reset, METH_STATIC |
+                                                          METH_NOARGS,   quaternion_repr_reset_doc},
    {NULL, NULL, 0, NULL}   /* sentinel */
 };
 
@@ -1634,8 +1701,16 @@ static PyNumberMethods QuaternionAsNumber = {
    0,                                          /* nb_inplace_floor_divide */
    0,                                          /* nb_inplace_true_divide */
    0,                                          /* nb_index */
-   0,                                          /* nb_matrix_multiply @ */
+   (binaryfunc)quaternion_dot,                 /* nb_matrix_multiply @ */
    0,                                          /* nb_inplace_matrix_multiply */
+};
+
+
+/* -----------------------------------------------------------------------------
+ */
+static PyBufferProcs QuaternionAsBuffer = {
+    (getbufferproc)quaternion_buffer_getbuf,
+    (releasebufferproc)quaternion_buffer_relbuf
 };
 
 
@@ -1709,7 +1784,7 @@ static PyTypeObject QuaternionType = {
    (reprfunc)quaternion_str,                  /* tp_str */
    (getattrofunc)quaternion_getattro,         /* tp_getattro */
    0,                                         /* tp_setattro */
-   0,                                         /* tp_as_buffer */
+   &QuaternionAsBuffer,                       /* tp_as_buffer */
    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /* tp_flags */
    quaternion_doc,                            /* tp_doc */
    0,                                         /* tp_traverse */

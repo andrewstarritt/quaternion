@@ -16,6 +16,7 @@ together with a QuaternionArray object.
 [hash function](#hash)<br>
 [rotation matrices](#rot_mat)<br>
 [quarternion arrays](#qnarray)<br>
+[miscellaneous](#miscellaneous)<br>
 [background](#background)<br>
 [references](#references)<br>
 [credits](#credits)<br>
@@ -420,6 +421,49 @@ fromlist method (with no argument restriction).
 The fuctionality of &nbsp; _array.tolist()_ &nbsp; can be acheived by
 calling &nbsp; _list(array)_.
 
+## <a name = "miscellaneous"/><span style='color:#00c000'>miscellaneous</span>
+
+### <span style='color:#00c000'>pickle</span>
+
+Both the Quaternion and QuaternionArray types support pickle.
+Example:
+
+    q = Quaternion(1,2,3,4)
+    s = pickle.dumps(q)
+    print(s)
+    b'\x80\x04\x95F\x00\x00\x00\x00\x00\x00\x00\x8c\nquaternion\x94\x8c\n   \
+      Quaternion\x94\x93\x94(G?\xf0\x00\x00\x00\x00\x00\x00G@\x00\x00\x00   \
+      \x00\x00\x00\x00G@\x08\x00\x00\x00\x00\x00\x00G@\x10\x00\x00\x00\x00  \
+      \x00\x00t\x94\x81\x94.'
+    p = pickle.loads(s)
+    print(p == q)
+    True
+
+### <span style='color:#00c000'>jsonpickle</span>
+
+While jsonpickle seems to work with Quaternions, there are issues with
+QuaternionArrays.
+
+### <span style='color:#00c000'>buffer API</span>
+
+Both the Quaternion and QuaternionArray types support the (read only)
+buffer API, i.e may be supplied as a parameter to bytes and bytearray.
+Examples:
+
+
+    q = Quaternion(1.111, 2.222, 3.333, 4.444)
+    print(bytes(q))
+    b'-\xb2\x9d\xef\xa7\xc6\xf1?-\xb2\x9d\xef\xa7\xc6\x01@D\x8bl    \
+    \xe7\xfb\xa9\n@-\xb2\x9d\xef\xa7\xc6\x11@'
+
+    a = QuaternionArray( ... )
+    b = bytearray(a)
+    print(b == a.tobytes())
+    True
+
+Note: __a.tobytes()__ is effectively idential to __bytes(a)__.
+
+
 ## <a name = "background"/><span style='color:#00c000'>background</span>
 
 This was initially developed more or less as an experiment to create a Python
@@ -443,5 +487,5 @@ together with cribbing many code-snippets and ideas from the complex type
 and the array.array type; and last _but not least_ Sir William R. Hamilton.
 
 
-<font size="-1">Last updated: Sun Jul 23 22:28:19 2023</font>
+<font size="-1">Last updated: Sun Jan 14 14:18:07 AEDT 2024</font>
 <br>

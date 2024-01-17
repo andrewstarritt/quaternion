@@ -246,7 +246,7 @@ def test_atanh():
         check(math.atanh, cmath.atanh, quaternion.atanh, q)
 
 
-def test_dot():
+def test_dot1():
     b = Quaternion(+17.16, -1.32, -1.48, -2.80)
     for a in qlist:
         u = quaternion.dot(a, a)
@@ -262,6 +262,22 @@ def test_dot():
         assert abs(u - v) < 1.0e-15
 
 
+def test_dot2():
+    b = Quaternion(+17.16, -1.32, -1.48, -2.80)
+    for a in qlist:
+        u = a @ a
+        v = a.quadrance()
+        assert abs(u - v) < 1.0e-15
+
+        u = a.w * b.w + a.x * b.x + a.y * b.y + a.z * b.z
+        v = a @ b
+        assert abs(u - v) < 1.0e-15
+
+        u = b @ a
+        v = a @ b
+        assert abs(u - v) < 1.0e-15
+
+
 def test_pythagoras():
     for a in qlist:
         u = quaternion.sin(a)**2 + quaternion.cos(a)**2
@@ -274,6 +290,26 @@ def test_polar_rect():
         t = quaternion.polar(a)
         c = quaternion.rect(*t)
         assert abs(a - c) < 1.0e-10
+
+
+def test_lerp():
+    a = Quaternion(+3.16, -1.32, -1.48, -2.80)
+    b = Quaternion(-1.32, -3.48, -2.80, 3.142)
+
+    c = quaternion.lerp(a, b, 0.5)
+    d = (a + b) / 2
+    e = abs(c - d)
+    assert e < 1.0e-15
+
+    c = quaternion.lerp(a, b, 0.75)
+    d = (a + 3 * b) / 4
+    e = abs(c - d)
+    assert e < 1.0e-15
+
+    c = quaternion.lerp(a, -b, 0.9)
+    d = (a - 9 * b) / 10
+    e = abs(c - d)
+    assert e < 1.0e-15
 
 
 if __name__ == "__main__":
@@ -295,8 +331,10 @@ if __name__ == "__main__":
     test_asinh()
     test_acosh()
     test_atanh()
-    test_dot()
+    test_dot1()
+    test_dot2()
     test_pythagoras()
     test_polar_rect()
+    test_lerp()
 
 # end
