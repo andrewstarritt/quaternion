@@ -15,5 +15,6 @@ Makefile
 MANIFEST
 proto.py
 _pip.conf
+_pro
 *-wip
 z*

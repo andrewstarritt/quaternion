@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It privides basic
  * quaternion maths operation with minimalist reference to Python.
  *
- * Copyright (c) 2018-2023  Andrew C. Starritt
+ * Copyright (c) 2018-2024  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -69,12 +69,24 @@ typedef struct {
 } Py_quat_matrix;
 
 
+/* Enable/disable use of red i, green j and blue k.
+ * A bit of fun rather than any meaningful purpose.
+ */
+void _Py_set_use_colour(bool use_colour);
+
 /* The caller is responsible for calling PyMem_Free to free the buffer
    that's is returned.
 */
 char * _Py_quat_to_string (const Py_quaternion a,
-                           char format_code,
-                           int precision);
+                           const char format_code, /* always 'r' */
+                           const int precision);   /* aleeays 0 */
+
+char * _Py_quat_to_string2 (const int size,
+                            const char* ps,
+                            const char* px,
+                            const char* py,
+                            const char* pz);
+
 
 /* Infinities and NaNs
  */
@@ -117,7 +129,7 @@ Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b);
 /* Other functions
  */
 double _Py_quat_quadrance (const Py_quaternion a);
-double _Py_quat_dot_prod (const Py_quaternion a, const Py_quaternion b);
+double _Py_quat_dot_prod  (const Py_quaternion a, const Py_quaternion b);
 Py_quaternion _Py_quat_lerp (const Py_quaternion a, const Py_quaternion b, const double t);
 Py_quaternion _Py_quat_slerp (const Py_quaternion a, const Py_quaternion b, const double t);
 

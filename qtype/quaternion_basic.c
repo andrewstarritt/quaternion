@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It provides basic
  * quaternion maths operation with minimalist reference to Python.
  *
- * Copyright (c) 2018-2023  Andrew C. Starritt
+ * Copyright (c) 2018-2024  Andrew C. Starritt
  *
  * The quaternion module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,6 +32,12 @@
 #include <Python.h>
 #include <complex.h>
 
+static const char* red   = "\033[31;1m";
+static const char* green = "\033[32;1m";
+static const char* blue  = "\033[34;1m";
+static const char* reset = "\033[00m";
+
+static bool do_use_colour = false;
 
 /* -----------------------------------------------------------------------------
  * PRIVATE FUNCTIONS
@@ -197,9 +203,16 @@ static Py_quaternion use_complex_func (const Py_quaternion q, const cfunc f)
  * -----------------------------------------------------------------------------
  *
  */
+void _Py_set_use_colour(bool use_colour)
+{
+   do_use_colour = use_colour;
+}
+
+/* -----------------------------------------------------------------------------
+ */
 char * _Py_quat_to_string (const Py_quaternion a,
                            char format_code,
-                           int precision)
+                           const int precision)
 {
    char *result = NULL;
 
@@ -209,7 +222,6 @@ char * _Py_quat_to_string (const Py_quaternion a,
    char *px = NULL;
    char *py = NULL;
    char *pz = NULL;
-   size_t total;
 
    ps = PyOS_double_to_string(a.w, format_code, precision, 0, NULL);
    if (!ps) {
@@ -231,15 +243,81 @@ char * _Py_quat_to_string (const Py_quaternion a,
       goto done;
    }
 
-   total = strlen(ps) + strlen(px) + strlen(py) + strlen(pz) + 8;  /* 2 spare */
-   result = PyMem_Malloc (total);
-   snprintf(result, total, "(%s%si%sj%sk)", ps, px, py, pz);
+   result = _Py_quat_to_string2 (0, ps, px, py, pz);
 
 done:
    if (ps) PyMem_Free(ps);
    if (px) PyMem_Free(px);
    if (py) PyMem_Free(py);
    if (pz) PyMem_Free(pz);
+
+   return result;
+}
+
+/* -----------------------------------------------------------------------------
+ */
+char * _Py_quat_to_string2 (const int size,
+                            const char* psin,
+                            const char* pxin,
+                            const char* pyin,
+                            const char* pzin)
+{
+   char *result = NULL;
+   size_t total;
+   int spaces;
+   size_t alloc;
+   int j;
+   char *image;
+   int imsize;
+
+   /* Local copies - data constant - not the pointer
+    */
+   const char* ps = psin;
+   const char* px = pxin;
+   const char* py = pyin;
+   const char* pz = pzin;
+
+   /* Strip leading spaces.
+    */
+   while (*ps == ' ') ps++;
+   while (*px == ' ') px++;
+   while (*py == ' ') py++;
+   while (*pz == ' ') pz++;
+
+   /* Do the i, j and/or k components need a sign?
+    */
+   bool sx = (*px != '+') && (*px != '-');
+   bool sy = (*py != '+') && (*py != '-');
+   bool sz = (*pz != '+') && (*pz != '-');
+
+   /* ps, px, py and pz may include +/- but not:  'i', 'j', 'k' , '(' and ')'
+    */
+   total = strlen(ps) + strlen(px) + strlen(py) + strlen(pz) + 5 + sx + sy + sz;
+
+   spaces = size > total ? size - total : 0;
+   alloc = (spaces + total) + (do_use_colour ? + 48 : 12);    /* 48/12 carries some spare as well */
+
+   result = PyMem_Malloc(alloc);
+
+   /* pre-fill start with required number of spaces - if any.
+    */
+   for (j = 0; j < spaces; j++)
+      result[j] = ' ';
+
+   image = result + spaces;  /* sprintf offset */
+   imsize = alloc - spaces;  /* and remaining space */
+
+   if (do_use_colour) {
+      snprintf(image, imsize, "(%s%s%s%si%s%s%s%sj%s%s%s%sk%s)", ps,
+               sx ? "+" : "", px, red, reset,
+               sy ? "+" : "", py, green, reset,
+               sz ? "+" : "", pz, blue, reset);
+   } else {
+      snprintf(image, imsize, "(%s%s%si%s%sj%s%sk)", ps,
+               sx ? "+" : "", px,
+               sy ? "+" : "", py,
+               sz ? "+" : "", pz);
+   }
 
    return result;
 }
