@@ -2117,13 +2117,13 @@ quaternion_array_getattro(PyObject *self, PyObject *attr)
 
 
 /* -----------------------------------------------------------------------------
- * Cribbed from array.array - it seems to work even if the doco for each
+ * Cribbed from array.array (3.12) - it seems to work even if the doco for each
  * view field is a bit vague.
  */
 static int quaternion_array_buffer_getbuf (PyQuaternionArrayObject *self,
                                            Py_buffer *view, int flags)
 {
-   static Py_quaternion emptybuf = { 0, 0, 0, 0 };
+   static Py_quaternion emptybuf = { 0.0, 0.0, 0.0, 0.0 };
 
 // printf ("%s:%d %d\n", __FUNCTION__, __LINE__, flags);
 
@@ -2143,11 +2143,11 @@ static int quaternion_array_buffer_getbuf (PyQuaternionArrayObject *self,
    view->len = self->aval.count * sizeof (Py_quaternion);
    view->readonly = 0;
    view->ndim = 1;
-   view->itemsize = 1;
+   view->itemsize = sizeof (Py_quaternion);
    view->suboffsets = NULL;
    view->shape = NULL;
    if ((flags & PyBUF_ND) == PyBUF_ND) {
-      view->shape = &((Py_SIZE(self)));
+      view->shape = &((PyVarObject*)self)->ob_size;
    }
    view->strides = NULL;
    if ((flags & PyBUF_STRIDES) == PyBUF_STRIDES) {

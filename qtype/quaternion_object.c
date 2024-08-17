@@ -43,9 +43,10 @@
 #include <string.h>
 
 /* Controls the behaviour of __repr__
- * See brief and reset static methods
+ * See for_repr_use_str and repr_reset static methods
  */
 static bool do_brief_repr = false;
+
 
 /* Forward declarations
  */
@@ -646,6 +647,22 @@ PyDoc_STRVAR(quaternion_conjugate_doc,
 /* -----------------------------------------------------------------------------
  */
 static PyObject *
+quaternion_copy(PyObject *self)
+{
+   Py_quaternion q;
+   q = ((PyQuaternionObject *)self)->qval;
+   return PyQuaternion_FromCQuaternion(q);
+}
+
+PyDoc_STRVAR(quaternion_copy_doc,
+             "quaternion.copy() -> quaternion\n"
+             "\n"
+             "Returns a copy of the quaternion\n."
+             "An alternative to copy.copy(quaternion)");
+
+/* -----------------------------------------------------------------------------
+ */
+static PyObject *
 quaternion_inverse(PyObject *self)
 {
    Py_quaternion c, r;
@@ -849,50 +866,14 @@ quaternion_format(PyObject *self, PyObject *args)
          const char *utf8_k = PyUnicode_AsUTF8 (fk);
 
          /* Save required length - the formatting of r on its own will
-          * capture ther overall required length.
+          * capture the overall required length.
           */
          const int rlen = strlen (utf8_r);
 
-         /* Strip leading spaces.
-          */
-         while (*utf8_r == ' ') utf8_r++;
-         while (*utf8_i == ' ') utf8_i++;
-         while (*utf8_j == ' ') utf8_j++;
-         while (*utf8_k == ' ') utf8_k++;
-
-         /* Do the i, j and/or k start with a sign?
-          */
-         bool si = (*utf8_i == '+') || (*utf8_i == '-');
-         bool sj = (*utf8_j == '+') || (*utf8_j == '-');
-         bool sk = (*utf8_k == '+') || (*utf8_k == '-');
-
-         /* If no sign add a '+', if component -ve format will always add a sign.
-          */
-         char image [244];
-         snprintf (image, sizeof(image), "(%s%s%si%s%sj%s%sk)", utf8_r,
-                   si ? "" : "+", utf8_i,
-                   sj ? "" : "+", utf8_j,
-                   sk ? "" : "+", utf8_k);
-
-
-         int alen = strlen (image);
-         int pad = rlen - alen;
-
-         /* Constrain pad to available buffer size. */
-         if (pad > (int) sizeof(image) - 1 - alen) {
-             pad = (int) sizeof(image) - 1 - alen;
-         }
-
-         if (pad > 0) {
-            memmove (&image[pad], &image [0], alen + 1);   /* Include the zero */
-            int i;
-            for (i = 0; i < pad; i++)
-               image [i] = ' ';
-         }
-
-         image [sizeof(image) - 1] = '\0';     /* Belts n braces */
-
+         char* image;
+         image = _Py_quat_to_string2 (rlen, utf8_r, utf8_i, utf8_j, utf8_k);
          result = PyUnicode_FromString (image);
+         PyMem_Free (image);  /* Must free this */
       }
 
       /* Done with these objects - decrement the ref counts.
@@ -1067,6 +1048,39 @@ static PyObject *quaternion_repr_reset()
    Py_INCREF(result);
    return result;
 }
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(quaternion_use_colour_doc,
+             "use_colour() [static]\n"
+             "\n"
+             "Turns on colourisation for __str__ and __format__, e.g\n"
+             "  (1.2+9.81\033[31;1mi\033[00m+3.14\033[32;1mj\033[00m-1.612\033[34;1mk\033[00m)\n"
+             "\n"
+             "\n");
+static PyObject *quaternion_use_colour()
+{
+   _Py_set_use_colour(true);
+   PyObject *result = Py_None;
+   Py_INCREF(result);
+   return result;
+}
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(quaternion_no_colour_doc,
+             "no_colour() [static]\n"
+             "\n"
+             "Turns off colourisation.\n"
+             "\n");
+static PyObject *quaternion_no_colour()
+{
+   _Py_set_use_colour(false);
+   PyObject *result = Py_None;
+   Py_INCREF(result);
+   return result;
+}
+
 
 /* -----------------------------------------------------------------------------
  * Dunder and other object methods
@@ -1576,15 +1590,14 @@ quaternion_getattro(PyObject *self, PyObject *attr)
    return result;
 }
 
-
 /* -----------------------------------------------------------------------------
- * Cribbed from array.array - it seems to work even if the doco for each
+ * Cribbed from array.array (3.12) - it seems to work even if the doco for each
  * view field is a bit vague.
  */
 static int quaternion_buffer_getbuf (PyQuaternionObject *self,
                                      Py_buffer *view, int flags)
 {
-   static Py_quaternion emptybuf = { 0, 0, 0, 0 };
+   static Py_quaternion emptybuf = { 0.0, 0.0, 0.0, 0.0 };
 
 // printf ("%s:%d %d \n", __FUNCTION__, __LINE__, flags);
 
@@ -1606,7 +1619,7 @@ static int quaternion_buffer_getbuf (PyQuaternionObject *self,
    view->suboffsets = NULL;
    view->shape = NULL;
    if ((flags & PyBUF_ND) == PyBUF_ND) {
-      view->shape = &((Py_SIZE(self)));
+      view->shape = &((PyVarObject*)self)->ob_size;
    }
    view->strides = NULL;
    if ((flags & PyBUF_STRIDES) == PyBUF_STRIDES) {
@@ -1639,6 +1652,7 @@ static PyMethodDef QuaternionMethods [] = {
    {"__round__",      (PyCFunction)quaternion_round,      METH_VARARGS |
                                                           METH_KEYWORDS, quaternion_round_doc},
    {"conjugate",      (PyCFunction)quaternion_conjugate,  METH_NOARGS,   quaternion_conjugate_doc},
+   {"copy",           (PyCFunction)quaternion_copy,       METH_NOARGS,   quaternion_copy_doc},
    {"inverse",        (PyCFunction)quaternion_inverse,    METH_NOARGS,   quaternion_inverse_doc},
    {"quadrance",      (PyCFunction)quaternion_quadrance,  METH_NOARGS,   quaternion_quadrance_doc},
    {"normalise",      (PyCFunction)quaternion_normalise,  METH_NOARGS,   quaternion_normalise_doc},
@@ -1651,6 +1665,10 @@ static PyMethodDef QuaternionMethods [] = {
                                                           METH_NOARGS,   quaternion_for_repr_use_str_doc},
    {"repr_reset",     (PyCFunction)quaternion_repr_reset, METH_STATIC |
                                                           METH_NOARGS,   quaternion_repr_reset_doc},
+   {"use_colour",     (PyCFunction)quaternion_use_colour, METH_STATIC |
+                                                          METH_NOARGS,   quaternion_use_colour_doc},
+   {"no_colour",      (PyCFunction)quaternion_no_colour,  METH_STATIC |
+                                                          METH_NOARGS,   quaternion_no_colour_doc},
    {NULL, NULL, 0, NULL}   /* sentinel */
 };
 
