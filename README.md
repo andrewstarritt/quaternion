@@ -232,7 +232,7 @@ This method may raise a ValueError if q is not a rotation quaternion.
 This should not be confused with the polor co-ordinate form phase
 (aka argument) angle.
 
-### <span style='color:#00c000'>angle</span>
+### <span style='color:#00c000'>axis</span>
 
 q.axis () returns the normalised axis of q, where q should be a rotation
 quaternion.
@@ -248,29 +248,51 @@ The returned value is rotated by an angle a radians about the axis (x,y,z).
 
 These are the equivilent of "@staticmethod" functions
 
-### <span style='color:#00c000'>brief</span>
+### <span style='color:#00c000'>for_repr_use_str</span>
 
-Quaternion.brief() modifies the behaviour of the \_\_repr\_\_ function.
+Quaternion.for_repr_use_str() modifies the behaviour of the \_\_repr\_\_ function.
 Within interactive python/ipython we have:
 
     In [2]: q = quaternion.Quaternion (1,0,1,0)
     In [3]: q
     Out[3]: quaternion.Quaternion(1, +0, +1, +0)
 
-and after invoking brief we have:
+and after invoking for_repr_use_str we have:
 
-    In [4]: quaternion.Quaternion.brief()
+    In [4]: quaternion.Quaternion.for_repr_use_str()
     In [5]: q
     Out[5]: (1+0i+1j+0k)
 
 This also impacts how lists ,tuples, dictionarys etc. that contain quaternions
 are converted to str and printed.
 
-### <span style='color:#00c000'>reset</span>
+This function was previously named brief.
 
-Quaternion.reset() un-does the  \_\_repr\_\_ function behaviour modification
-instigated by the call to brief().
-I might change this name.
+### <span style='color:#00c000'>repr_reset</span>
+
+Quaternion.repr_reset() un-does the  \_\_repr\_\_ function behaviour modification
+instigated by the call to for_repr_use_str().
+
+This function was previously named reset.
+
+
+### <span style='color:#00c000'>use_colour</span>
+
+Quaternion.use_colour() modifies the string representation of a Quaternion to use colour, e.g.:
+
+&nbsp;&nbsp;&nbsp;&nbsp;(2+1.32
+<span style='color:#ff0000'>**i**</span>+0
+<span style='color:#00ff00'>**i**</span>+4.2
+<span style='color:#0000ff'>**i**</span>)
+
+
+### <span style='color:#00c000'>no_colour</span>
+
+Quaternion.no_colour()  resets the use of colour if i, j and k.
+
+### <span style='color:#00c000'>using_colour</span>
+
+Quaternion.using_colour() returns a bool indicating the use of colour or not.
 
 ## <a name = "magicfuncs"/><span style='color:#00c000'>magic functions</span>
 
@@ -402,12 +424,14 @@ far as resonabley possbile the API and behaviour of the inbuilt
 ### <span style='color:#00c000'>additional methods/attributes</span>
 
 The QuaternionArray class provides a number of additonal methods:
+
 - clear() - this is equivilent to the list class clear() method;
 - reserve(int) - this method allows the minimum space allocated
   for the array to be specified (expressed in number of quaterions,
-  __not__ number of bytes).
+  and __not__ the number of bytes).
 
 The QuaternionArray class also provides two additional attributes:
+
 - allocated - provides the allocated memory size
   (expressed in quaterions);
 - reserved - provides the minimum allocated memory size
@@ -442,7 +466,7 @@ Example:
 ### <span style='color:#00c000'>jsonpickle</span>
 
 While jsonpickle seems to work with Quaternions, there are issues with
-QuaternionArrays.
+QuaternionArrays (still under investigation).
 
 ### <span style='color:#00c000'>buffer API</span>
 
@@ -486,6 +510,5 @@ Guidance from https://docs.python.org/3.5/extending/newtypes.html
 together with cribbing many code-snippets and ideas from the complex type
 and the array.array type; and last _but not least_ Sir William R. Hamilton.
 
-
-<font size="-1">Last updated: Sun Jan 14 14:18:07 AEDT 2024</font>
+<font size="-1">Last updated: Sat Aug 31 15:35:29 2024</font>
 <br>
