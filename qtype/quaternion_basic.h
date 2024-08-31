@@ -72,7 +72,8 @@ typedef struct {
 /* Enable/disable use of red i, green j and blue k.
  * A bit of fun rather than any meaningful purpose.
  */
-void _Py_set_use_colour(bool use_colour);
+void _Py_quat_set_use_colour(bool use_colour);
+bool _Py_quat_using_colour();
 
 /* The caller is responsible for calling PyMem_Free to free the buffer
    that's is returned.

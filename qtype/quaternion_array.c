@@ -2125,8 +2125,6 @@ static int quaternion_array_buffer_getbuf (PyQuaternionArrayObject *self,
 {
    static Py_quaternion emptybuf = { 0.0, 0.0, 0.0, 0.0 };
 
-// printf ("%s:%d %d\n", __FUNCTION__, __LINE__, flags);
-
    if (view == NULL) {
       PyErr_SetString(PyExc_BufferError,
                       "quaternion_buffer_getbuf: view==NULL argument is obsolete");
@@ -2227,6 +2225,7 @@ static PyMappingMethods quaternion_array_mapping = {
 
 
 /* -----------------------------------------------------------------------------
+ * Allows bytes (QuaternionArray)
  */
 static PyBufferProcs QuaternionArrayAsBuffer = {
     (getbufferproc)quaternion_array_buffer_getbuf,

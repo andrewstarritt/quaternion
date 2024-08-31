@@ -203,9 +203,16 @@ static Py_quaternion use_complex_func (const Py_quaternion q, const cfunc f)
  * -----------------------------------------------------------------------------
  *
  */
-void _Py_set_use_colour(bool use_colour)
+void _Py_quat_set_use_colour(bool use_colour)
 {
    do_use_colour = use_colour;
+}
+
+/* -----------------------------------------------------------------------------
+ */
+bool _Py_quat_using_colour()
+{
+   return do_use_colour;
 }
 
 /* -----------------------------------------------------------------------------

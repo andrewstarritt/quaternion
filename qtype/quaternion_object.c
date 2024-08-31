@@ -794,6 +794,7 @@ PyDoc_STRVAR(quaternion_axis_doc,
 
 
 /* -----------------------------------------------------------------------------
+ * Supports pickle
  */
 static PyObject *
 quaternion_getnewargs(PyObject* self)
@@ -1060,7 +1061,7 @@ PyDoc_STRVAR(quaternion_use_colour_doc,
              "\n");
 static PyObject *quaternion_use_colour()
 {
-   _Py_set_use_colour(true);
+   _Py_quat_set_use_colour(true);
    PyObject *result = Py_None;
    Py_INCREF(result);
    return result;
@@ -1075,8 +1076,23 @@ PyDoc_STRVAR(quaternion_no_colour_doc,
              "\n");
 static PyObject *quaternion_no_colour()
 {
-   _Py_set_use_colour(false);
+   _Py_quat_set_use_colour(false);
    PyObject *result = Py_None;
+   Py_INCREF(result);
+   return result;
+}
+
+/* -----------------------------------------------------------------------------
+ */
+PyDoc_STRVAR(quaternion_using_colour_doc,
+             "using_colour() [static]\n"
+             "\n"
+             "Returns True if use_colour() has been called ptherwise False.\n"
+             "\n");
+static PyObject *quaternion_using_colour()
+{
+   const bool r = _Py_quat_using_colour();
+   PyObject *result = r ? Py_True : Py_False;
    Py_INCREF(result);
    return result;
 }
@@ -1591,6 +1607,7 @@ quaternion_getattro(PyObject *self, PyObject *attr)
 }
 
 /* -----------------------------------------------------------------------------
+ * Supports bytes (quaternion) that returns a bytes object, length 32.
  * Cribbed from array.array (3.12) - it seems to work even if the doco for each
  * view field is a bit vague.
  */
@@ -1598,8 +1615,6 @@ static int quaternion_buffer_getbuf (PyQuaternionObject *self,
                                      Py_buffer *view, int flags)
 {
    static Py_quaternion emptybuf = { 0.0, 0.0, 0.0, 0.0 };
-
-// printf ("%s:%d %d \n", __FUNCTION__, __LINE__, flags);
 
    if (view == NULL) {
       PyErr_SetString(PyExc_BufferError,
@@ -1612,10 +1627,10 @@ static int quaternion_buffer_getbuf (PyQuaternionObject *self,
    Py_INCREF(self);
    if (view->buf == NULL)
       view->buf = (void *)(&emptybuf);
-   view->len = sizeof (self->qval); //  (Py_SIZE(self)) * self->ob_descr->itemsize;
+   view->len = sizeof (self->qval);      /* (Py_SIZE(self)) * self->ob_descr->itemsize; */
    view->readonly = 0;
    view->ndim = 0;
-   view->itemsize = sizeof (self->qval); // self->ob_descr->itemsize;
+   view->itemsize = sizeof (self->qval); /* self->ob_descr->itemsize; */
    view->suboffsets = NULL;
    view->shape = NULL;
    if ((flags & PyBUF_ND) == PyBUF_ND) {
@@ -1631,6 +1646,7 @@ static int quaternion_buffer_getbuf (PyQuaternionObject *self,
       view->format = "B";
    }
 
+   /* self->ob_exports++;  */
    return 0;
 }
 
@@ -1638,7 +1654,7 @@ static int quaternion_buffer_getbuf (PyQuaternionObject *self,
  */
 static void quaternion_buffer_relbuf (PyQuaternionObject *self, Py_buffer *view)
 {
-// printf ("%s:%d\n", __FUNCTION__, __LINE__);
+   /* self->ob_exports--;  */
 }
 
 
@@ -1647,28 +1663,30 @@ static void quaternion_buffer_relbuf (PyQuaternionObject *self, Py_buffer *view)
  * =============================================================================
  */
 static PyMethodDef QuaternionMethods [] = {
-   {"__getnewargs__", (PyCFunction)quaternion_getnewargs, METH_NOARGS,   quaternion_getnewargs_doc},
-   {"__format__",     (PyCFunction)quaternion_format,     METH_VARARGS,  quaternion_format_doc},
-   {"__round__",      (PyCFunction)quaternion_round,      METH_VARARGS |
-                                                          METH_KEYWORDS, quaternion_round_doc},
-   {"conjugate",      (PyCFunction)quaternion_conjugate,  METH_NOARGS,   quaternion_conjugate_doc},
-   {"copy",           (PyCFunction)quaternion_copy,       METH_NOARGS,   quaternion_copy_doc},
-   {"inverse",        (PyCFunction)quaternion_inverse,    METH_NOARGS,   quaternion_inverse_doc},
-   {"quadrance",      (PyCFunction)quaternion_quadrance,  METH_NOARGS,   quaternion_quadrance_doc},
-   {"normalise",      (PyCFunction)quaternion_normalise,  METH_NOARGS,   quaternion_normalise_doc},
-   {"matrix",         (PyCFunction)quaternion_matrix,     METH_NOARGS,   quaternion_matrix_doc},
-   {"angle",          (PyCFunction)quaternion_angle,      METH_NOARGS,   quaternion_angle_doc},
-   {"axis",           (PyCFunction)quaternion_axis,       METH_NOARGS,   quaternion_axis_doc},
-   {"rotate",         (PyCFunction)quaternion_rotate,     METH_VARARGS |
-                                                          METH_KEYWORDS, quaternion_rotate_doc},
+   {"__getnewargs__", (PyCFunction)quaternion_getnewargs,   METH_NOARGS,   quaternion_getnewargs_doc},
+   {"__format__",     (PyCFunction)quaternion_format,       METH_VARARGS,  quaternion_format_doc},
+   {"__round__",      (PyCFunction)quaternion_round,        METH_VARARGS |
+                                                            METH_KEYWORDS, quaternion_round_doc},
+   {"conjugate",      (PyCFunction)quaternion_conjugate,    METH_NOARGS,   quaternion_conjugate_doc},
+   {"copy",           (PyCFunction)quaternion_copy,         METH_NOARGS,   quaternion_copy_doc},
+   {"inverse",        (PyCFunction)quaternion_inverse,      METH_NOARGS,   quaternion_inverse_doc},
+   {"quadrance",      (PyCFunction)quaternion_quadrance,    METH_NOARGS,   quaternion_quadrance_doc},
+   {"normalise",      (PyCFunction)quaternion_normalise,    METH_NOARGS,   quaternion_normalise_doc},
+   {"matrix",         (PyCFunction)quaternion_matrix,       METH_NOARGS,   quaternion_matrix_doc},
+   {"angle",          (PyCFunction)quaternion_angle,        METH_NOARGS,   quaternion_angle_doc},
+   {"axis",           (PyCFunction)quaternion_axis,         METH_NOARGS,   quaternion_axis_doc},
+   {"rotate",         (PyCFunction)quaternion_rotate,       METH_VARARGS |
+                                                            METH_KEYWORDS, quaternion_rotate_doc},
    {"for_repr_use_str",(PyCFunction)quaternion_for_repr_use_str, METH_STATIC |
-                                                          METH_NOARGS,   quaternion_for_repr_use_str_doc},
-   {"repr_reset",     (PyCFunction)quaternion_repr_reset, METH_STATIC |
-                                                          METH_NOARGS,   quaternion_repr_reset_doc},
-   {"use_colour",     (PyCFunction)quaternion_use_colour, METH_STATIC |
-                                                          METH_NOARGS,   quaternion_use_colour_doc},
-   {"no_colour",      (PyCFunction)quaternion_no_colour,  METH_STATIC |
-                                                          METH_NOARGS,   quaternion_no_colour_doc},
+                                                            METH_NOARGS,   quaternion_for_repr_use_str_doc},
+   {"repr_reset",     (PyCFunction)quaternion_repr_reset,   METH_STATIC |
+                                                            METH_NOARGS,   quaternion_repr_reset_doc},
+   {"use_colour",     (PyCFunction)quaternion_use_colour,   METH_STATIC |
+                                                            METH_NOARGS,   quaternion_use_colour_doc},
+   {"no_colour",      (PyCFunction)quaternion_no_colour,    METH_STATIC |
+                                                            METH_NOARGS,   quaternion_no_colour_doc},
+   {"using_colour",   (PyCFunction)quaternion_using_colour, METH_STATIC |
+                                                            METH_NOARGS,   quaternion_using_colour_doc},
    {NULL, NULL, 0, NULL}   /* sentinel */
 };
 
@@ -1898,7 +1916,7 @@ PyQuaternion_FromCQuaternion(const Py_quaternion qval)
 }
 
 /* -----------------------------------------------------------------------------
- * Returns the object convert to a PyQuaternionObject
+ * Returns the object convert to a PyQuaternionObject or NULL
  */
 PyObject * PyObject_AsQuaternion(PyObject *obj)
 {
