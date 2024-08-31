@@ -10,7 +10,7 @@ Qn = quaternion.Quaternion
 
 zero = Quaternion(0)
 
-a  = Quaternion(1.2, -3.4, +5.6, -7.8)
+a = Quaternion(1.2, -3.4, +5.6, -7.8)
 ac = Quaternion(1.2, +3.4, -5.6, +7.8)
 b = Quaternion(+7.8, +9.0, -1.2, -3.4)
 
@@ -18,6 +18,7 @@ b = Quaternion(+7.8, +9.0, -1.2, -3.4)
 def test_attributes():
 
     print(quaternion.__version__)
+    print('test_attributes')
 
     assert zero.w == 0.0
     assert zero.x == 0.0
@@ -64,6 +65,7 @@ def test_attributes():
 
 
 def test_init():
+    print('test_init')
     z = Quaternion()
     assert z == zero
 
@@ -92,7 +94,7 @@ def test_init():
         assert False, "Expecting ValueError"
     except ValueError:
         pass
-    except:
+    except BaseException:
         raise
 
     try:
@@ -100,13 +102,14 @@ def test_init():
         assert False, "Expecting TypeError"
     except TypeError:
         pass
-    except:
+    except BaseException:
         raise
 
 
 def test_equal():
     """ Test equality and non-equality
     """
+    print('test_equal')
     assert zero == zero
     assert a == a
     assert b == b
@@ -143,6 +146,7 @@ def test_equal():
 
 
 def test_conjugate():
+    print('test_conjugate')
     assert a.conjugate() == ac
     assert ac.conjugate() == a
 
@@ -164,6 +168,7 @@ def test_conjugate():
 
 
 def test_abs():
+    print('test_abs')
     assert abs(zero) == 0.0
     assert abs(one) == 1.0
     assert abs(i) == 1.0
@@ -185,14 +190,16 @@ def test_abs():
 
 
 def test_normalise():
-    s = abs(a.normalise() - a/abs(a))
+    print('test_normalise')
+    s = abs(a.normalise() - a / abs(a))
     assert s < 1.0e-9
-    
-    s = abs(b.normalise() - b/abs(b))
+
+    s = abs(b.normalise() - b / abs(b))
     assert s < 1.0e-9
 
 
 def test_quadrance():
+    print('test_quadrance')
     p = abs(a) * abs(a)
     q = a.quadrance()
     assert abs(p - q) < 1.0e-9
@@ -205,6 +212,7 @@ def test_quadrance():
 
 
 def test_add():
+    print('test_add')
     assert a == +a
     assert zero + a == a
     assert a + zero == a
@@ -225,6 +233,7 @@ def test_add():
 
 
 def test_sub():
+    print('test_sub')
     assert a == -(-a)
     assert zero - a == -a
     assert a - zero == a
@@ -245,6 +254,7 @@ def test_sub():
 
 
 def test_mul():
+    print('test_mul')
     assert a * one == a
     assert one * a == a
     # in general a*b != b*a
@@ -281,6 +291,7 @@ def test_mul():
 
 
 def test_div():
+    print('test_div')
     assert a / one == a
     assert (4.6 * a) / a == Quaternion(4.6)
 
@@ -303,6 +314,7 @@ def test_div():
 
 
 def test_inverse():
+    print('test_inverse')
     b = a.inverse()
     t = one - a * b
     assert abs(t) < 1.0e-9
@@ -311,13 +323,14 @@ def test_inverse():
     b = a.inverse().inverse()
     t = a - b
     assert abs(t) < 1.0e-9
-    
-    assert (quaternion.isclose(b*b.inverse(), one))
-    assert (quaternion.isclose(b.inverse()*b, one))
+
+    assert (quaternion.isclose(b * b.inverse(), one))
+    assert (quaternion.isclose(b.inverse() * b, one))
 
 
 def test_pow1():
     # quaternion ** float
+    print('test_pow1')
     assert a ** 0 == one
     assert a ** 1 == a
     assert abs(a ** 2 - (a * a)) <= 1.0e-12
@@ -341,30 +354,30 @@ def test_pow1():
     s = abs(b**r)
     assert abs(t - s) <= 1.0e-12
 
-
     p = a ** r
-    q = quaternion.exp (quaternion.log(a) * r)
+    q = quaternion.exp(quaternion.log(a) * r)
     assert quaternion.isclose(p, q)
-       
-    
+
     p = r ** a
-    q = quaternion.exp (math.log(r) * a)
+    q = quaternion.exp(math.log(r) * a)
     assert quaternion.isclose(p, q)
-   
+
 
 def test_pow2():
     # float ** quaternion
+    print('test_pow2')
     f = 1.43
     assert f ** zero == one
-    assert f ** one  == f
+    assert f ** one == f
 
     t1 = f ** b
-    t2 = quaternion.exp (math.log(f) * b)
+    t2 = quaternion.exp(math.log(f) * b)
     p = t1 - t2
     assert abs(p) <= 1.0e-9
 
 
 def test_hash():
+    print('test_hash')
     n = 234
     r = float(n)
     c = complex(r)
@@ -395,12 +408,14 @@ def test_hash():
 
 
 def test_buffer_api():
-    a = Qn               (1.1e2, 2.3, 3.2 , 4)
-    b = array.array('d', [1.1e2, 2.3, 3.2 , 4] )
-    assert bytes(a) == bytes(b),     "bytes(a) failed"
+    print('test_buffer_api')
+    a =                Qn(1.1e2, 2.3, 3.2, 4)
+    b = array.array('d', [1.1e2, 2.3, 3.2, 4])
+    assert bytes(a) == bytes(b), "bytes(a) failed"
 
 
 def run_stuff():
+    print('run_stuff')
     n = Quaternion()
     print("n", n)
     n = Quaternion(n)

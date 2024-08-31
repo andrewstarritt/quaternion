@@ -22,6 +22,7 @@ qx = Qn(2, -1, 8, -4)
 
 
 def test_array_assign():
+    print("test_array_assign")
     a = Qa([1, 2, 3, 4])
     assert len(a) == 4, "Wrong length"
 
@@ -35,26 +36,29 @@ def test_array_assign():
 
 
 def test_array_attributes():
+    print("test_array_attributes")
     r = 1027
     a = Qa(reserve=r)
     assert a.itemsize == 32, f"itemsize is {a.itemsize} and not 32"
-    assert a.reserved == r,  f"reserved is {a.reserved } and not {r}"
+    assert a.reserved == r, f"reserved is {a.reserved } and not {r}"
     assert a.allocated >= r, f"allocated {a.allocated} is < reserved {r}"
 
 
 def test_array_append():
+    print("test_array_append")
     a = Qa(ql)
     n = len(a)
 
     a.append(qx)
     m = len(a)
 
-    assert m == n+1, "Append count to dnot increment by 1"
-    q = a[m-1]
-    assert q == qx,  "Appended item not added to the end"
+    assert m == n + 1, "Append count to dnot increment by 1"
+    q = a[m - 1]
+    assert q == qx, "Appended item not added to the end"
 
 
 def test_array_buffer_info():
+    print("test_array_buffer_info")
     a = Qa()
     bi = a.buffer_info()
     assert bi == (0, 0), "Buffer info tuple is not (0, 0)"
@@ -65,6 +69,7 @@ def test_array_buffer_info():
 
 
 def test_array_byteswap():
+    print("test_array_byteswap")
     a = Qa(ql)
     b = array.array('d')
     c = array.array('d')
@@ -85,6 +90,7 @@ def test_array_byteswap():
 
 
 def test_array_clear():
+    print("test_array_clear")
     a = Qa(qr)
     assert len(a) == len(qr), "Assign failure"
     a.clear()
@@ -92,6 +98,7 @@ def test_array_clear():
 
 
 def test_array_count():
+    print("test_array_count")
     a = Qa(qr)
     assert a.count(q2) == 1, "Count fail, expecting 1"
     assert a.count(qx) == 0, "Count fail, expecting 0"
@@ -103,6 +110,7 @@ def test_array_count():
 
 
 def test_array_extend():
+    print("test_array_extend")
     a = Qa(ql)
     a.extend(qr)
     n = len(ql) + len(qr)
@@ -122,6 +130,7 @@ def test_array_extend():
 
 
 def test_array_index():
+    print("test_array_index")
     a = Qa(ql)
     i = a.index(q0)
     assert i == 0, f"Expecting index to return 0, got {i}"
@@ -139,11 +148,12 @@ def test_array_index():
         assert False, "Expecting a ValueError"
     except ValueError:
         pass
-    except:
+    except BaseException:
         assert False, "Expecting a ValueError"
 
 
 def test_array_insert():
+    print("test_array_insert")
     a = Qa()
     a.insert(0, qx)
     n = len(a)
@@ -163,10 +173,11 @@ def test_array_insert():
     n = len(a)
     assert n == 5, f"Insert - got wrong length expecyting 1, got {n}"
     i = a.index(qx)
-    assert i == n-2, f"Expecting index to return {n-2}, got {i}"
+    assert i == n - 2, f"Expecting index to return {n-2}, got {i}"
 
 
 def test_array_pop():
+    print("test_array_pop")
     a = Qa(ql)
     n = len(a)
 
@@ -185,6 +196,7 @@ def test_array_pop():
 
 
 def test_array_remove():
+    print("test_array_remove")
     a = Qa(ql)
 
     for q in ql:
@@ -203,11 +215,12 @@ def test_array_remove():
         assert False, "Expecting a ValueError"
     except ValueError:
         pass
-    except:
+    except BaseException:
         assert False, "Expecting a ValueError"
 
 
 def test_array_reverse():
+    print("test_array_reverse")
     a = Qa(ql)
     b = Qa(qr)
     a.reverse()
@@ -215,6 +228,7 @@ def test_array_reverse():
 
 
 def test_array_reserve():
+    print("test_array_reserve")
     a = Qa(ql, reserve=123)
     n = a.reserved
     assert n == 123, f"Reserve - expecting 123, got {n}"
@@ -226,6 +240,7 @@ def test_array_reserve():
 
 
 def test_array_to_from_bytes():
+    print("test_array_to_from_bytes")
     a = Qa(ql)
     b = a.tobytes()
 
@@ -246,19 +261,21 @@ def test_array_to_from_bytes():
         assert False, "Expecting a ValueError"
     except ValueError:
         pass
-    except:
+    except BaseException:
         assert False, "Expecting a ValueError"
 
 
 def test_array_buffer_api():
-    a = Qa(          [Qn (1.1e2, 2.3, 3.2 , 4), Qn (55, 666, -7.7, 1e-8) ] )
-    b = array.array('d', [1.1e2, 2.3, 3.2 , 4,      55, 666, -7.7, 1e-8] )
-    
-    assert bytes(a) == bytes(b),     "bytes(a) failed"
-    assert bytes(a) == a.tobytes(),  "bytes(a) != a.tobytes()"
-    
+    print("test_array_buffer_api")
+    a =            Qa([Qn(1.1e2, 2.3, 3.2, 4), Qn(55, 666, -7.7, 1e-8)])
+    b = array.array('d', [1.1e2, 2.3, 3.2, 4,     55, 666, -7.7, 1e-8])
+
+    assert bytes(a) == bytes(b), "bytes(a) failed"
+    assert bytes(a) == a.tobytes(), "bytes(a) != a.tobytes()"
+
 
 def test_array_to_from_file():
+    print("test_array_to_from_file")
     fname = '/tmp/test_array_to_from_file.dat'
     a = Qa(ql)
     n = len(a)
@@ -277,15 +294,16 @@ def test_array_to_from_file():
     c = Qa()
     try:
         with open(fname, 'rb') as f:
-            c.fromfile(f, n+2)
+            c.fromfile(f, n + 2)
         assert False, "Expecting an EOFError"
     except EOFError:
         pass
-    except:
+    except BaseException:
         assert False, "Expecting an EOFError"
 
 
 def test_array_pickle():
+    print("test_array_pickle")
     a = Qa(ql, reserve=131)
     s = pickle.dumps(a)
     c = pickle.loads(s)
@@ -295,6 +313,7 @@ def test_array_pickle():
 
 
 def test_array_concat():
+    print("test_array_concat")
     a = Qa(ql)
     n = len(a)
 
@@ -310,9 +329,8 @@ def test_array_concat():
         if j < n:
             y = a[j]
         else:
-            y = b[j-n]
+            y = b[j - n]
         assert x == y, f"Concat error: {j}th element {x} is not  {y}"
-
 
     # Now do concat in place
     #
@@ -332,41 +350,43 @@ def test_array_concat():
         if j < n:
             y = a[j]
         else:
-            y = b[j-n]
+            y = b[j - n]
         assert x == y, f"Concat error: {j}th element {x} is not  {y}"
-    
+
 
 def test_array_repeat():
+    print("test_array_repeat")
     a = Qa(ql)
     n = len(a)
 
-    b = 3*a
+    b = 3 * a
     m = len(b)
-    assert m == 3*n, f"Repeat length failure {m} != 3*{n}"
+    assert m == 3 * n, f"Repeat length failure {m} != 3*{n}"
 
     for j in range(m):
         x = b[j]
-        y = a[j%n]
+        y = a[j % n]
         assert x == y, f"Repeat error: {j}th element {x} is not  {y}"
 
     # Now do repeat in place
     #
     a = Qa(ql)
     n = len(a)
-    
+
     b = Qa(ql)
     b *= 3
     m = len(b)
-    assert m == 3*n, f"Repeat length failure {m} != 3*{n}"
+    assert m == 3 * n, f"Repeat length failure {m} != 3*{n}"
     for j in range(m):
         x = b[j]
-        y = a[j%n]
+        y = a[j % n]
         assert x == y, f"Repeat error: {j}th element {x} is not {y}"
 
 
 def test_array_iteration():
+    print("test_array_iteration")
     a = Qa(ql)
-    
+
     j = 0
     for q in a:
         x = ql[j]
@@ -378,7 +398,7 @@ def test_array_iteration():
     for p in a:
         j = 0
         for q in a:
-            x = ql[i] 
+            x = ql[i]
             y = ql[j]
             assert p == x, f"Iteration error: {i}th outer item, {j}th inner cycle"
             assert q == y, f"Iteration error: {i}th outer cycle, {j}th inner item"
@@ -401,10 +421,11 @@ def equivilent(a, b):
     return result
 
 
-def test_array_slice ():
+def test_array_slice():
+    print("test_array_slice")
     a = array.array('d', range(23))
     b = Qa(a)
-    
+
     # We leverage of doing the equivilent slice action on both an array.array
     # of doubles and a quaternion array, and comapring the result.
     #
@@ -433,8 +454,7 @@ def test_array_slice ():
     assert equivilent(a[0::-4], b[0::-4]), "Array slice error"
     assert equivilent(a[-1::-4], b[-1::-4]), "Array slice error"
     assert equivilent(a[-3::-4], b[-3::-4]), "Array slice error"
-    
-    
+
     a[3], a[14] = a[14], a[3]
     b[3], b[14] = b[14], b[3]
     assert equivilent(a, b), "Array assign error"
@@ -451,20 +471,22 @@ def test_array_slice ():
     b[-1:3:-5] = b[-2:2:-5]
     assert equivilent(a, b), "Array slice assign error"
 
-    new_items =  [101, 102, 103, 104, 105, 106, 107, 108, 109, 111.11] 
+    new_items = [101, 102, 103, 104, 105, 106, 107, 108, 109, 111.11]
     a[3:6] = array.array('d', new_items)
-    b[3:6] = Qa (new_items)
+    b[3:6] = Qa(new_items)
     assert equivilent(a, b), "Array assign error"
 
-    del (a[5]) ; del (b[5])
+    del (a[5])
+    del (b[5])
     assert equivilent(a, b), "Array del error"
 
-    del (a[::3]) ; del (b[::3])
+    del (a[::3])
+    del (b[::3])
     assert equivilent(a, b), "Array del error"
 
-    del (a[2::7]) ; del (b[2::7])
+    del (a[2::7])
+    del (b[2::7])
     assert equivilent(a, b), "Array del error"
-
 
 
 if __name__ == "__main__":
@@ -489,6 +511,6 @@ if __name__ == "__main__":
     test_array_concat()
     test_array_repeat()
     test_array_iteration()
-    test_array_slice ()
+    test_array_slice()
 
 # end

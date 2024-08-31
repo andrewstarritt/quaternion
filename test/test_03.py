@@ -15,9 +15,9 @@ def det(m):
     """ Returns the determinent of a 3x3 matrix m.
         m is expected to be a tuple/list of tuples and/or lists.
     """
-    t1 = m[0][0] * (m[1][1]*m[2][2] - m[1][2]*m[2][1])
-    t2 = m[0][1] * (m[1][2]*m[2][0] - m[1][0]*m[2][2])
-    t3 = m[0][2] * (m[1][0]*m[2][1] - m[1][1]*m[2][0])
+    t1 = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+    t2 = m[0][1] * (m[1][2] * m[2][0] - m[1][0] * m[2][2])
+    t3 = m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
 
     return t1 + t2 + t3
 
@@ -70,7 +70,7 @@ def mmult(left, right):
             for j in range(nc):
                 s = 0.0
                 for k in range(nk1):
-                    s += left[i][k]*right[k][j]
+                    s += left[i][k] * right[k][j]
                 row.append(s)
 
             result.append(tuple(row))
@@ -89,7 +89,7 @@ def mmult(left, right):
         for i in range(nr):
             s = 0.0
             for j in range(nk1):
-                s += left[i][j]*right[j]
+                s += left[i][j] * right[j]
             result.append(s)
         result = tuple(result)
 
@@ -99,6 +99,7 @@ def mmult(left, right):
 # -----------------------------------------------------------------------------
 #
 def test_construct():
+    print("test_construct")
     a = 1.0
     b = (2.0, 3.0, 4.0)
     # Construct a rotation Qn
@@ -107,6 +108,7 @@ def test_construct():
 
 
 def test_expected_errors():
+    print("test_expected_errors")
 
     a = 1.0
     b = (2.0, 3.0, 4.0)
@@ -116,7 +118,7 @@ def test_expected_errors():
         assert False, "Expecting TypeError"
     except TypeError as te:
         print("Expected Error: %s: %s" % (type(te).__name__, te))
-    except:
+    except BaseException:
         raise
 
     try:
@@ -124,7 +126,7 @@ def test_expected_errors():
         assert False, "Expecting TypeError"
     except TypeError as te:
         print("Expected Error: %s: %s" % (type(te).__name__, te))
-    except:
+    except BaseException:
         raise
 
     try:
@@ -132,7 +134,7 @@ def test_expected_errors():
         assert False, "Expecting TypeError"
     except TypeError as te:
         print("Expected Error: %s: %s" % (type(te).__name__, te))
-    except:
+    except BaseException:
         raise
 
     try:
@@ -140,7 +142,7 @@ def test_expected_errors():
         assert False, "Expecting TypeError"
     except TypeError as te:
         print("Expected Error: %s: %s" % (type(te).__name__, te))
-    except:
+    except BaseException:
         raise
 
     try:
@@ -148,7 +150,7 @@ def test_expected_errors():
         assert False, "Expecting TypeError"
     except TypeError as te:
         print("Expected Error: %s: %s" % (type(te).__name__, te))
-    except:
+    except BaseException:
         raise
 
     try:
@@ -156,7 +158,7 @@ def test_expected_errors():
         assert False, "Expecting TypeError"
     except TypeError as te:
         print("Expected Error: %s: %s" % (type(te).__name__, te))
-    except:
+    except BaseException:
         raise
 
     try:
@@ -164,7 +166,7 @@ def test_expected_errors():
         assert False, "Expecting TypeError"
     except TypeError as te:
         print("Expected Error: %s: %s" % (type(te).__name__, te))
-    except:
+    except BaseException:
         raise
 
     b = (0.0, 0.0, 0.0)
@@ -174,13 +176,14 @@ def test_expected_errors():
         assert False, "Expecting ValueError"
     except ValueError as te:
         print("Expected Error: %s: %s" % (type(te).__name__, te))
-    except:
+    except BaseException:
         raise
 
     print()
 
 
 def test_rotation1():
+    print("test_rotation1")
     a = tau / 8.0         # 45 deg
     b = (0.0, 0.0, 1.0)   # +z axis
 
@@ -202,6 +205,7 @@ def test_rotation1():
 
 
 def test_rotation2():
+    print("test_rotation2")
     a = tau / 6.0         # 60 deg
     b = (1.0, 1.0, 1.0)   # diagonal
 
@@ -228,6 +232,7 @@ def test_rotation2():
 
 
 def test_rotation3():
+    print("test_rotation3")
     # Choose quazi random angle and axis
     #
     a = 0.54321
@@ -260,13 +265,14 @@ def test_rotation3():
 
 
 def test_rotation4():
+    print("test_rotation4")
     # Choose quazi random angle and axis
     #
     a1 = 0.54321
 
     x, y, z = 0.12, -0.34, -0.56
-    s = (x*x + y*y + z*z)**0.5
-    u1 = (x/s, y/s, z/s)
+    s = (x * x + y * y + z * z)**0.5
+    u1 = (x / s, y / s, z / s)
 
     r = Qn(angle=a1, axis=u1)
 
@@ -286,6 +292,7 @@ def test_rotation4():
 
 
 def test_rotation5():
+    print("test_rotation5")
     # Choose quazi random rotation matrix
     #
     m = ((-0.6644335128480408, -0.7456022251949338, +0.0510434010306547),
@@ -314,6 +321,7 @@ def test_rotation5():
 
 
 def test_rotation6():
+    print("test_rotation6")
     p = Qn(angle=3.0, axis=(1, -1, 2))
     q = Qn(angle=1.5, axis=(-2, 3, -3))
     print(f"{p:.6f}")

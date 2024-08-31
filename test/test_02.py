@@ -65,6 +65,7 @@ def check(rfn, cfn, qfn, q):
 
 
 def test_isclose():
+    print("test_isclose")
     a = Quaternion(1.23e10)
     b = a + 0.001
 
@@ -74,6 +75,7 @@ def test_isclose():
 
 
 def test_exp():
+    print("test_exp")
     for q in qlist:
         # Do special for the zeroth term
         #
@@ -97,16 +99,19 @@ def test_exp():
 
 
 def test_log():
+    print("test_log")
     for q in qlist:
         check(math.log, cmath.log, quaternion.log, q)
 
 
 def test_log10():
+    print("test_log10")
     for q in qlist:
         check(math.log10, cmath.log10, quaternion.log10, q)
 
 
 def test_log_exp():
+    print("test_log_exp")
     for a in qlist:
         b = quaternion.log(a)
         c = quaternion.exp(b)
@@ -114,6 +119,7 @@ def test_log_exp():
 
 
 def test_sqrt():
+    print("test_sqrt")
     a = Quaternion(4.0, 0.0, 0.0, 0.0)
     b = Quaternion(2.0, 0.0, 0.0, 0.0)
 
@@ -136,6 +142,7 @@ def test_sqrt():
 
 
 def test_sin():
+    print("test_sin")
     for q in qlist:
         check(math.sin, cmath.sin, quaternion.sin, q)
 
@@ -161,6 +168,7 @@ def test_sin():
 
 
 def test_cos():
+    print("test_cos")
     for q in qlist:
         check(math.cos, cmath.cos, quaternion.cos, q)
 
@@ -186,6 +194,7 @@ def test_cos():
 
 
 def test_tan():
+    print("test_tan")
     for q in qlist:
         s = quaternion.sin(q)
         c = quaternion.cos(q)
@@ -196,57 +205,67 @@ def test_tan():
 
 
 def test_asin():
+    print("test_asin")
     for q in qlist:
         q = q / 10.0
         check(math.asin, cmath.asin, quaternion.asin, q)
 
 
 def test_acos():
+    print("test_acos")
     for q in qlist:
         q = q / 10.0
         check(math.acos, cmath.acos, quaternion.acos, q)
 
 
 def test_atan():
+    print("test_atan")
     for q in qlist:
         q = q / 10.0
         check(math.atan, cmath.atan, quaternion.atan, q)
 
 
 def test_sinh():
+    print("test_sinh")
     for q in qlist:
         check(math.sinh, cmath.sinh, quaternion.sinh, q)
 
 
 def test_cosh():
+    print("test_cosh")
     for q in qlist:
         check(math.cosh, cmath.cosh, quaternion.cosh, q)
 
 
 def test_tanh():
+    print("test_tanh")
     for q in qlist:
         check(math.tanh, cmath.tanh, quaternion.tanh, q)
 
 
 def test_asinh():
+    print("test_asinh")
     for q in qlist:
         q = q / 10.0
         check(math.asinh, cmath.asinh, quaternion.asinh, q)
 
 
 def test_acosh():
+    print("test_acosh")
     for q in qlist:
         q = q + 1.0
         check(math.acosh, cmath.acosh, quaternion.acosh, q)
 
 
 def test_atanh():
+    print("test_atanh")
     for q in qlist:
         q = q / 10.0
         check(math.atanh, cmath.atanh, quaternion.atanh, q)
 
 
 def test_dot1():
+    print("test_dot1")
     b = Quaternion(+17.16, -1.32, -1.48, -2.80)
     for a in qlist:
         u = quaternion.dot(a, a)
@@ -263,6 +282,7 @@ def test_dot1():
 
 
 def test_dot2():
+    print("test_dot2")
     b = Quaternion(+17.16, -1.32, -1.48, -2.80)
     for a in qlist:
         u = a @ a
@@ -279,6 +299,7 @@ def test_dot2():
 
 
 def test_pythagoras():
+    print("test_pythagoras")
     for a in qlist:
         u = quaternion.sin(a)**2 + quaternion.cos(a)**2
         v = abs(u)
@@ -286,6 +307,7 @@ def test_pythagoras():
 
 
 def test_polar_rect():
+    print("test_polar_rect")
     for a in qlist:
         t = quaternion.polar(a)
         c = quaternion.rect(*t)
@@ -293,6 +315,7 @@ def test_polar_rect():
 
 
 def test_lerp():
+    print("test_lerp")
     a = Quaternion(+3.16, -1.32, -1.48, -2.80)
     b = Quaternion(-1.32, -3.48, -2.80, 3.142)
 
