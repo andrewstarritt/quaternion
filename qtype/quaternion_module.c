@@ -3,7 +3,7 @@
  * This file is part of the Python quaternion module. It privides module
  * framework.
  *
- * Copyright (c) 2018-2023  Andrew C. Starritt
+ * Copyright (c) 2018-2025  Andrew C. Starritt
  *
  * All rights reserved.
  *
@@ -33,6 +33,10 @@
  * Python 3.9.2
  * CentOS Linux release 7.9.2009 (Core)
  * gcc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-44)
+ *
+ * Python 3.11.2
+ * Debian GNU/Linux release 12
+ * gcc (Debian 12.2.0-14) 12.2.0
  */
 
 #include <Python.h>

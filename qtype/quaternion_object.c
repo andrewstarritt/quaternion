@@ -2,7 +2,7 @@
  *
  * This file is part of the Python quaternion module.
  *
- * Copyright (c) 2018-2024  Andrew C. Starritt
+ * Copyright (c) 2018-2025  Andrew C. Starritt
  *
  * All rights reserved.
  *
@@ -1775,9 +1775,9 @@ PyDoc_STRVAR(
       "\n"
       "d) from a single number parameter: int, float, complex or another Quaternion.\n"
       "   When the number is complex, the imaginary part of the complex is assigned\n"
-      "   to the j imaginary part. So that Quaternion(z) == Quaternion(str(z)); or\n"
+      "   to the j imaginary part. So that Quaternion(z) == Quaternion(str(z));\n"
       "\n"
-      "e) from the string representation of a quaternion (modelled on the complex type).\n"
+      "e) from the string representation of a quaternion (modelled on the complex type); or\n"
       "\n"
       "f) from a 3x3 matrix of floats (or float-able objects). The matrix must be an\n"
       "   iterator with 3 elements, each of which must also be an iterator with three\n"
@@ -1797,7 +1797,7 @@ PyDoc_STRVAR(
       "complex - complex - the complex number (w + y.j)\n"
       "real    - float - real/scalar part\n"
       "imag    - tuple - the imaginary part, the same as vector.\n"
-      "data    - tuple - the raw data as the tuple (w, x, y, z) \n"
+      "data    - tuple - the raw data as the float tuple (w, x, y, z).\n"
       "\n"
       );
 
