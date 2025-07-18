@@ -69,7 +69,7 @@ typedef struct {
 } Py_quat_matrix;
 
 
-/* Enable/disable use of red i, green j and blue k.
+/* Enable/disable use of red i, green j and blue k components.
  * A bit of fun rather than any meaningful purpose.
  */
 void _Py_quat_set_use_colour(bool use_colour);
@@ -80,7 +80,7 @@ bool _Py_quat_using_colour();
 */
 char * _Py_quat_to_string (const Py_quaternion a,
                            const char format_code, /* always 'r' */
-                           const int precision);   /* aleeays 0 */
+                           const int precision);   /* always 0 */
 
 char * _Py_quat_to_string2 (const int size,
                             const char* ps,

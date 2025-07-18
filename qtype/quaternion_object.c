@@ -1056,7 +1056,7 @@ PyDoc_STRVAR(quaternion_use_colour_doc,
              "use_colour() [static]\n"
              "\n"
              "Turns on colourisation for __str__ and __format__, e.g\n"
-             "  (1.2+9.81\033[31;1mi\033[00m+3.14\033[32;1mj\033[00m-1.612\033[34;1mk\033[00m)\n"
+             "  (1.2\033[31;1m+9.81i\033[32;1m+3.14j\033[34;1m-1.612k\033[00m)\n"
              "\n"
              "\n");
 static PyObject *quaternion_use_colour()

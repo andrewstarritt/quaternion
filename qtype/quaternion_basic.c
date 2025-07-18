@@ -262,6 +262,7 @@ done:
 }
 
 /* -----------------------------------------------------------------------------
+ * quaternion to string part 2.
  */
 char * _Py_quat_to_string2 (const int size,
                             const char* psin,
@@ -270,7 +271,7 @@ char * _Py_quat_to_string2 (const int size,
                             const char* pzin)
 {
    char *result = NULL;
-   size_t total;
+   int total;
    int spaces;
    size_t alloc;
    int j;
@@ -315,10 +316,10 @@ char * _Py_quat_to_string2 (const int size,
    imsize = alloc - spaces;  /* and remaining space */
 
    if (do_use_colour) {
-      snprintf(image, imsize, "(%s%s%s%si%s%s%s%sj%s%s%s%sk%s)", ps,
-               sx ? "+" : "", px, red, reset,
-               sy ? "+" : "", py, green, reset,
-               sz ? "+" : "", pz, blue, reset);
+      snprintf(image, imsize, "(%s%s%s%si%s%s%sj%s%s%sk%s)", ps,
+               red,   sx ? "+" : "", px,
+               green, sy ? "+" : "", py,
+               blue,  sz ? "+" : "", pz, reset);
    } else {
       snprintf(image, imsize, "(%s%s%si%s%sj%s%sk)", ps,
                sx ? "+" : "", px,
