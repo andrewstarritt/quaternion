@@ -48,11 +48,11 @@
 #include "quaternion_array_iter.h"
 #include "quaternion_math.h"
 
-static Py_quaternion q0 = {0.0, 0.0, 0.0, 0.0};
-static Py_quaternion q1 = {1.0, 0.0, 0.0, 0.0};
-static Py_quaternion qi = {0.0, 1.0, 0.0, 0.0};
-static Py_quaternion qj = {0.0, 0.0, 1.0, 0.0};
-static Py_quaternion qk = {0.0, 0.0, 0.0, 1.0};
+static const Py_quaternion q0 = {0.0, 0.0, 0.0, 0.0};
+static const Py_quaternion q1 = {1.0, 0.0, 0.0, 0.0};
+static const Py_quaternion qi = {0.0, 1.0, 0.0, 0.0};
+static const Py_quaternion qj = {0.0, 0.0, 1.0, 0.0};
+static const Py_quaternion qk = {0.0, 0.0, 0.0, 1.0};
 
 
 static PyModuleDef QuaternionModule = {
