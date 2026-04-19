@@ -127,6 +127,10 @@ Py_quaternion _Py_quat_quot (const Py_quaternion a, const Py_quaternion b);
 Py_quaternion _Py_quat_pow1  (const Py_quaternion a, const double b);
 Py_quaternion _Py_quat_pow2  (const double a, const Py_quaternion b);
 
+/* rotates the i, j and k component values (modulo 3) */
+Py_quaternion _Py_quat_lshift  (const Py_quaternion a, const int b);
+Py_quaternion _Py_quat_rshift  (const Py_quaternion a, const int b);
+
 /* Other functions
  */
 double _Py_quat_quadrance (const Py_quaternion a);

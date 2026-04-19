@@ -63,9 +63,11 @@ binary: +, -, \*, /
 
 power: \*\*
 
+shift: &lt;&lt;, &gt;&gt;
+
 There is no mod (%) or integer division (//) operation available.
 Therefore only the two argument version of the pow() function is available -
- see below.
+see below.
 
 The Quaternion type is associative under both addition and multiplication, i.e.:
 
@@ -94,6 +96,9 @@ as this could implemented as:
     exp (log (p) * q)
 
 However, mixed-mode ** is possible - please see below.
+
+The shift operators are mixed mode as well - see below.
+
 
 ## <a name = "mixedmode"/><span style='color:#00c000'>mixed mode arithmetic</span>
 
@@ -131,6 +136,19 @@ are both provided:
     q ** a
     a ** q        -- a must be > 0.0
 
+Mixed mode is also available for the &lt;&lt; and &gt;&gt; operators;
+If n is an integer number, the following are both provided:
+
+    q >> n
+    q << n
+
+The operators provide cyclic permutations, swapping the coefficients of
+i to j to k to i n times (or the reverse i to k to j to i n times), and
+constitutes an automorphism of the quaternion algebra, meaning the fundamental
+multiplication rules (i^2=j^2=k^2=ijk=-1) remain invariant under this transformation.
+
+This corresponds to rotating the coordinate system in 3D space, effectively
+relabeling the axes without changing the underlying geometric structure.
 
 ## <a name = "construction"/><span style='color:#00c000'>construction</span>
 
@@ -510,5 +528,5 @@ Guidance from https://docs.python.org/3.5/extending/newtypes.html
 together with cribbing many code-snippets and ideas from the complex type
 and the array.array type; and last _but not least_ Sir William R. Hamilton.
 
-<font size="-1">Last updated: Sat Aug 31 15:35:29 2024</font>
+<font size="-1">Last updated: Sat Apr 18 19:57:01 AEST 2026</font>
 <br>

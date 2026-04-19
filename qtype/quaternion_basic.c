@@ -666,7 +666,7 @@ Py_quaternion _Py_quat_pow2 (const double a, const Py_quaternion b)
       za = a + I*0.0;
 
       /* Form complex equivalent of b
-    */
+       */
       decompose(b, &br, &bi, &unit);
       zb = br + I*bi;
 
@@ -680,6 +680,47 @@ Py_quaternion _Py_quat_pow2 (const double a, const Py_quaternion b)
       r = compose (rr, ri, unit);
    }
    return r;
+}
+
+/* -----------------------------------------------------------------------------
+ */
+Py_quaternion _Py_quat_rshift  (const Py_quaternion a, const int b)
+{
+   Py_quaternion r;
+
+   int m = b % 3;
+   if (m != 0 && b < 0) {
+      /* The C % operator is a remainder operator.  We want the modulo
+       * operator, so need to do a special when b is negative.
+       */
+      m = m + 3;
+   }
+
+   if (m == 1) {
+      r.w = a.w;
+      r.x = a.z;
+      r.y = a.x;
+      r.z = a.y;
+   } else if (m == 2) {
+      r.w = a.w;
+      r.x = a.y;
+      r.y = a.z;
+      r.z = a.x;
+   } else {
+      r.w = a.w;
+      r.x = a.x;
+      r.y = a.y;
+      r.z = a.z;
+   }
+
+   return r;
+}
+
+/* -----------------------------------------------------------------------------
+ */
+Py_quaternion _Py_quat_lshift  (const Py_quaternion a, const int b)
+{
+   return _Py_quat_rshift (a, -b);
 }
 
 

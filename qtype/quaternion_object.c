@@ -54,9 +54,9 @@ static PyObject *
 quaternion_subtype_from_c_quaternion(PyTypeObject *type, Py_quaternion qval);
 
 /* We roll our own macro here because:
- * a) Py_ADJUST_ERANGE2 disappears in 3.11 and we have to be Py_BUILD_CORE to
+ * a) Py_ADJUST_ERANGE2 disappeared in 3.11 and we have to be Py_BUILD_CORE to
  *    access the new internal/pycore_pymath.h; and
- * b) we a quaternion, not two complex numbers.
+ * b) we are a quaternion, not two complex numbers.
  */
 #define QN_ADJUST_ERANGE4(W, X, Y, Z)                                   \
     do {                                                                \
@@ -1492,6 +1492,53 @@ quaternion_abs (PyQuaternionObject *v)
 }
 
 /* -----------------------------------------------------------------------------
+ * Cyclic Permutations if i, j and k coefficients
+ */
+static PyObject *
+quaternion_lshift(PyObject *v, PyObject *w)
+{
+   Py_quaternion result;
+   Py_quaternion a;
+   int b;
+   TO_C_QUATERNION(v, a);
+
+   if (PyLong_Check(w)) {
+      b = _PyLong_AsInt(w);
+   } else {
+      Py_INCREF(Py_NotImplemented);
+      return Py_NotImplemented;
+   }
+
+   PyFPE_START_PROTECT("quaternion_lshift", return 0)
+   result = _Py_quat_lshift(a, b);
+   PyFPE_END_PROTECT(result)
+   return PyQuaternion_FromCQuaternion(result);
+}
+
+/* -----------------------------------------------------------------------------
+ */
+static PyObject *
+quaternion_rshift (PyObject *v, PyObject *w)
+{
+   Py_quaternion result;
+   Py_quaternion a;
+   int b;
+   TO_C_QUATERNION(v, a);
+
+   if (PyLong_Check(w)) {
+      b = _PyLong_AsInt(w);
+   } else {
+      Py_INCREF(Py_NotImplemented);
+      return Py_NotImplemented;
+   }
+
+   PyFPE_START_PROTECT("quaternion_rshift", return 0)
+   result = _Py_quat_rshift(a, b);
+   PyFPE_END_PROTECT(result)
+   return PyQuaternion_FromCQuaternion(result);
+}
+
+/* -----------------------------------------------------------------------------
  */
 static PyObject *
 quaternion_quadrance (PyQuaternionObject *self)
@@ -1714,8 +1761,8 @@ static PyNumberMethods QuaternionAsNumber = {
    (unaryfunc)quaternion_abs,                  /* nb_absolute */
    (inquiry)quaternion_is_bool,                /* nb_bool */
    0,                                          /* nb_invert */
-   0,                                          /* nb_lshift */
-   0,                                          /* nb_rshift */
+   (binaryfunc)quaternion_lshift,              /* nb_lshift */
+   (binaryfunc)quaternion_rshift,              /* nb_rshift */
    0,                                          /* nb_and */
    0,                                          /* nb_xor */
    0,                                          /* nb_or */
