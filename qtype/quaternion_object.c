@@ -21,7 +21,7 @@
  *
  * Contact details:
  * andrew.starritt@gmail.com
- * PO Box 3118, Prahran East, Victoria 3181, Australia.
+ * 
  */
 
 /* From https://docs.python.org/3.5/extending/newtypes.html,

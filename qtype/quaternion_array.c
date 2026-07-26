@@ -20,7 +20,7 @@
  *
  * Contact details:
  * andrew.starritt@gmail.com
- * PO Box 3118, Prahran East, Victoria 3181, Australia.
+ * 
  *
  * source formatting:
  *    indent -kr -pcs -i3 -cli3 -nbbo -nut -l96

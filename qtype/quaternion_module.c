@@ -22,7 +22,7 @@
  *
  * Contact details:
  * andrew.starritt@gmail.com
- * PO Box 3118, Prahran East, Victoria 3181, Australia.
+ * 
  */
 
 /* The version definition is read by setup.py

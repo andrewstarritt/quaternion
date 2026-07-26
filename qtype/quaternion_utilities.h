@@ -20,7 +20,7 @@
  *
  * Contact details:
  * andrew.starritt@gmail.com
- * PO Box 3118, Prahran East, Victoria 3181, Australia.
+ * 
  */
 
 #ifndef QUATERNION_UTILITIES_H
